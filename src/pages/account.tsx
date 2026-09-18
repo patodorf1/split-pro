@@ -26,6 +26,7 @@ import MainLayout from '~/components/Layout/MainLayout';
 import { EntityAvatar } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
 import { env } from '~/env';
+import { clearRememberedRoute } from '~/hooks/useRememberLastRoute';
 import { customServerSideTranslations } from '~/utils/i18n/server';
 import { BankConnection } from '~/components/Account/BankAccount/BankConnection';
 import { bigIntReplacer } from '~/utils/numbers';
@@ -91,6 +92,8 @@ const AccountPage: NextPageWithUser<{
   const header = useMemo(() => <div className="text-3xl font-semibold">Account</div>, []);
 
   const onSignOut = useCallback(async () => {
+    // El recuerdo de "dónde la dejé" es del dispositivo: al salir, se borra.
+    clearRememberedRoute();
     await signOut({ redirect: false });
     void router.push('/auth/signin', '/auth/signin', { locale: 'default' });
   }, [router]);

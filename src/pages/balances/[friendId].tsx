@@ -2,7 +2,7 @@ import { ChevronLeftIcon, HandCoins, Pencil, PlusIcon } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { DefaultSplitSettings } from '~/components/DefaultSplit/DefaultSplitSettings';
 import { ExpenseList } from '~/components/Expense/ExpenseList';
@@ -17,6 +17,7 @@ import { type NextPageWithUser } from '~/types';
 import { api } from '~/utils/api';
 import { customServerSideTranslations } from '~/utils/i18n/server';
 import { type GetServerSideProps } from 'next';
+import { forgetRouteIfRemembered } from '~/hooks/useRememberLastRoute';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { CumulatedBalances } from '~/components/Expense/CumulatedBalances';
 import { deserializeDefaultSplit } from '~/lib/defaultSplit';
@@ -60,6 +61,16 @@ const FriendPage: NextPageWithUser = ({ user }) => {
       .filter(([, amount]) => 0n !== amount)
       .map(([currency, amount]) => ({ currency, amount }));
   }, [balances.data]);
+
+  // Amigo inaccesible (eliminado, o sin permiso): que el arranque de la app no
+  // Siga apuntando acá.
+  const friendIsGone = friendQuery.isError || (friendQuery.isSuccess && !friendQuery.data);
+
+  useEffect(() => {
+    if (friendIsGone) {
+      forgetRouteIfRemembered(router.asPath);
+    }
+  }, [friendIsGone, router.asPath]);
 
   return (
     <>

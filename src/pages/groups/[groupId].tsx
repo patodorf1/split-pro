@@ -38,7 +38,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { UpdateName } from '~/components/Account/UpdateDetails';
 import { CurrencyPicker } from '~/components/AddExpense/CurrencyPicker';
 import { env } from '~/env';
+import { forgetRouteIfRemembered } from '~/hooks/useRememberLastRoute';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
+import {
+  CLEAR_LAST_ROUTE_COOKIE,
+  LAST_ROUTE_COOKIE,
+  isRememberedRoute,
+  readCookieValue,
+} from '~/lib/lastRoute';
 import { deserializeDefaultSplit } from '~/lib/defaultSplit';
 import { isCurrencyCode, parseCurrencyCode } from '~/lib/currency';
 import { db } from '~/server/db';
@@ -147,6 +154,17 @@ const BalancePage: NextPageWithUser<{
       setGroupDefaultCurrency(groupId, groupDetailQuery.data.defaultCurrency);
     }
   }, [groupDetailQuery.data?.defaultCurrency, setGroupDefaultCurrency, groupId]);
+
+  // Grupo inaccesible (borrado, o ya no soy miembro): que el arranque de la app
+  // No siga apuntando acá.
+  const groupIsGone =
+    groupDetailQuery.isError || (groupDetailQuery.isSuccess && !groupDetailQuery.data);
+
+  useEffect(() => {
+    if (groupIsGone) {
+      forgetRouteIfRemembered(router.asPath);
+    }
+  }, [groupIsGone, router.asPath]);
 
   return (
     <>
@@ -645,6 +663,14 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   });
 
   if (!group) {
+    // El grupo ya no existe: si el arranque de la app apuntaba acá, se borra el
+    // Recuerdo para no quedar rebotando contra una pantalla que no está.
+    const rememberedRaw = readCookieValue(context.req.headers.cookie, LAST_ROUTE_COOKIE);
+
+    if (isRememberedRoute(rememberedRaw, `/groups/${Number(context.query.groupId)}`)) {
+      context.res.setHeader('Set-Cookie', CLEAR_LAST_ROUTE_COOKIE);
+    }
+
     return {
       redirect: {
         destination: '/groups',

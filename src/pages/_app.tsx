@@ -12,6 +12,7 @@ import { Toaster } from '~/components/ui/sonner';
 import { LoadingSpinner } from '~/components/ui/spinner';
 import { ThemeProvider } from 'next-themes';
 import { ThemeColorMeta } from '~/components/Theme/ThemeColorMeta';
+import { useRememberLastRoute } from '~/hooks/useRememberLastRoute';
 import { DEFAULT_THEME, NEXT_THEMES_LIST } from '~/lib/themes';
 import { CurrencyHelpersProvider } from '~/contexts/CurrencyHelpersContext';
 import { useAddExpenseStore } from '~/store/addStore';
@@ -34,6 +35,9 @@ const MyApp: AppType<{ session: Session | null }> = ({
   pageProps: { session, ...pageProps },
 }) => {
   const { t, ready } = useTranslation();
+
+  // "Que arranque donde la dejé": recuerda la última pantalla en este dispositivo.
+  useRememberLastRoute();
 
   if (!ready) {
     return (
