@@ -348,7 +348,7 @@ export const userRouter = createTRPCRouter({
 
   sendTestPushNotification: protectedProcedure.mutation(async ({ ctx }) => {
     const { sentCount } = await sendPushNotificationToUsers([ctx.session.user.id], {
-      title: 'SplitPro',
+      title: 'Split',
       message: 'Test notification from debug info',
       data: {
         url: '/account',
