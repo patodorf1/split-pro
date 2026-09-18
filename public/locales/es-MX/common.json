@@ -396,6 +396,11 @@
     "groups": "Grupos",
     "recurring": "Recurrente"
   },
+  "payer": {
+    "paid": "Pagó",
+    "received": "Recibió",
+    "change": "Cambiar quién pagó"
+  },
   "quick_categories": {
     "label": "Categorías más usadas"
   },
@@ -502,6 +507,17 @@
       "terminal": "Terminal"
     }
   },
+  "transfer": {
+    "title": "Transferencia",
+    "mode_label": "Tipo de movimiento",
+    "mode_expense": "Gasto",
+    "mode_transfer": "Transferencia",
+    "sender_label": "Transfiere",
+    "receiver_label": "Recibe",
+    "swap": "Invertir",
+    "pick_receiver": "¿Quién la recibe?",
+    "pick_receiver_placeholder": "Elige quién la recibe"
+  },
   "ui": {
     "added_by": "Añadido por",
     "and": "y",
@@ -545,9 +561,9 @@
     "outstanding_balances": "Saldos pendientes",
     "select_balance": "",
     "select_currency": "Seleccionar moneda",
-    "settle_up_name": "Liquidar",
+    "settle_up_name": "Transferencia de saldo",
     "settled_up": "Liquidado",
-    "settlement": "Liquidación",
+    "settlement": "Transferencia de saldo",
     "share_text": "Echa un vistazo a SplitPro. Es una alternativa gratuita de código abierto a Splitwise",
     "show_all_currencies": "Mostrar todas las monedas",
     "today": "Hoy",

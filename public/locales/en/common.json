@@ -423,6 +423,11 @@
     "balances": "Balances",
     "groups": "Groups"
   },
+  "payer": {
+    "paid": "Paid by",
+    "received": "Received by",
+    "change": "Change who paid"
+  },
   "quick_categories": {
     "label": "Most used categories"
   },
@@ -528,6 +533,17 @@
       "noche": "Noche",
       "terminal": "Terminal"
     }
+  },
+  "transfer": {
+    "title": "Transfer",
+    "mode_label": "Entry type",
+    "mode_expense": "Expense",
+    "mode_transfer": "Transfer",
+    "sender_label": "Sends",
+    "receiver_label": "Receives",
+    "swap": "Swap",
+    "pick_receiver": "Who receives it?",
+    "pick_receiver_placeholder": "Pick who receives it"
   },
   "ui": {
     "added_by": "Added by",

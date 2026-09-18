@@ -9,6 +9,7 @@ import { api } from '~/utils/api';
 import { toast } from 'sonner';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { cronToBackend } from '~/lib/cron';
+import { buildSettlementInput, resolveTransferReceiver } from '~/lib/settlement';
 import { cn } from '~/lib/utils';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -18,8 +19,10 @@ import { CurrencyPicker } from './CurrencyPicker';
 import { QuickCategories } from './QuickCategories';
 import { DateSelector } from './DateSelector';
 import { RecurrenceInput } from './RecurrenceInput';
+import { PayerSelector } from './PayerSelector';
 import { SelectUserOrGroup } from './SelectUserOrGroup';
-import { PayerSelectionForm, SplitExpenseForm } from './SplitTypeSection';
+import { SplitExpenseForm } from './SplitTypeSection';
+import { EntryModeToggle, TransferDirection } from './TransferSection';
 import { UploadFile } from './UploadFile';
 import { UserInput } from './UserInput';
 import { CurrencyInput } from '../ui/currency-input';
@@ -53,9 +56,10 @@ export const AddOrEditExpensePage: React.FC<{
   const transactionId = useAddExpenseStore((s) => s.transactionId);
   const cronExpression = useAddExpenseStore((s) => s.cronExpression);
   const multipleTransactions = useAddExpenseStore((s) => s.multipleTransactions);
+  const entryMode = useAddExpenseStore((s) => s.entryMode);
+  const transferToId = useAddExpenseStore((s) => s.transferToId);
 
-  const { t, displayName, generateSplitDescription, getCurrencyHelpersCached } =
-    useTranslationWithUtils();
+  const { t, generateSplitDescription, getCurrencyHelpersCached } = useTranslationWithUtils();
 
   const {
     setCurrency,
@@ -218,6 +222,71 @@ export const AddOrEditExpensePage: React.FC<{
     update,
   ]);
 
+  /** Con dos participantes el que recibe sale solo; con más, hay que elegirlo. */
+  const transferReceiver = resolveTransferReceiver(participants, paidBy?.id, transferToId);
+  const isTransfer = 'TRANSFER' === entryMode;
+  const canSaveTransfer = Boolean(amount) && Boolean(paidBy) && Boolean(transferReceiver);
+
+  /**
+   * Guardar una transferencia de saldo. Crea exactamente el mismo registro que "Saldar cuentas"
+   * (misma mutación, mismo `buildSettlementInput`), así que no suma a los totales del mes.
+   */
+  const addTransfer = useCallback(async () => {
+    if (!paidBy || !transferReceiver || !amount) {
+      return;
+    }
+
+    try {
+      await addExpenseMutation.mutateAsync(
+        [
+          buildSettlementInput({
+            sender: paidBy,
+            receiver: transferReceiver,
+            amount,
+            currency,
+            groupId: group?.id ?? null,
+            name: t('ui.settle_up_name'),
+            expenseDate,
+          }),
+        ],
+        {
+          onSuccess: (d) => {
+            const id = d.length > 0 ? d[0]?.id : undefined;
+            const friendId = 'string' === typeof router.query.friendId ? router.query.friendId : '';
+            const groupId = 'string' === typeof router.query.groupId ? router.query.groupId : '';
+
+            const target =
+              friendId && !groupId
+                ? `/balances/${friendId}/expenses/${id}`
+                : groupId
+                  ? `/groups/${groupId}/expenses/${id}`
+                  : `/expenses/${id}?keepAdding=1`;
+
+            router.push(target).catch(console.error);
+          },
+        },
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : t('errors.saving_expense'));
+    }
+  }, [
+    paidBy,
+    transferReceiver,
+    amount,
+    currency,
+    group,
+    expenseDate,
+    addExpenseMutation,
+    router,
+    t,
+  ]);
+
+  const onSave = isTransfer ? addTransfer : addExpense;
+  const isSaveDisabled =
+    addExpenseMutation.isPending ||
+    (isTransfer ? !canSaveTransfer : !amount || '' === description || isFileUploading);
+
   const handleDescriptionChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setDescription(e.target.value.toString() ?? '');
@@ -284,6 +353,22 @@ export const AddOrEditExpensePage: React.FC<{
   /** Todavía no se eligió con quién: es el paso de grupos/amigos con el buscador abajo. */
   const isPickingFirstParticipant = !group && 1 === participants.length;
 
+  /** Moneda + monto: el mismo renglón sirve para el gasto y para la transferencia. */
+  const amountRow = (
+    <div className="flex gap-2">
+      <CurrencyPicker currentCurrency={currency} onCurrencyPick={onCurrencyPick} />
+      <CurrencyInput
+        placeholder={t('expense_details.add_expense_details.amount_placeholder')}
+        currency={currency}
+        strValue={amtStr}
+        allowNegative={!isTransfer}
+        hideSymbol
+        onValueChange={onUpdateAmount}
+        rightIcon={currencyConversionComponent}
+      />
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -291,15 +376,17 @@ export const AddOrEditExpensePage: React.FC<{
           {t('actions.cancel')}
         </Button>
         <div className="text-center">
-          {expenseId ? t('actions.edit_expense') : t('actions.add_expense')}
+          {expenseId
+            ? t('actions.edit_expense')
+            : isTransfer
+              ? t('transfer.title')
+              : t('actions.add_expense')}
         </div>
         <Button
           variant="ghost"
           className="text-primary px-0"
-          disabled={
-            addExpenseMutation.isPending || !amount || '' === description || isFileUploading
-          }
-          onClick={addExpense}
+          disabled={isSaveDisabled}
+          onClick={onSave}
         >
           {t('actions.save')}
         </Button>{' '}
@@ -315,49 +402,57 @@ export const AddOrEditExpensePage: React.FC<{
       ) : (
         <>
           <UserInput isEditing={Boolean(expenseId)} />
-          <div className="mt-4 sm:mt-10">
-            <QuickCategories groupId={group?.id} category={category} onCategoryPick={setCategory} />
-          </div>
-          <div className="flex gap-2">
-            <CategoryPicker category={category} onCategoryPick={setCategory} />
-            <Input
-              placeholder={t('expense_details.add_expense_details.description_placeholder')}
-              value={description}
-              onChange={handleDescriptionChange}
-              className="text-lg placeholder:text-sm"
-              autoFocus
-            />
-          </div>
-          <div className="flex gap-2">
-            <CurrencyPicker currentCurrency={currency} onCurrencyPick={onCurrencyPick} />
-            <CurrencyInput
-              placeholder={t('expense_details.add_expense_details.amount_placeholder')}
-              currency={currency}
-              strValue={amtStr}
-              allowNegative
-              hideSymbol
-              onValueChange={onUpdateAmount}
-              rightIcon={currencyConversionComponent}
-            />
-          </div>
-          <div className="h-[180px]">
-            {amount && '' !== description ? (
-              <>
-                <div className="text-muted-foreground flex flex-col items-center justify-center text-sm sm:mt-4 sm:flex-row">
-                  <p>{t(`ui.expense.${isNegative ? 'received_by' : 'paid_by'}`)}</p>
-                  <PayerSelectionForm>
-                    <Button
-                      variant="ghost"
-                      className="text-primary h-8 max-w-full min-w-0 justify-start px-1.5 py-0 text-base sm:max-w-none"
-                    >
-                      <span className="max-w-full truncate">
-                        {displayName(paidBy, currentUser?.id, 'dativus')}
-                      </span>
-                    </Button>
-                  </PayerSelectionForm>
-                  <p>{t('ui.and')} </p>
+          {!expenseId && 1 < participants.length ? (
+            <EntryModeToggle className="mt-4 self-center" />
+          ) : null}
+          {isTransfer ? (
+            <>
+              <TransferDirection className="mt-6" />
+              {amountRow}
+              <div className="mt-4 flex items-start justify-between sm:mt-10">
+                <DateSelector
+                  mode="single"
+                  required
+                  selected={expenseDate}
+                  onSelect={setExpenseDate}
+                />
+                <Button
+                  className="min-w-[100px]"
+                  size="sm"
+                  loading={addExpenseMutation.isPending}
+                  disabled={isSaveDisabled}
+                  onClick={addTransfer}
+                >
+                  {t('actions.save')}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mt-4 sm:mt-6">
+                <QuickCategories
+                  groupId={group?.id}
+                  category={category}
+                  onCategoryPick={setCategory}
+                />
+              </div>
+              <div className="flex gap-2">
+                <CategoryPicker category={category} onCategoryPick={setCategory} />
+                <Input
+                  placeholder={t('expense_details.add_expense_details.description_placeholder')}
+                  value={description}
+                  onChange={handleDescriptionChange}
+                  className="text-lg placeholder:text-sm"
+                  autoFocus
+                />
+              </div>
+              {amountRow}
+              {/* Quién pagó y cómo se divide: siempre a la vista, no recién cuando hay monto. */}
+              <div className="flex flex-col gap-2">
+                <PayerSelector />
+                {1 < participants.length ? (
                   <SplitExpenseForm>
-                    <Button variant="ghost" className="text-primary h-8 px-1.5 py-0 text-base">
+                    <Button variant="ghost" className="text-primary h-8 w-full px-1.5 py-0 text-sm">
                       {generateSplitDescription(
                         splitType,
                         participants,
@@ -367,38 +462,43 @@ export const AddOrEditExpensePage: React.FC<{
                       )}
                     </Button>
                   </SplitExpenseForm>
-                </div>
-
-                <div className="mt-4 flex items-start justify-between sm:mt-10">
-                  <DateSelector
-                    mode="single"
-                    required
-                    selected={expenseDate}
-                    onSelect={setExpenseDate}
-                  />
-                  <div className="flex items-center gap-4">
-                    <UploadFile />
-                    <Button
-                      className="min-w-[100px]"
-                      size="sm"
-                      loading={addExpenseMutation.isPending || isFileUploading}
-                      disabled={
-                        addExpenseMutation.isPending ||
-                        !amount ||
-                        '' === description ||
-                        isFileUploading ||
-                        !isExpenseSettled
-                      }
-                      onClick={addExpense}
-                    >
-                      {t('actions.save')}
-                    </Button>
+                ) : null}
+              </div>
+              <div className="min-h-[90px]">
+                {amount && '' !== description ? (
+                  <div className="flex items-start justify-between">
+                    <DateSelector
+                      mode="single"
+                      required
+                      selected={expenseDate}
+                      onSelect={setExpenseDate}
+                    />
+                    <div className="flex items-center gap-4">
+                      <UploadFile />
+                      <Button
+                        className="min-w-[100px]"
+                        size="sm"
+                        loading={addExpenseMutation.isPending || isFileUploading}
+                        disabled={
+                          addExpenseMutation.isPending ||
+                          !amount ||
+                          '' === description ||
+                          isFileUploading ||
+                          !isExpenseSettled
+                        }
+                        onClick={addExpense}
+                      >
+                        {t('actions.save')}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </>
-            ) : null}
-          </div>
-          <div className="flex items-center justify-evenly px-4 lg:px-0">
+                ) : null}
+              </div>
+            </>
+          )}
+          <div
+            className={cn('flex items-center justify-evenly px-4 lg:px-0', isTransfer && 'hidden')}
+          >
             {!expenseId && (
               <RecurrenceInput>
                 <Button variant="ghost" size="sm">

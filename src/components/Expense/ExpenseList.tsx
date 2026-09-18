@@ -155,8 +155,11 @@ const Settlement: ExpenseComponent = ({ e, userId }) => {
       <div className="min-w-0">
         <p className="text-muted-foreground line-clamp-2 text-sm">
           {displayName(e.paidByUser, userId)}{' '}
-          {t(`ui.expense.user.${e.amount < 0n ? 'received' : 'paid'}`)} {toUIString(e.amount)}{' '}
-          {t('ui.expense.to')} {displayName(userDetails.data, userId)}
+          {/* El verbo tiene que concordar con quién pagó: "Vos pagaste", "Belén pagó". */}
+          {t(
+            `ui.expense.${e.paidBy === userId ? 'you' : 'user'}.${e.amount < 0n ? 'received' : 'paid'}`,
+          )}{' '}
+          {toUIString(e.amount)} {t('ui.expense.to')} {displayName(userDetails.data, userId)}
         </p>
       </div>
     </div>

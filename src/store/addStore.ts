@@ -4,6 +4,7 @@ import { create } from 'zustand';
 
 import { DEFAULT_CATEGORY } from '~/lib/category';
 import { type CurrencyCode } from '~/lib/currency';
+import { resolveTransferReceiver } from '~/lib/settlement';
 import type { TransactionAddInputModel } from '~/types';
 import { shuffleArray } from '~/utils/array';
 import { BigMath } from '~/utils/numbers';
@@ -11,6 +12,11 @@ import { cyrb128, splitmix32 } from '~/utils/random';
 
 export type Participant = User & { amount?: bigint };
 export type SplitShares = Record<number, Record<SplitType, bigint | undefined>>;
+/**
+ * Qué se está cargando en /add: un gasto común o una transferencia de saldo (SETTLEMENT), que no
+ * suma a los totales. Es un modo de la misma pantalla, no un formulario aparte.
+ */
+export type EntryMode = 'EXPENSE' | 'TRANSFER';
 /** Grupo con sus miembros: lo mínimo para poder elegirlo como destino del gasto. */
 export type GroupWithUsers = Group & { groupUsers: { user: User }[] };
 
@@ -38,6 +44,9 @@ export interface AddExpenseState {
   transactionId?: string;
   multipleTransactions: TransactionAddInputModel[];
   isTransactionLoading: boolean;
+  entryMode: EntryMode;
+  /** Destinatario elegido a mano cuando hay tres o más participantes. */
+  transferToId?: number;
   actions: {
     setAmount: (amount: bigint) => void;
     setAmountStr: (amountStr: string) => void;
@@ -66,6 +75,9 @@ export interface AddExpenseState {
     setSingleTransaction: (singleTransaction: TransactionAddInputModel) => void;
     setIsTransactionLoading: (isTransactionLoading: boolean) => void;
     setCronExpression: (cronExpression: string) => void;
+    setEntryMode: (entryMode: EntryMode) => void;
+    setTransferTo: (transferToId: number) => void;
+    swapTransferDirection: () => void;
   };
 }
 
@@ -96,6 +108,7 @@ export const useAddExpenseStore = create<AddExpenseState>()((set) => ({
   multipleTransactions: [],
   isTransactionLoading: false,
   cronExpression: '',
+  entryMode: 'EXPENSE',
   actions: {
     setAmount: (realAmount) =>
       set((s) => {
@@ -280,6 +293,8 @@ export const useAddExpenseStore = create<AddExpenseState>()((set) => ({
         cronExpression: '',
         isFileUploading: false,
         paidBy: s.currentUser,
+        entryMode: 'EXPENSE' as EntryMode,
+        transferToId: undefined,
       }));
     },
     setSplitScreenOpen: (splitScreenOpen) => set({ splitScreenOpen }),
@@ -301,6 +316,26 @@ export const useAddExpenseStore = create<AddExpenseState>()((set) => ({
       }),
     setIsTransactionLoading: (isTransactionLoading) => set({ isTransactionLoading }),
     setCronExpression: (cronExpression) => set({ cronExpression }),
+    setEntryMode: (entryMode) => set({ entryMode }),
+    setTransferTo: (transferToId) => set({ transferToId }),
+    /** Dar vuelta el sentido de la transferencia: el que recibía pasa a pagar y viceversa. */
+    swapTransferDirection: () =>
+      set((state) => {
+        const receiver = resolveTransferReceiver(
+          state.participants,
+          state.paidBy?.id,
+          state.transferToId,
+        );
+
+        if (!receiver || !state.paidBy) {
+          return {};
+        }
+
+        return {
+          ...calculateParticipantSplit({ ...state, paidBy: receiver }),
+          transferToId: state.paidBy.id,
+        };
+      }),
   },
 }));
 
