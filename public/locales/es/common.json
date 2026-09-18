@@ -141,7 +141,7 @@
       "expenses": "Gastos",
       "home": "Inicio",
       "more": "Más",
-      "shopping": "Compras"
+      "shopping": "Lista de compras"
     },
     "recent": {
       "title": "Últimos movimientos",
@@ -441,17 +441,10 @@
     "actions": {
       "add": "Agregar",
       "clear_bought": "Limpiar comprados",
-      "convert_to_expense": "Convertir en gasto",
       "delete": "Borrar",
-      "later": "Ahora no",
       "save": "Guardar"
     },
     "add_placeholder": "¿Qué falta? Separa con comas",
-    "after_expense": {
-      "subtitle_one": "Si ya lo guardaste, limpiamos el comprado.",
-      "subtitle_other": "Si ya lo guardaste, limpiamos los {{count}} comprados.",
-      "title": "¿Guardaste el gasto del súper?"
-    },
     "bought": "Comprado",
     "confirm_clear_one": "¿Quitar el comprado de la lista?",
     "confirm_clear_other": "¿Quitar los {{count}} comprados de la lista?",
@@ -469,14 +462,13 @@
       "subtitle": "Escribe lo que falta y aparece en los dos móviles.",
       "title": "Lista limpia"
     },
-    "expense_description": "Súper",
     "group_label": "Lista de",
     "pending": "Para comprar",
     "requested_by": "Lo pidió {{name}}",
     "source": {
       "alexa": "Alexa"
     },
-    "title": "Compras",
+    "title": "Lista de compras",
     "toast": {
       "added_one": "Listo, {{count}} artículo en la lista",
       "added_other": "Listo, {{count}} artículos en la lista",

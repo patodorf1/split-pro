@@ -153,7 +153,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
       </div>
 
-      <nav className="bg-background/80 border-border fixed bottom-0 flex w-full items-end justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
+      <nav className="bg-background/80 border-border fixed bottom-0 flex w-full items-start justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
         <NavItem
           title={t?.('dashboard.nav.home') ?? 'Home'}
           Icon={HouseIcon}
@@ -198,11 +198,15 @@ const NavItem: React.FC<NavItemProps> = ({ title, Icon, link, currentPath }) => 
     <Link
       href={link}
       aria-current={isActive ? 'page' : undefined}
-      className="flex flex-1 flex-col items-center justify-end gap-1.5 py-4"
+      className="flex min-w-0 flex-1 flex-col items-center justify-start gap-1.5 py-4"
     >
       <Icon className={clsx('h-6 w-6', isActive ? 'text-primary' : 'text-muted-foreground')} />
+      {/* Arriba y centrado: si una etiqueta pasa a dos renglones, los íconos siguen alineados. */}
       <span
-        className={clsx('text-xs', isActive ? 'text-primary font-medium' : 'text-muted-foreground')}
+        className={clsx(
+          'text-center text-xs leading-tight',
+          isActive ? 'text-primary font-medium' : 'text-muted-foreground',
+        )}
       >
         {title}
       </span>

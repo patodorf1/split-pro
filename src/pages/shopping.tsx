@@ -1,6 +1,5 @@
-import { ReceiptText, ShoppingBasket, Trash2 } from 'lucide-react';
+import { ShoppingBasket, Trash2 } from 'lucide-react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -16,7 +15,6 @@ import {
   AccordionTrigger,
 } from '~/components/ui/accordion';
 import { Button } from '~/components/ui/button';
-import { Card } from '~/components/ui/card';
 import { NativeSelect, NativeSelectOption } from '~/components/ui/native-select';
 import { SectionLabel } from '~/components/ui/section-label';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
@@ -26,13 +24,8 @@ import { withI18nStaticProps } from '~/utils/i18n/server';
 
 /** Última lista abierta, para que el celular arranque donde quedó. */
 const LAST_GROUP_KEY = 'casa.shopping.lastGroupId';
-/** Marca que se fue a cargar el gasto del súper, para ofrecer limpiar al volver. */
-const EXPENSE_PENDING_KEY = 'casa.shopping.expensePending';
-const EXPENSE_PENDING_TTL_MS = 2 * 60 * 60 * 1000;
 /** Cada cuánto se vuelve a mirar la lista mientras la página está a la vista. */
 const POLL_INTERVAL_MS = 10_000;
-/** Categoría de supermercado del selector de gastos. */
-const GROCERIES_CATEGORY = 'groceries';
 
 const readStorage = (storage: Storage | undefined, key: string): string | null => {
   try {
@@ -55,8 +48,7 @@ const writeStorage = (storage: Storage | undefined, key: string, value: string |
 };
 
 const ShoppingPage: NextPageWithUser = ({ user }) => {
-  const { t, toUIDate } = useTranslationWithUtils();
-  const router = useRouter();
+  const { t } = useTranslationWithUtils();
   const utils = api.useUtils();
 
   const groupsQuery = api.group.getAllGroups.useQuery();
@@ -100,8 +92,6 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
       refetchInterval: POLL_INTERVAL_MS,
     },
   );
-
-  const [showAfterExpense, setShowAfterExpense] = useState(false);
 
   const onMutationError = useCallback(() => toast.error(t('shopping.toast.error')), [t]);
 
@@ -175,8 +165,6 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
   const clearChecked = api.shopping.clearChecked.useMutation({
     onSuccess: ({ count }) => {
       toast.success(t('shopping.toast.cleared', { count }));
-      writeStorage(globalThis.window?.sessionStorage, EXPENSE_PENDING_KEY, null);
-      setShowAfterExpense(false);
       if (null !== groupId) {
         void utils.shopping.getList.invalidate({ groupId });
       }
@@ -196,60 +184,6 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
   );
 
   const checkedTotal = listQuery.data?.checkedTotal ?? 0;
-
-  useEffect(() => {
-    if (null === groupId || 0 === checkedTotal) {
-      setShowAfterExpense(false);
-      return;
-    }
-
-    const raw = readStorage(globalThis.window?.sessionStorage, EXPENSE_PENDING_KEY);
-
-    if (!raw) {
-      setShowAfterExpense(false);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as { groupId?: number; at?: number };
-      const isFresh =
-        parsed.groupId === groupId && Date.now() - Number(parsed.at) < EXPENSE_PENDING_TTL_MS;
-
-      setShowAfterExpense(isFresh);
-
-      if (!isFresh) {
-        writeStorage(globalThis.window?.sessionStorage, EXPENSE_PENDING_KEY, null);
-      }
-    } catch {
-      setShowAfterExpense(false);
-    }
-  }, [checkedTotal, groupId]);
-
-  const onConvertToExpense = useCallback(() => {
-    if (null === groupId) {
-      return;
-    }
-
-    writeStorage(
-      globalThis.window?.sessionStorage,
-      EXPENSE_PENDING_KEY,
-      JSON.stringify({ groupId, at: Date.now() }),
-    );
-
-    void router.push({
-      pathname: '/add',
-      query: {
-        groupId,
-        description: `${t('shopping.expense_description')} ${toUIDate(new Date())}`,
-        category: GROCERIES_CATEGORY,
-      },
-    });
-  }, [groupId, router, t, toUIDate]);
-
-  const onDismissAfterExpense = useCallback(() => {
-    writeStorage(globalThis.window?.sessionStorage, EXPENSE_PENDING_KEY, null);
-    setShowAfterExpense(false);
-  }, []);
 
   const onClearChecked = useCallback(() => {
     if (null !== groupId) {
@@ -313,25 +247,6 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
               </div>
             ) : null}
 
-            {showAfterExpense ? (
-              <Card className="flex flex-col gap-3">
-                <div>
-                  <p className="text-sm font-medium">{t('shopping.after_expense.title')}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {t('shopping.after_expense.subtitle', { count: checkedTotal })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" onClick={onClearChecked} loading={clearChecked.isPending}>
-                    {t('shopping.actions.clear_bought')}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={onDismissAfterExpense}>
-                    {t('shopping.actions.later')}
-                  </Button>
-                </div>
-              </Card>
-            ) : null}
-
             {0 === pending.length && 0 === checkedTotal && !listQuery.isPending ? (
               <div className="mt-16 flex flex-col items-center gap-3 text-center">
                 <ShoppingBasket className="text-primary size-10" />
@@ -367,16 +282,6 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
 
             {0 < checkedTotal ? (
               <section className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={onConvertToExpense}
-                  disabled={null === groupId}
-                >
-                  <ReceiptText className="size-4" />
-                  {t('shopping.actions.convert_to_expense')}
-                </Button>
-
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="bought" className="border-none">
                     <AccordionTrigger className="text-primary py-3">
