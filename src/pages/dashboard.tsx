@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
+import { BalanceCards } from '~/components/dashboard/BalanceCards';
 import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
 import { NextRecurringCard } from '~/components/dashboard/NextRecurringCard';
@@ -25,85 +26,35 @@ import { withI18nStaticProps } from '~/utils/i18n/server';
 const TOP_CATEGORIES = 3;
 const RECENT_MOVEMENTS = 5;
 
-type Balances = RouterOutputs['expense']['getBalances']['balances'];
+type BalanceCardList = RouterOutputs['stats']['homeBalances'];
 type RecentMovement = RouterOutputs['stats']['recentActivity'][number];
 type CategoryTotals = RouterOutputs['stats']['monthlySummary']['current'][number]['categories'];
 
-const EMPTY_BALANCES: Balances = [];
+const EMPTY_BALANCE_CARDS: BalanceCardList = [];
 const EMPTY_MOVEMENTS: RecentMovement[] = [];
 const EMPTY_CATEGORIES: CategoryTotals = [];
 
-const SpentThisMonthCard: React.FC<{ amount: bigint; currency: string }> = ({
-  amount,
+/**
+ * Lo gastado en el mes por todo el hogar (grupos y gastos con amigos, sin
+ * transferencias), en la moneda elegida. Abajo, chiquito, la parte del usuario.
+ */
+const SpentThisMonthCard: React.FC<{ total: bigint; mine: bigint; currency: string }> = ({
+  total,
+  mine,
   currency,
 }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
+  const helpers = getCurrencyHelpersCached(currency);
 
   return (
     <Card>
       <SectionLabel>{t('dashboard.spent.title')}</SectionLabel>
-      <p className="text-foreground mt-2 text-3xl font-semibold">
-        {getCurrencyHelpersCached(currency).toUIString(amount)}
+      <p className="text-foreground mt-2 text-3xl font-semibold tabular-nums">
+        {helpers.toUIString(total)}
       </p>
-      <p className="text-muted-foreground mt-1 text-sm">{t('dashboard.spent.subtitle')}</p>
-    </Card>
-  );
-};
-
-const BalanceCard: React.FC<{ balances: Balances }> = ({ balances }) => {
-  const { t, displayName, getCurrencyHelpersCached } = useTranslationWithUtils();
-
-  const lines = useMemo(
-    () =>
-      balances.flatMap((balance) =>
-        balance.currencies
-          .filter(({ amount }) => 0n !== amount)
-          .map(({ currency, amount }) => ({
-            key: `${balance.friendId}-${currency}`,
-            friendId: balance.friendId,
-            name: displayName(balance.friend),
-            currency,
-            amount,
-          })),
-      ),
-    [balances, displayName],
-  );
-
-  const friendIds = useMemo(() => new Set(lines.map((line) => line.friendId)), [lines]);
-  const settleHref = 1 === friendIds.size ? `/balances/${lines[0]!.friendId}` : '/balances';
-
-  return (
-    <Card>
-      <SectionLabel>{t('dashboard.balance.title')}</SectionLabel>
-      {0 === lines.length ? (
-        <p className="text-muted-foreground mt-2 text-sm">{t('dashboard.balance.settled_up')}</p>
-      ) : (
-        <ul className="mt-2 flex flex-col gap-1">
-          {lines.map((line) => (
-            <li
-              key={line.key}
-              className={`text-sm font-medium ${0n < line.amount ? 'text-positive' : 'text-negative'}`}
-            >
-              {0n < line.amount
-                ? t('dashboard.balance.owes_you', {
-                    name: line.name,
-                    amount: getCurrencyHelpersCached(line.currency).toUIString(line.amount),
-                  })
-                : t('dashboard.balance.you_owe', {
-                    name: line.name,
-                    amount: getCurrencyHelpersCached(line.currency).toUIString(-line.amount),
-                  })}
-            </li>
-          ))}
-        </ul>
-      )}
-      <Link
-        href={settleHref}
-        className="text-primary mt-3 inline-flex items-center gap-0.5 text-sm font-medium"
-      >
-        {t('dashboard.balance.settle')}
-        <ChevronRightIcon className="size-4" />
-      </Link>
+      <p className="text-muted-foreground mt-1 text-sm">
+        {t('home_summary.your_share', { amount: helpers.toUIString(mine) })}
+      </p>
     </Card>
   );
 };
@@ -118,8 +69,8 @@ const TopCategoriesCard: React.FC<{ categories: CategoryTotals; total: bigint }>
   const top = useMemo(
     () =>
       [...categories]
-        .filter(({ mine }) => 0n < mine)
-        .sort((a, b) => (a.mine > b.mine ? -1 : 1))
+        .filter(({ ours }) => 0n < ours)
+        .sort((a, b) => (a.ours > b.ours ? -1 : 1))
         .slice(0, TOP_CATEGORIES),
     [categories],
   );
@@ -136,8 +87,8 @@ const TopCategoriesCard: React.FC<{ categories: CategoryTotals; total: bigint }>
           <ChevronRightIcon className="text-primary size-4" />
         </CardHeader>
         <div className="flex flex-col gap-3">
-          {top.map(({ category, mine }) => {
-            const percentage = percentageOf(mine, total);
+          {top.map(({ category, ours }) => {
+            const percentage = percentageOf(ours, total);
 
             return (
               <CategoryRow
@@ -234,7 +185,7 @@ const DashboardPage: NextPageWithUser = ({ user }) => {
     month: month.month,
     timeZone,
   });
-  const balanceQuery = api.expense.getBalances.useQuery();
+  const balanceQuery = api.stats.homeBalances.useQuery();
   const recentQuery = api.stats.recentActivity.useQuery({ limit: RECENT_MOVEMENTS });
 
   const currencies = useMemo(
@@ -245,7 +196,7 @@ const DashboardPage: NextPageWithUser = ({ user }) => {
 
   const monthTotals = summaryQuery.data?.current.find((entry) => entry.currency === currency);
   const categories = monthTotals?.categories ?? EMPTY_CATEGORIES;
-  const balances = balanceQuery.data?.balances ?? EMPTY_BALANCES;
+  const balanceCards = balanceQuery.data ?? EMPTY_BALANCE_CARDS;
   const movements = recentQuery.data ?? EMPTY_MOVEMENTS;
 
   const actions = useMemo(
@@ -265,11 +216,12 @@ const DashboardPage: NextPageWithUser = ({ user }) => {
       >
         <div className="flex flex-col gap-4 pb-8">
           <SpentThisMonthCard
-            amount={monthTotals?.mine ?? 0n}
+            total={monthTotals?.ours ?? 0n}
+            mine={monthTotals?.mine ?? 0n}
             currency={currency || user.currency}
           />
-          <BalanceCard balances={balances} />
-          <TopCategoriesCard categories={categories} total={monthTotals?.mine ?? 0n} />
+          <BalanceCards cards={balanceCards} />
+          <TopCategoriesCard categories={categories} total={monthTotals?.ours ?? 0n} />
           <NextRecurringCard />
           <RecentMovementsCard movements={movements} userId={user.id} />
         </div>

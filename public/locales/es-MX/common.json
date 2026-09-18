@@ -129,13 +129,6 @@
     "title": "Conversión de moneda"
   },
   "dashboard": {
-    "balance": {
-      "owes_you": "{{name}} te debe {{amount}}",
-      "settle": "Saldar",
-      "settled_up": "Están a mano",
-      "title": "Balance",
-      "you_owe": "Le debes {{amount}}"
-    },
     "more": {
       "account": "Cuenta",
       "activity": "Actividad",
@@ -158,7 +151,6 @@
       "title": "Próxima recurrente"
     },
     "spent": {
-      "subtitle": "Tu parte de los gastos compartidos",
       "title": "Gastado este mes"
     },
     "stats": {
@@ -375,6 +367,18 @@
       "expenses": "Gastos"
     },
     "title": "Saldos pendientes del grupo"
+  },
+  "home_summary": {
+    "balance": {
+      "owe_generic": "Debes",
+      "owed_generic": "Te deben",
+      "owes_you": "{{name}} te debe",
+      "settled": "Al día",
+      "settled_subtitle": "No se deben nada",
+      "you_owe": "Le debes a {{name}}"
+    },
+    "balances_title": "Saldos",
+    "your_share": "Tu parte: {{amount}}"
   },
   "invite_message": {
     "in_splitpro": "en Split",

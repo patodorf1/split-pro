@@ -1,6 +1,7 @@
 import { Prisma, SplitType } from '@prisma/client';
 import { z } from 'zod';
 
+import { type BalanceCard, type BalancePerson, buildBalanceCards } from '~/lib/balanceCards';
 import { DEFAULT_CATEGORY } from '~/lib/category';
 import { addMonths, computeShare, getMonthRange, toUtcTimestampLiteral } from '~/lib/stats';
 import {
@@ -279,6 +280,67 @@ export const statsRouter = createTRPCRouter({
 
       return rankTopCategories(recent, await countByCategory(scope));
     }),
+
+  /**
+   * Tarjetas de saldo de Inicio: una por grupo activo y moneda (o una "al día"
+   * si el grupo está saldado) más los saldos con amigos fuera de grupos. El neto
+   * de cada grupo sale de la vista de saldos, que no cambia con la simplificación
+   * de deudas; por eso alcanza con sumar las filas del usuario.
+   */
+  homeBalances: protectedProcedure.query(async ({ ctx }): Promise<BalanceCard[]> => {
+    const userId = ctx.session.user.id;
+    const hiddenFriendIds = ctx.session.user.hiddenFriendIds;
+
+    const [memberships, rows] = await Promise.all([
+      db.groupUser.findMany({
+        where: { userId, group: { archivedAt: null } },
+        select: {
+          pinned: true,
+          group: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              defaultCurrency: true,
+              groupUsers: { select: { userId: true } },
+            },
+          },
+        },
+      }),
+      db.balanceView.findMany({
+        where: { userId },
+        select: { groupId: true, friendId: true, currency: true, amount: true },
+      }),
+    ]);
+
+    const groups = memberships.map(({ pinned, group }) => ({
+      id: group.id,
+      name: group.name,
+      image: group.image,
+      defaultCurrency: group.defaultCurrency,
+      pinned,
+      memberIds: group.groupUsers.map((member) => member.userId),
+    }));
+
+    // Los amigos ocultos no aparecen con sus saldos sueltos (igual que en Saldos).
+    const visibleRows = rows.filter(
+      (row) => null !== row.groupId || !hiddenFriendIds.includes(row.friendId),
+    );
+
+    const personIds = new Set<number>(visibleRows.map((row) => row.friendId));
+    groups.forEach((group) => group.memberIds.forEach((id) => personIds.add(id)));
+    personIds.delete(userId);
+
+    const users = await db.user.findMany({
+      where: { id: { in: [...personIds] } },
+      select: { id: true, name: true, email: true, image: true },
+    });
+    const people: Record<number, BalancePerson> = Object.fromEntries(
+      users.map((person) => [person.id, person]),
+    );
+
+    return buildBalanceCards({ userId, groups, rows: visibleRows, people });
+  }),
 
   /** Last movements of the user, settlements included. */
   recentActivity: protectedProcedure
