@@ -114,6 +114,7 @@ model Group {
   groupBalances     BalanceView[]
   groupDefaultSplit GroupDefaultSplit?
   shoppingItems     ShoppingItem[]
+  externalExpenses  ExternalExpense[]
 
   @@schema("public")
 }
@@ -202,6 +203,7 @@ model Expense {
   updatedByUser       User?                @relation("UpdatedByUser", fields: [updatedBy], references: [id])
   expenseNotes        ExpenseNote[]
   expenseParticipants ExpenseParticipant[]
+  externalExpense     ExternalExpense?
 
   @@index([groupId])
   @@index([paidBy])
@@ -310,6 +312,23 @@ model ShoppingItem {
   @@unique([groupId, externalId])
   @@index([groupId])
   @@index([groupId, checked])
+  @@schema("public")
+}
+
+/// Casa: marca los gastos cargados por la API externa (asistente por WhatsApp) y guarda su clave
+/// de idempotencia. Vive aparte de Expense para no tocar el modelo que usa toda la app: la fila se
+/// reserva ANTES de crear el gasto (con expenseId NULL) y el índice único (groupId,
+/// idempotencyKey) impide que dos pedidos con la misma clave creen dos gastos.
+model ExternalExpense {
+  id             Int      @id @default(autoincrement())
+  groupId        Int
+  expenseId      String?  @unique @db.Uuid
+  idempotencyKey String?
+  createdAt      DateTime @default(now())
+  group          Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  expense        Expense? @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, idempotencyKey])
   @@schema("public")
 }
 

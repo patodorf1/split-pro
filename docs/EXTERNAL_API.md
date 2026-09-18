@@ -1,7 +1,8 @@
 # External shopping list API
 
 REST endpoints for syncing the shared shopping list with external systems (Home Assistant mirroring
-an Alexa list, n8n flows, scripts). Nothing about expenses, balances or group members is exposed.
+an Alexa list, n8n flows, scripts). The shopping endpoints expose nothing about expenses; the same
+key also enables the expenses endpoints described in [Gastos / Expenses](#gastos--expenses).
 
 ## Enabling it
 
@@ -21,7 +22,8 @@ Authorization: Bearer <EXTERNAL_API_KEY>
 The key is compared in constant time. A missing or wrong key gets `401`.
 
 > The key is a machine credential: it can read and write the shopping list of **any** group in the
-> instance. It is not tied to a user and grants no access to expenses.
+> instance, and it can also add and delete expenses (see [Gastos / Expenses](#gastos--expenses)).
+> It is not tied to a user.
 
 ## Base URL
 
@@ -189,3 +191,233 @@ At least one filter is required, otherwise `400`. Filters are OR-ed.
    ones get updated, and the names of items a person typed in the app are left alone.
 3. `PATCH` with `checked: true` for what Alexa marked as bought.
 4. `DELETE` with the `externalIds` that disappeared from the Alexa list.
+
+---
+
+## Gastos / Expenses
+
+Endpoints for an assistant (a WhatsApp bot) to **add expenses and balance transfers** and read back
+enough to confirm them. Same `EXTERNAL_API_KEY`, same `Authorization: Bearer` header, same
+behaviour when the key is not configured (every route answers `404`).
+
+> **Assumption:** the key is global to the installation, which belongs to a single family. It can
+> read and write expenses in **every** group. What it can never do is assign a payer, participant,
+> author or deleter who is not a member of the group in the URL: people are always resolved
+> against that group's members only.
+
+The API has no user session, so the caller says who paid (`paidBy`) and who is loading it
+(`createdBy`). People are given as **email** (case-insensitive) or **user id**.
+
+Expenses are created with the very same service the app uses (`createExpense`, behind the tRPC
+`expense.addOrEditExpense` mutation), so rows, split math, penny rounding and push notifications are
+identical to an expense typed in the app. Transfers use `buildSettlementInput`, the builder every
+"settle up" flow of the app uses.
+
+Examples use `$SPLIT_API_KEY` and `BASE=https://split.thepulso.com`.
+
+### GET /api/external/groups
+
+Groups with default currency and members.
+
+```bash
+curl -s "$BASE/api/external/groups" -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groups": [
+    {
+      "id": 1,
+      "name": "Casa",
+      "defaultCurrency": "ARS",
+      "archived": false,
+      "members": [{ "id": 1, "name": "Pato", "email": "pato@example.com" }]
+    }
+  ]
+}
+```
+
+### GET /api/external/groups/{groupId}/expenses?limit=10
+
+Latest non-deleted expenses (by expense date, `limit` 1–50, default 10) plus the current balance
+of the group, read from the same `BalanceView` the app uses (simplified when the group has
+"simplify debts" on).
+
+```bash
+curl -s "$BASE/api/external/groups/1/expenses?limit=5" -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groupId": 1,
+  "expenses": [
+    {
+      "id": "e1c8dcf5-...",
+      "type": "expense",
+      "description": "Supermercado",
+      "amount": 45000,
+      "currency": "ARS",
+      "category": "groceries",
+      "splitType": "EQUAL",
+      "date": "2026-09-18T19:37:32.230Z",
+      "createdAt": "2026-09-18T19:37:32.239Z",
+      "paidBy": { "id": 1, "name": "Pato", "email": "pato@example.com" },
+      "createdBy": { "id": 1, "name": "Pato", "email": "pato@example.com" },
+      "source": "api",
+      "idempotencyKey": "wa-3EB0C4F2",
+      "deleted": false,
+      "participants": [
+        { "id": 1, "name": "Pato", "email": "pato@example.com", "share": 22500, "balance": 22500 },
+        {
+          "id": 2,
+          "name": "Belén",
+          "email": "belen@example.com",
+          "share": 22500,
+          "balance": -22500
+        }
+      ]
+    }
+  ],
+  "balances": [
+    {
+      "currency": "ARS",
+      "amount": 285083.69,
+      "debtor": { "id": 2, "name": "Belén", "email": "belen@example.com" },
+      "creditor": { "id": 1, "name": "Pato", "email": "pato@example.com" },
+      "text": "Belén le debe $ 285.083,69 a Pato"
+    }
+  ]
+}
+```
+
+- Amounts are in currency units (`45000.5`), not cents.
+- `type`: `expense` or `transfer`. `source`: `api` (loaded through this API) or `app`.
+- `share`: the part of the expense that person consumes. `balance`: what the expense moves in
+  their balance (paid − share). For transfers `category` is `null`.
+- `balances` only lists non-zero debts; an empty list means the group is settled.
+
+### POST /api/external/groups/{groupId}/expenses — expense
+
+```bash
+curl -s -X POST "$BASE/api/external/groups/1/expenses" \
+  -H "Authorization: Bearer $SPLIT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Supermercado",
+    "amount": 45000,
+    "paidBy": "pato@example.com",
+    "category": "groceries",
+    "idempotencyKey": "wa-3EB0C4F2"
+  }'
+```
+
+| field            | type             | notes                                                                                                                                                                                                                                                          |
+| ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `description`    | string           | required, 1–100 chars.                                                                                                                                                                                                                                         |
+| `amount`         | number \| string | required, positive, in units (`45000.5` or `"45000.50"`). Dot as decimal separator, no thousands separator. More decimals than the currency allows → `400` (never rounded silently).                                                                           |
+| `currency`       | string           | optional, ISO code. Defaults to the group's default currency.                                                                                                                                                                                                  |
+| `paidBy`         | email \| id      | required. Must be a member of the group.                                                                                                                                                                                                                       |
+| `createdBy`      | email \| id      | optional, defaults to `paidBy`. Shown in the app as who added it.                                                                                                                                                                                              |
+| `category`       | string           | optional, defaults to `general`. Must be a key of `CATEGORIES` in `src/lib/category.ts` (e.g. `groceries`, `diningOut`, `cleaning`, `childcare`, `services`, `electricity`, `water`, `fuel`, `parking`, `maintenance`, `sports`, `pets`, `travel`, `medical`). |
+| `date`           | string           | optional. `YYYY-MM-DD` (stored at noon Buenos Aires time) or ISO datetime (no zone = Buenos Aires). Defaults to now.                                                                                                                                           |
+| `split`          | object           | optional. Default: equal parts among **all** group members.                                                                                                                                                                                                    |
+| `notes`          | string           | optional, up to 1000 chars. Saved as an expense note.                                                                                                                                                                                                          |
+| `idempotencyKey` | string           | optional but recommended (up to 200 chars), e.g. derived from the chat message id.                                                                                                                                                                             |
+
+`split` variants:
+
+```json
+{ "type": "EQUAL", "participants": ["pato@example.com", 2] }
+{ "type": "EXACT", "shares": { "pato@example.com": 3000, "2": 7000 } }
+```
+
+- `EQUAL`: equal parts among that subset. The payer is always included in the record (with a zero
+  share if not listed), exactly like the app.
+- `EXACT`: shares must add up **exactly** to `amount`, otherwise `400` with both sums.
+
+Response `201`:
+
+```json
+{ "groupId": 1, "created": true, "expense": { ... }, "balances": [ ... ] }
+```
+
+### POST — transfer (settle up)
+
+A balance transfer between two members (`SETTLEMENT`): it moves the balance but does **not** count
+as spending in stats.
+
+```bash
+curl -s -X POST "$BASE/api/external/groups/1/expenses" \
+  -H "Authorization: Bearer $SPLIT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "type": "transfer", "from": "pato@example.com", "to": "belen@example.com",
+        "amount": 100000, "idempotencyKey": "wa-3EB0C4F3" }'
+```
+
+| field                             | type         | notes                                                 |
+| --------------------------------- | ------------ | ----------------------------------------------------- |
+| `type`                            | `"transfer"` | required.                                             |
+| `from`                            | email \| id  | required: who sends the money. Recorded as the payer. |
+| `to`                              | email \| id  | required: who receives it. Must differ from `from`.   |
+| `amount`                          | number       | required, same rules as above.                        |
+| `currency`                        | string       | optional, defaults to the group currency.             |
+| `description`                     | string       | optional, defaults to `Transferencia de saldo`.       |
+| `createdBy`                       | email \| id  | optional, defaults to `from`.                         |
+| `date`, `notes`, `idempotencyKey` |              | same as for expenses.                                 |
+
+`category` and `split` are not accepted for transfers (`400`).
+
+### Idempotency
+
+Send an `idempotencyKey` (unique per group) with every POST. If the key was already used in that
+group, nothing is created and the **original** expense comes back with `200` and `"created": false`
+— also if it was deleted afterwards (`"deleted": true`). Reusing a key for a _different_ entry
+(other amount, currency, payer or type) is `409`. Two simultaneous requests with the same key:
+one creates, the other gets `409` ("in progress") and can simply retry.
+
+Implementation: a separate table `ExternalExpense` (group, expense, key; unique on
+`(groupId, idempotencyKey)`). The key is reserved **before** creating the expense, so the database
+itself prevents duplicates. The same table marks which expenses were created through the API.
+
+### DELETE /api/external/groups/{groupId}/expenses/{expenseId}?deletedBy=<email|id>
+
+Soft delete, exactly like the app (`deletedAt` + `deletedBy`, balance recalculated), to undo a
+mistake. Only expenses **created through this API** can be deleted (`403` for expenses loaded in
+the app). `deletedBy` is required and must be a group member (query param or JSON body).
+
+```bash
+curl -s -X DELETE \
+  "$BASE/api/external/groups/1/expenses/e1c8dcf5-549a-4267-a5f5-de81615ccdc1?deletedBy=pato@example.com" \
+  -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{ "groupId": 1, "deleted": true, "expense": { ..., "deleted": true }, "balances": [ ... ] }
+```
+
+### Errors
+
+Errors carry a message in Spanish and English, a stable `code` and, when it applies, the `field`:
+
+```json
+{
+  "error": "paidBy: \"x@example.com\" no es miembro de este grupo / paidBy: \"x@example.com\" is not a member of this group",
+  "code": "not_a_member",
+  "field": "paidBy"
+}
+```
+
+| code | when                                                                                                                                         |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 200  | ok; POST replay of an existing `idempotencyKey`                                                                                              |
+| 201  | created                                                                                                                                      |
+| 400  | invalid body/field (`validation_error`, `invalid_field`, `not_a_member`, `unknown_category`, `split_mismatch`), invalid `groupId` or `limit` |
+| 401  | missing or wrong key                                                                                                                         |
+| 403  | DELETE of an expense that was not created through the API (`not_created_by_api`)                                                             |
+| 404  | API disabled (no `EXTERNAL_API_KEY`), group not found, expense not found in that group                                                       |
+| 405  | method not allowed                                                                                                                           |
+| 409  | `idempotency_key_reused`, `idempotency_in_progress`, `already_deleted`, `group_archived`                                                     |
+| 500  | unexpected error (no details are returned; they go to the server log)                                                                        |
+
+Unknown fields are rejected (`400`), so a typo like `paidby` does not silently fall back to a
+default.
