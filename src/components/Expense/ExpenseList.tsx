@@ -61,13 +61,13 @@ export const ExpenseList: React.FC<{
           <React.Fragment key={e.id}>
             {isFirstOfMonth && (
               <div className="flex flex-row items-center gap-4 pt-2">
-                <div className="text-xs font-medium text-gray-700 uppercase">
+                <div className="section-label">
                   {new Intl.DateTimeFormat(i18n.language, {
                     month: 'long',
                     year: 'numeric',
                   }).format(currentDate)}
                 </div>
-                <Separator className="flex-1 bg-gray-800" />
+                <Separator className="bg-border flex-1" />
               </div>
             )}
             <Link
@@ -104,13 +104,13 @@ const Expense: ExpenseComponent = ({ e, userId }) => {
   return (
     <>
       <div className="flex min-w-0 items-center gap-4">
-        <div className="inline-block w-6 shrink-0 text-center text-xs text-gray-500">
+        <div className="text-muted-foreground inline-block w-6 shrink-0 text-center text-xs">
           {toUIDate(e.expenseDate)}
         </div>
-        <CategoryIcon category={e.category} className="size-5 shrink-0 text-gray-400" />
+        <CategoryIcon category={e.category} className="text-muted-foreground size-5 shrink-0" />
         <div className="min-w-0 pe-1">
           <p className="truncate text-sm lg:text-base">{e.name}</p>
-          <p className="truncate text-xs text-gray-500">
+          <p className="text-muted-foreground truncate text-xs">
             {displayName(e.paidByUser, userId)}{' '}
             {t(`ui.expense.user.${e.amount < 0n ? 'received' : 'paid'}`)} {toUIString(e.amount)}
           </p>
@@ -130,7 +130,7 @@ const Expense: ExpenseComponent = ({ e, userId }) => {
           </>
         ) : (
           <div>
-            <p className="text-xs text-gray-400">{t('ui.not_involved')}</p>
+            <p className="text-muted-foreground text-xs">{t('ui.not_involved')}</p>
           </div>
         )}
       </div>
@@ -148,12 +148,12 @@ const Settlement: ExpenseComponent = ({ e, userId }) => {
 
   return (
     <div className="flex items-center gap-4">
-      <div className="inline-block w-6 text-center text-xs text-gray-500">
+      <div className="text-muted-foreground inline-block w-6 text-center text-xs">
         {toUIDate(e.expenseDate)}
       </div>
-      <SettleupIcon className="size-5 shrink-0 text-gray-400" />
+      <SettleupIcon className="text-muted-foreground size-5 shrink-0" />
       <div className="min-w-0">
-        <p className="line-clamp-2 text-sm text-gray-400">
+        <p className="text-muted-foreground line-clamp-2 text-sm">
           {displayName(e.paidByUser, userId)}{' '}
           {t(`ui.expense.user.${e.amount < 0n ? 'received' : 'paid'}`)} {toUIString(e.amount)}{' '}
           {t('ui.expense.to')} {displayName(userDetails.data, userId)}
@@ -179,10 +179,10 @@ const CurrencyConversion: ExpenseComponent = ({ e, userId }) => {
 
   return (
     <div className="flex min-w-0 items-center gap-4">
-      <div className="inline-block w-6 shrink-0 text-center text-xs text-gray-500">
+      <div className="text-muted-foreground inline-block w-6 shrink-0 text-center text-xs">
         {toUIDate(e.expenseDate)}
       </div>
-      <CurrencyConversionIcon className="size-5 shrink-0 text-gray-400" />
+      <CurrencyConversionIcon className="text-muted-foreground size-5 shrink-0" />
       <div className="min-w-0">
         <p className="truncate text-sm lg:text-base">
           {getCurrencyHelpersCached(e.currency).toUIString(e.amount)} ➡️{' '}
@@ -191,7 +191,7 @@ const CurrencyConversion: ExpenseComponent = ({ e, userId }) => {
             getCurrencyHelpersCached(e.conversionTo.currency).toUIString(e.conversionTo.amount)
           }
         </p>
-        <p className="truncate text-xs text-gray-500">
+        <p className="text-muted-foreground truncate text-xs">
           {t('ui.expense.for')} {displayName(e.paidByUser, userId)} {t('ui.and')}{' '}
           {displayName(userDetails.data, userId)}
         </p>

@@ -8,6 +8,7 @@ import { BalanceEntry } from '~/components/Expense/BalanceEntry';
 import MainLayout from '~/components/Layout/MainLayout';
 import { NotificationModal } from '~/components/NotificationModal';
 import { Button } from '~/components/ui/button';
+import { SectionLabel } from '~/components/ui/section-label';
 import { ConvertibleBalance } from '~/components/Expense/ConvertibleBalance';
 import { useIsPwa } from '~/hooks/useIsPwa';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
@@ -113,14 +114,14 @@ const BalancePage: NextPageWithUser = ({ user }) => {
             <div className="mt-[40vh] flex -translate-y-[130%] flex-col items-center justify-center gap-6">
               <DownloadAppDrawer>
                 <Button className="w-62.5">
-                  <Download className="mr-2 h-5 w-5 text-black" />
+                  <Download className="mr-2 h-5 w-5" />
                   {t('account.download_app')}
                 </Button>
               </DownloadAppDrawer>
               {!isPwa && <p>{t('ui.or')}</p>}
               <Link href="/add">
                 <Button className="w-62.5">
-                  <PlusIcon className="mr-2 h-5 w-5 text-black" />
+                  <PlusIcon className="mr-2 h-5 w-5" />
                   {t('actions.add_expense')}
                 </Button>
               </Link>
@@ -143,13 +144,11 @@ const CumulatedBalanceDisplay: React.FC<{
   }
 
   return (
-    <div className={cn('w-1/2 rounded-2xl border px-4 py-2', className)}>
-      <div className="mt-2 px-1">
-        <div className="flex items-center justify-center gap-2 text-center">
-          <p className="text-sm">{prefix}</p>
-        </div>
+    <div className={cn('card-surface w-1/2 px-4 py-3', className)}>
+      <div className="flex items-center justify-center gap-2 text-center">
+        <SectionLabel>{prefix}</SectionLabel>
       </div>
-      <div className="mt-4 mb-2 flex flex-wrap justify-center gap-1">
+      <div className="mt-2 flex flex-wrap justify-center gap-1">
         <ConvertibleBalance
           balances={cumulatedBalances}
           showMultiOption

@@ -292,7 +292,7 @@ export const UpdateName: React.FC<{
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="relative h-64 w-full overflow-hidden rounded-lg bg-black/5">
+              <div className="bg-muted relative h-64 w-full overflow-hidden rounded-lg">
                 <Cropper
                   image={imageSrc}
                   crop={crop}

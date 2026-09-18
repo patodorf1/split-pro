@@ -83,7 +83,7 @@ export const BankTransactionItem: React.FC<{
         disabled={alreadyAdded}
         onClick={hasMultiple ? createCheckboxHandler : createClickHandler}
       >
-        <div className="text-xs text-gray-500">
+        <div className="text-muted-foreground text-xs">
           {toUIDate(new Date(item.bookingDate), { useToday: true })
             .split(' ')
             .map((d) => (
@@ -101,7 +101,7 @@ export const BankTransactionItem: React.FC<{
           >
             {item.description}
           </p>
-          <p className="line-clamp-1 flex text-left text-xs whitespace-break-spaces text-gray-500">
+          <p className="text-muted-foreground line-clamp-1 flex text-left text-xs whitespace-break-spaces">
             {item.pending && t('expense_details.pending')}{' '}
             {alreadyAdded && `(${t('expense_details.already_added')}${groupName})`}
           </p>
@@ -111,9 +111,9 @@ export const BankTransactionItem: React.FC<{
       <div className="min-w-10 shrink-0">
         <div
           className={cn(
-            'text-right text-emerald-600',
-            alreadyAdded && 'text-gray-500',
-            isNegative && 'text-red-500',
+            'text-positive text-right',
+            alreadyAdded && 'text-muted-foreground',
+            isNegative && 'text-negative',
           )}
         >
           <span className="font-light">{item.transactionAmount.currency}</span>{' '}

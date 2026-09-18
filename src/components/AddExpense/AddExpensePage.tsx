@@ -332,7 +332,7 @@ export const AddOrEditExpensePage: React.FC<{
           <div className="h-[180px]">
             {amount && '' !== description ? (
               <>
-                <div className="flex flex-col items-center justify-center text-sm text-gray-400 sm:mt-4 sm:flex-row">
+                <div className="text-muted-foreground flex flex-col items-center justify-center text-sm sm:mt-4 sm:flex-row">
                   <p>{t(`ui.expense.${isNegative ? 'received_by' : 'paid_by'}`)}</p>
                   <PayerSelectionForm>
                     <Button
@@ -410,13 +410,16 @@ export const AddOrEditExpensePage: React.FC<{
                   className="hover:text-foreground/80 items-center justify-between px-2"
                 >
                   <Landmark
-                    className={cn(transactionId ? 'text-primary' : 'text-white-500', 'h-6 w-6')}
+                    className={cn(
+                      transactionId ? 'text-primary' : 'text-muted-foreground',
+                      'h-6 w-6',
+                    )}
                   />
                 </Button>
               </AddBankTransactions>
               <Button
                 variant="ghost"
-                className={cn('px-2', transactionId ? 'text-red-500' : 'invisible')}
+                className={cn('px-2', transactionId ? 'text-destructive' : 'invisible')}
                 disabled={!transactionId}
                 onClick={clearTransaction}
               >
@@ -437,10 +440,10 @@ const SponsorUs = () => {
       <Link href="https://github.com/sponsors/krokosik" target="_blank" className="mx-auto">
         <Button
           variant="outline"
-          className="text-md hover:text-foreground/80 justify-between rounded-full border-pink-500"
+          className="text-md hover:text-foreground/80 border-primary justify-between rounded-full"
         >
           <div className="flex items-center gap-4">
-            <HeartHandshakeIcon className="h-5 w-5 text-pink-500" />
+            <HeartHandshakeIcon className="text-primary h-5 w-5" />
             {t('expense_details.add_expense_details.sponsor_us')}
           </div>
         </Button>

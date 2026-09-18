@@ -20,16 +20,14 @@ export const FriendBalance: React.FC<{
         <EntityAvatar entity={user} size={30} />
         <div>
           <div className="text-foreground">{user.name}</div>
-          {groupName ? <div className="text-xs text-gray-500">{groupName}</div> : null}
+          {groupName ? <div className="text-muted-foreground text-xs">{groupName}</div> : null}
         </div>
       </div>
       <div>
-        <div
-          className={clsx('text-right text-xs', isPositive ? 'text-green-500' : 'text-orange-600')}
-        >
+        <div className={clsx('text-right text-xs', isPositive ? 'text-positive' : 'text-negative')}>
           {t('actors.you')} {isPositive ? t('ui.expense.you.lent') : t('ui.expense.you.owe')}
         </div>
-        <div className={`${isPositive ? 'text-green-500' : 'text-orange-600'} flex text-right`}>
+        <div className={`${isPositive ? 'text-positive' : 'text-negative'} flex text-right`}>
           {toUIString(balance.amount)}
         </div>
       </div>

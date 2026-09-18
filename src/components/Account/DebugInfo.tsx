@@ -102,7 +102,7 @@ export const DebugInfo: React.FC<React.PropsWithChildren> = ({ children }) => {
             {newVersion &&
             env.NEXT_PUBLIC_APP_VERSION &&
             newVersion !== env.NEXT_PUBLIC_APP_VERSION ? (
-              <p className="mt-4 text-sm text-yellow-600">
+              <p className="text-negative mt-4 text-sm">
                 {t('account.debug_info_details.new_version_available')}: {newVersion}
               </p>
             ) : null}
@@ -129,7 +129,7 @@ export const DebugInfo: React.FC<React.PropsWithChildren> = ({ children }) => {
 const Label: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
   children,
   className,
-}) => <span className={cn('text-sm text-white', className)}>{children}</span>;
+}) => <span className={cn('text-foreground text-sm', className)}>{children}</span>;
 
 const Value: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
   children,

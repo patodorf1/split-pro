@@ -28,7 +28,9 @@ const NoMembers: React.FC<NoMembersProps> = ({ group, enableSendingInvites }) =>
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4">
-      <p className="mb-4 text-center text-gray-500">{t('group_details.no_members.no_members')}</p>
+      <p className="text-muted-foreground mb-4 text-center">
+        {t('group_details.no_members.no_members')}
+      </p>
 
       <AddMembers group={group} enableSendingInvites={enableSendingInvites}>
         <Button className="w-[200px]" disabled={isArchived}>
@@ -36,7 +38,7 @@ const NoMembers: React.FC<NoMembersProps> = ({ group, enableSendingInvites }) =>
         </Button>
       </AddMembers>
 
-      <p className="text-gray-400">{t('ui.or')}</p>
+      <p className="text-muted-foreground">{t('ui.or')}</p>
       <Button
         className="flex w-[200px] items-center gap-2"
         onClick={copyToClipboard}

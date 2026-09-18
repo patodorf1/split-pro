@@ -267,7 +267,7 @@ const AmountDisplay: React.FC<{
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
 
   if (amount === 0n) {
-    return <span className={cn('text-gray-500', className)}>{t('ui.settled_up')}</span>;
+    return <span className={cn('text-muted-foreground', className)}>{t('ui.settled_up')}</span>;
   }
 
   const isPositive = amount > 0n;

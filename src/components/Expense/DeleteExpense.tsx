@@ -77,7 +77,7 @@ export const DeleteExpense: React.FC<DeleteExpenseProps> = ({ expenseId, recurre
       variant="destructive"
     >
       <Button variant="ghost">
-        <Trash2 className="text-red-400" size={23} />
+        <Trash2 className="text-destructive" size={23} />
       </Button>
     </SimpleConfirmationDialog>
   );

@@ -113,7 +113,7 @@ export const BankingTransactionList: React.FC<{
         setMultipleTransactions(
           isInMultipleTransactions
             ? multipleTransactions.filter((cItem) => cItem.transactionId !== item.transactionId)
-            : [...multipleTransactions, transactionData as TransactionAddInputModel],
+            : [...multipleTransactions, transactionData],
         );
       } else {
         if (alreadyAdded(item.transactionId)) {
@@ -171,7 +171,7 @@ export const BankingTransactionList: React.FC<{
         ) : (
           <>
             {transactionsArray?.length === 0 && (
-              <div className="mt-[30vh] text-center text-gray-400">
+              <div className="text-muted-foreground mt-[30vh] text-center">
                 {t('expense_details.no_transactions_yet')}
               </div>
             )}

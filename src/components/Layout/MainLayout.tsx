@@ -79,13 +79,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             currentPath={currentPath}
           />
         </nav>
-        <div
-          className="w-full overflow-auto lg:border-x lg:border-gray-900 lg:px-6"
-          id="mainlayout"
-        >
+        <div className="lg:border-border w-full overflow-auto lg:border-x lg:px-6" id="mainlayout">
           {title ? (
             <div className="mb-2 flex items-center justify-between px-4 py-4">
-              <div className="text-3xl font-bold text-gray-200">{title}</div>
+              <div className="text-foreground text-3xl font-bold">{title}</div>
               {actions}
             </div>
           ) : null}
@@ -102,7 +99,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
       </div>
 
-      <nav className="bg-opacity-80 fixed bottom-0 flex w-full justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
+      <nav className="bg-background/85 border-border fixed bottom-0 flex w-full justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
         <NavItem
           title={t?.('navigation.balances') ?? 'Balances'}
           Icon={SolidScaleIcon}
@@ -153,8 +150,10 @@ const NavItem: React.FC<NavItemProps> = ({ title, Icon, link, currentPath }) => 
       href={link}
       className={clsx('flex w-32 flex-col items-center justify-between gap-2 py-4')}
     >
-      <Icon className={clsx('h-7 w-7', isActive ? 'text-cyan-500' : 'text-gray-600')} />
-      <span className={clsx('text-xs', isActive ? 'font-medium text-cyan-500' : 'text-gray-500')}>
+      <Icon className={clsx('h-7 w-7', isActive ? 'text-primary' : 'text-muted-foreground')} />
+      <span
+        className={clsx('text-xs', isActive ? 'text-primary font-medium' : 'text-muted-foreground')}
+      >
         {title}
       </span>
     </Link>
@@ -166,9 +165,12 @@ const NavItemDesktop: React.FC<NavItemProps> = ({ title, Icon, link, currentPath
 
   return (
     <Link href={link} className={clsx('flex w-[150px] items-center gap-2 py-4')}>
-      <Icon className={clsx('h-7 w-7', isActive ? 'text-cyan-500' : 'text-gray-600')} />
+      <Icon className={clsx('h-7 w-7', isActive ? 'text-primary' : 'text-muted-foreground')} />
       <span
-        className={clsx('capitalize', isActive ? 'font-medium text-cyan-500' : 'text-gray-500')}
+        className={clsx(
+          'capitalize',
+          isActive ? 'text-primary font-medium' : 'text-muted-foreground',
+        )}
       >
         {title}
       </span>
