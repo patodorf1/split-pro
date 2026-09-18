@@ -1,4 +1,3 @@
-import { SplitType } from '@prisma/client';
 import { isSameDay } from 'date-fns';
 import { type User as NextUser } from 'next-auth';
 
@@ -11,8 +10,8 @@ import { toast } from 'sonner';
 import { useIntlCronParser } from '~/hooks/useIntlCronParser';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { cronFromBackend } from '~/lib/cron';
-import { DEFAULT_CATEGORY } from '~/lib/category';
 import { isCurrencyCode } from '~/lib/currency';
+import { buildSettlementInput } from '~/lib/settlement';
 import type { ExpenseRouter } from '~/server/api/routers/expense';
 import { useAddExpenseStore } from '~/store/addStore';
 import { api } from '~/utils/api';
@@ -292,27 +291,16 @@ export const EditSettlement: React.FC<{ expense: ExpenseDetailsOutput }> = ({ ex
     }
 
     addExpenseMutation.mutate(
-      {
+      buildSettlementInput({
         expenseId: expense.id,
-        name: t('ui.settle_up_name'),
-        currency: expense.currency,
+        sender,
+        receiver,
         amount,
-        splitType: SplitType.SETTLEMENT,
-        participants: [
-          {
-            userId: sender.id,
-            amount,
-          },
-          {
-            userId: receiver.id,
-            amount: -amount,
-          },
-        ],
-        paidBy: sender.id,
-        category: DEFAULT_CATEGORY,
+        currency: expense.currency,
         groupId: expense.groupId,
+        name: t('ui.settle_up_name'),
         expenseDate,
-      },
+      }),
       {
         onSuccess: () => {
           apiUtils.invalidate().catch(console.error);

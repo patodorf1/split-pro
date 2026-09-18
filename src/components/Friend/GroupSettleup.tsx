@@ -1,9 +1,9 @@
-import { SplitType, type User } from '@prisma/client';
+import { type User } from '@prisma/client';
 import { ArrowRightIcon } from 'lucide-react';
 import React, { type ReactNode, useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
-import { DEFAULT_CATEGORY } from '~/lib/category';
+import { buildSettlementInput } from '~/lib/settlement';
 import { api } from '~/utils/api';
 import { BigMath } from '~/utils/numbers';
 
@@ -49,25 +49,14 @@ export const GroupSettleUp: React.FC<{
     }
 
     addExpenseMutation.mutate(
-      {
-        name: t('ui.settle_up_name'),
-        currency: currency,
+      buildSettlementInput({
+        sender,
+        receiver,
         amount,
-        splitType: SplitType.SETTLEMENT,
+        currency,
         groupId,
-        participants: [
-          {
-            userId: sender.id,
-            amount,
-          },
-          {
-            userId: receiver.id,
-            amount: -amount,
-          },
-        ],
-        paidBy: sender.id,
-        category: DEFAULT_CATEGORY,
-      },
+        name: t('ui.settle_up_name'),
+      }),
       {
         onSuccess: () => {
           utils.group.invalidate().catch(console.error);
