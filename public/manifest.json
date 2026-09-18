@@ -1,7 +1,7 @@
 {
-  "name": "SplitPro",
-  "short_name": "SplitPro",
-  "description": "Split Expenses with your friends for free. SplitPro is an open-source alternative for splitwise",
+  "name": "Split",
+  "short_name": "Split",
+  "description": "Split Expenses with your friends for free. Split is an open-source alternative for splitwise",
   "icons": [
     {
       "src": "/icons/ios/72.png",
