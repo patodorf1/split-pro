@@ -6,6 +6,7 @@ import {
   findShoppingItemByName,
   normalizeShoppingItemName,
   parseShoppingItems,
+  resolveShoppingUpsertFields,
 } from '~/lib/shopping';
 
 describe('cleanShoppingItemName', () => {
@@ -144,6 +145,109 @@ describe('findShoppingItemByName', () => {
 
   it('should not match on empty input', () => {
     expect(findShoppingItemByName(items, '   ')).toBeUndefined();
+  });
+});
+
+describe('resolveShoppingUpsertFields', () => {
+  const loadedByPerson = { name: 'leche', externalId: null, addedBy: 1 };
+  const loadedBySync = { name: 'Leche', externalId: 'alexa-1', addedBy: null };
+
+  describe('match by name', () => {
+    it('should never rename what a person typed', () => {
+      expect(
+        resolveShoppingUpsertFields('name', loadedByPerson, { name: 'LECHE' }).name,
+      ).toBeUndefined();
+    });
+
+    it.each([['LECHE'], ['Leche'], ['  leche  '], ['Leche descremada']])(
+      'should leave the name alone when the incoming name is %p',
+      (incomingName) => {
+        expect(
+          resolveShoppingUpsertFields('name', loadedByPerson, { name: incomingName }),
+        ).not.toHaveProperty('name');
+      },
+    );
+
+    it('should not rename even when the existing item came from a sync', () => {
+      expect(
+        resolveShoppingUpsertFields(
+          'name',
+          { ...loadedBySync, externalId: null },
+          { name: 'LECHE' },
+        ).name,
+      ).toBeUndefined();
+    });
+
+    it('should adopt the incoming externalId when the item has none', () => {
+      expect(
+        resolveShoppingUpsertFields('name', loadedByPerson, {
+          name: 'LECHE',
+          externalId: 'alexa-9',
+        }),
+      ).toEqual({ externalId: 'alexa-9' });
+    });
+
+    it('should not overwrite an externalId the item already had', () => {
+      expect(
+        resolveShoppingUpsertFields(
+          'name',
+          { ...loadedByPerson, externalId: 'alexa-1' },
+          { name: 'LECHE', externalId: 'alexa-9' },
+        ),
+      ).toEqual({});
+    });
+
+    it('should leave everything alone when nothing new comes in', () => {
+      expect(resolveShoppingUpsertFields('name', loadedByPerson, { name: 'leche' })).toEqual({});
+    });
+  });
+
+  describe('match by externalId', () => {
+    it('should rename an item the external source owns', () => {
+      expect(
+        resolveShoppingUpsertFields('externalId', loadedBySync, {
+          name: 'Leche descremada',
+          externalId: 'alexa-1',
+        }),
+      ).toEqual({ name: 'Leche descremada' });
+    });
+
+    it('should clean the incoming name before renaming', () => {
+      expect(
+        resolveShoppingUpsertFields('externalId', loadedBySync, {
+          name: '-   Leche   entera  ',
+          externalId: 'alexa-1',
+        }),
+      ).toEqual({ name: 'Leche entera' });
+    });
+
+    it('should not rename when a person created the item', () => {
+      expect(
+        resolveShoppingUpsertFields(
+          'externalId',
+          { name: 'leche', externalId: 'alexa-1', addedBy: 2 },
+          { name: 'LECHE', externalId: 'alexa-1' },
+        ),
+      ).toEqual({});
+    });
+
+    it('should not report a rename when the name did not change', () => {
+      expect(
+        resolveShoppingUpsertFields('externalId', loadedBySync, {
+          name: 'Leche',
+          externalId: 'alexa-1',
+        }),
+      ).toEqual({});
+    });
+
+    it('should ignore an empty incoming name', () => {
+      expect(
+        resolveShoppingUpsertFields('externalId', loadedBySync, {
+          name: '   ',
+          externalId: 'alexa-1',
+        }),
+      ).toEqual({});
+    });
   });
 });
 

@@ -6,9 +6,11 @@ import {
   MAX_SHOPPING_ITEM_NAME_LENGTH,
   MAX_SHOPPING_ITEM_NOTE_LENGTH,
   MAX_SHOPPING_ITEM_QUANTITY_LENGTH,
+  type ShoppingUpsertMatchKind,
   cleanOptionalText,
   cleanShoppingItemName,
   normalizeShoppingItemName,
+  resolveShoppingUpsertFields,
 } from '~/lib/shopping';
 import { PENDING_SHOPPING_ITEM_ORDER, SHOPPING_ITEM_SELECT } from '~/server/api/routers/shopping';
 import { db } from '~/server/db';
@@ -165,7 +167,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
 
   const existing = await db.shoppingItem.findMany({
     where: { groupId },
-    select: { id: true, name: true, externalId: true, checked: true },
+    select: { id: true, name: true, externalId: true, checked: true, addedBy: true },
   });
 
   const byExternalId = new Map(
@@ -181,6 +183,18 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
       .map((item) => [normalizeShoppingItemName(item.name), item]),
   );
 
+  /** Mantiene los índices al día dentro del mismo lote. */
+  const remember = (item: (typeof existing)[number]) => {
+    if (item.externalId) {
+      byExternalId.set(item.externalId, item);
+    }
+    if (item.checked) {
+      pendingByName.delete(normalizeShoppingItemName(item.name));
+    } else {
+      pendingByName.set(normalizeShoppingItemName(item.name), item);
+    }
+  };
+
   const results = [];
   let created = 0;
   let updated = 0;
@@ -192,9 +206,14 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
       continue;
     }
 
-    const match = input.externalId
-      ? byExternalId.get(input.externalId)
-      : pendingByName.get(normalizeShoppingItemName(name));
+    /**
+     * Primero por `externalId`, que es el ancla de la sync. Si ese id todavía no existe acá,
+     * caemos al nombre: así un ítem que cargó una persona adopta el id externo en vez de
+     * duplicarse, y la próxima sync ya lo encuentra por id.
+     */
+    const matchByExternalId = input.externalId ? byExternalId.get(input.externalId) : undefined;
+    const match = matchByExternalId ?? pendingByName.get(normalizeShoppingItemName(name));
+    const matchedBy: ShoppingUpsertMatchKind = matchByExternalId ? 'externalId' : 'name';
 
     const quantity =
       undefined === input.quantity
@@ -206,10 +225,20 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
         : (cleanOptionalText(input.note, MAX_SHOPPING_ITEM_NOTE_LENGTH) ?? null);
 
     if (match) {
+      /**
+       * No pisamos `addedBy` ni `source`, y el nombre solo se reescribe cuando el ítem es de la
+       * fuente externa. Ver `resolveShoppingUpsertFields`.
+       */
+      const owned = resolveShoppingUpsertFields(matchedBy, match, {
+        name,
+        externalId: input.externalId,
+      });
+
       const item = await db.shoppingItem.update({
         where: { id: match.id },
         data: {
-          name,
+          name: owned.name,
+          externalId: owned.externalId,
           quantity,
           note,
           ...(undefined === input.checked
@@ -219,13 +248,12 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
                 checkedAt: input.checked ? new Date() : null,
                 checkedBy: null,
               }),
-          // No pisamos `addedBy` ni `source`: si lo cargó una persona, sigue siendo de esa persona.
-          externalId: input.externalId ?? match.externalId,
         },
         select: SHOPPING_ITEM_SELECT,
       });
       updated += 1;
       results.push(item);
+      remember({ ...match, name: item.name, externalId: item.externalId, checked: item.checked });
     } else {
       const item = await db.shoppingItem.create({
         data: {
@@ -242,13 +270,14 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
       });
       created += 1;
       results.push(item);
-
-      if (item.externalId) {
-        byExternalId.set(item.externalId, item);
-      }
-      if (!item.checked) {
-        pendingByName.set(normalizeShoppingItemName(item.name), item);
-      }
+      // Lo creó la sync, así que no tiene persona detrás.
+      remember({
+        id: item.id,
+        name: item.name,
+        externalId: item.externalId,
+        checked: item.checked,
+        addedBy: null,
+      });
     }
   }
 

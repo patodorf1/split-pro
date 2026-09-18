@@ -97,13 +97,28 @@ Body:
 
 Matching rules, in order:
 
-1. If `externalId` is given → the item with that `externalId` in the group.
+1. If `externalId` is given and that id already exists in the group → that item.
 2. Otherwise → a **pending** item with the same name, ignoring case and accents
    (`leche` matches `Leche`). Already-bought items do not block re-adding.
 3. No match → a new item is created.
 
-An upsert never overwrites `addedBy` or `source` of an existing item, so a sync cannot steal an
-item a person loaded by hand.
+### What a sync is allowed to overwrite
+
+`addedBy` and `source` are never touched, and the **name is protected**: the text a person typed
+is theirs. Concretely:
+
+| situation                                                      | `name`        | `externalId`                 |
+| -------------------------------------------------------------- | ------------- | ---------------------------- |
+| matched by name                                                | never changed | adopted if the item had none |
+| matched by `externalId`, item has no `addedBy`                 | updated       | unchanged                    |
+| matched by `externalId`, item has `addedBy` (a person made it) | never changed | unchanged                    |
+
+`quantity`, `note` and `checked` are updated whenever they come in the body, in every case.
+
+So `POST {"items":[{"name":"LECHE"}]}` against an existing `leche` that Pato typed updates its
+quantity and note but leaves it called `leche`. Sending the same name together with a new
+`externalId` links the two — the item keeps its name and gains the id, so the next sync finds it
+by id instead of by name, and still cannot rename it because it has an `addedBy`.
 
 ```json
 { "groupId": 1, "created": 1, "updated": 1, "items": [ ... ] }
@@ -171,6 +186,6 @@ At least one filter is required, otherwise `400`. Filters are OR-ed.
 
 1. `GET ?status=all` to read the current state.
 2. `POST` the Alexa list with a stable `externalId` per Alexa item — new ones get created, existing
-   ones get updated, and items loaded in the app are left alone.
+   ones get updated, and the names of items a person typed in the app are left alone.
 3. `PATCH` with `checked: true` for what Alexa marked as bought.
 4. `DELETE` with the `externalIds` that disappeared from the Alexa list.

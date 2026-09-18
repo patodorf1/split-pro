@@ -93,6 +93,57 @@ export const findShoppingItemByName = <T extends { name: string }>(
   return items.find((item) => normalizeShoppingItemName(item.name) === key);
 };
 
+/** Cómo encontró la sincronización externa al ítem que va a actualizar. */
+export type ShoppingUpsertMatchKind = 'externalId' | 'name';
+
+export interface ShoppingUpsertExistingItem {
+  name: string;
+  externalId: string | null;
+  /** Id de la persona que lo cargó desde la app, o null si lo trajo un sistema externo. */
+  addedBy: number | null;
+}
+
+export interface ShoppingUpsertIncomingItem {
+  name: string;
+  externalId?: string | null;
+}
+
+/** Campos que la sincronización tiene permitido escribir. `undefined` = no tocar. */
+export interface ShoppingUpsertFields {
+  name?: string;
+  externalId?: string;
+}
+
+/**
+ * Decide qué puede pisar una sincronización externa al actualizar un ítem que ya existe.
+ *
+ * La regla de fondo es que el texto que escribió una persona es suyo:
+ * - Match por nombre: nunca se renombra. Solo se puede adoptar un `externalId` si el ítem no
+ *   tenía, para que la próxima sync lo encuentre por id en vez de por nombre.
+ * - Match por `externalId`: la fuente externa es dueña del ítem y puede renombrarlo, salvo que
+ *   tenga `addedBy` (lo creó una persona y después se le enganchó un id externo).
+ */
+export const resolveShoppingUpsertFields = (
+  matchedBy: ShoppingUpsertMatchKind,
+  existing: ShoppingUpsertExistingItem,
+  incoming: ShoppingUpsertIncomingItem,
+): ShoppingUpsertFields => {
+  const fields: ShoppingUpsertFields = {};
+
+  const name = cleanShoppingItemName(incoming.name);
+  const ownedByExternalSource = 'externalId' === matchedBy && null === existing.addedBy;
+
+  if (ownedByExternalSource && name && name !== existing.name) {
+    fields.name = name;
+  }
+
+  if (incoming.externalId && !existing.externalId) {
+    fields.externalId = incoming.externalId;
+  }
+
+  return fields;
+};
+
 /** Recorta un campo de texto opcional y devuelve undefined si quedó vacío. */
 export const cleanOptionalText = (
   raw: string | null | undefined,
