@@ -241,7 +241,7 @@ const BalancePage: NextPageWithUser<{
                         <p>{displayName(groupUser.user)}</p>
                       </div>
                       {groupUser.userId === groupDetailQuery.data?.userId ? (
-                        <p className="text-sm text-gray-400">{t('actors.owner')}</p>
+                        <p className="text-muted-foreground text-sm">{t('actors.owner')}</p>
                       ) : (
                         isAdmin &&
                         (() => {
@@ -268,7 +268,7 @@ const BalancePage: NextPageWithUser<{
                             >
                               <Button
                                 variant="ghost"
-                                className="justify-start p-0 text-left text-red-500 hover:text-red-500 hover:opacity-90"
+                                className="text-destructive hover:text-destructive justify-start p-0 text-left hover:opacity-90"
                               >
                                 <X className="mr-2 h-5 w-5" />
                               </Button>
@@ -476,7 +476,7 @@ const BalancePage: NextPageWithUser<{
                     >
                       <Button
                         variant="ghost"
-                        className="justify-start p-0 text-left text-red-500 hover:text-red-500 hover:opacity-90"
+                        className="text-destructive hover:text-destructive justify-start p-0 text-left hover:opacity-90"
                       >
                         <Trash2 className="mr-2 size-4" />{' '}
                         {t('group_details.group_info.delete_group')}
@@ -499,7 +499,7 @@ const BalancePage: NextPageWithUser<{
                     >
                       <Button
                         variant="ghost"
-                        className="justify-start p-0 text-left text-red-500 hover:text-red-500 hover:opacity-90"
+                        className="text-destructive hover:text-destructive justify-start p-0 text-left hover:opacity-90"
                       >
                         <DoorOpen className="mr-2 h-5 w-5" />{' '}
                         {t('group_details.group_info.leave_group')}
@@ -553,7 +553,8 @@ const BalancePage: NextPageWithUser<{
 
               <AddMembers group={groupDetailQuery.data} enableSendingInvites={enableSendingInvites}>
                 <Button size="sm" responsiveIcon variant="secondary" disabled={isArchived}>
-                  <UserPlus className="size-4 text-gray-400" /> {t('group_details.add_members')}
+                  <UserPlus className="text-muted-foreground size-4" />{' '}
+                  {t('group_details.add_members')}
                 </Button>
               </AddMembers>
 
@@ -570,7 +571,7 @@ const BalancePage: NextPageWithUser<{
                   </>
                 ) : (
                   <>
-                    <Share className="size-4 text-gray-400" /> {t('actions.invite')}
+                    <Share className="text-muted-foreground size-4" /> {t('actions.invite')}
                   </>
                 )}
               </Button>

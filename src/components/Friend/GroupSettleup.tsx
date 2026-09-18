@@ -95,10 +95,10 @@ export const GroupSettleUp: React.FC<{
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-5">
             <EntityAvatar entity={sender} />
-            <ArrowRightIcon className="h-6 w-6 text-gray-600" />
+            <ArrowRightIcon className="text-muted-foreground h-6 w-6" />
             <EntityAvatar entity={receiver} />
           </div>
-          <p className="mt-2 text-center text-sm text-gray-400">
+          <p className="text-muted-foreground mt-2 text-center text-sm">
             {displayName(sender, data?.user.id)}{' '}
             {t(`ui.expense.${sender.id === data?.user.id ? 'you' : 'user'}.pay`)}{' '}
             {displayName(receiver, data?.user.id)}

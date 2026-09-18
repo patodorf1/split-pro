@@ -31,7 +31,7 @@ export const DownloadAppDrawer: React.FC<DownloadAppDrawerProps> = ({ children, 
         <p>
           {t('account.download_app_details.using_ios')}{' '}
           <a
-            className="text-cyan-500 underline"
+            className="text-primary underline"
             href="https://youtube.com/shorts/MQHeLOjr350"
             target="_blank"
             rel="noreferrer"
@@ -43,7 +43,7 @@ export const DownloadAppDrawer: React.FC<DownloadAppDrawerProps> = ({ children, 
         <p>
           {t('account.download_app_details.using_android')}{' '}
           <a
-            className="text-cyan-500 underline"
+            className="text-primary underline"
             href="https://youtube.com/shorts/04n7oKGzgOs"
             target="_blank"
             rel="noreferrer"

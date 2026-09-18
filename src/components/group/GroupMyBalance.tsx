@@ -22,19 +22,19 @@ const GroupMyBalance: React.FC<GroupMyBalanceProps> = ({
 
   const userMap = useMemo(
     () =>
-      users.reduce(
+      users.reduce< Record<number, User>>(
         (acc, user) => {
           acc[user.id] = user;
           return acc;
         },
-        {} as Record<number, User>,
+        {},
       ),
     [users],
   );
 
   const friendBalances = useMemo(
     () =>
-      groupBalances.reduce(
+      groupBalances.reduce< Record<number, Record<string, bigint>>>(
         (acc, balance) => {
           if (balance.userId === userId && 0 < BigMath.abs(balance.amount)) {
             acc[balance.friendId] ??= {};
@@ -44,7 +44,7 @@ const GroupMyBalance: React.FC<GroupMyBalanceProps> = ({
           }
           return acc;
         },
-        {} as Record<number, Record<string, bigint>>,
+        {},
       ),
     [groupBalances, userId],
   );
@@ -52,7 +52,7 @@ const GroupMyBalance: React.FC<GroupMyBalanceProps> = ({
   const cumulatedBalances = useMemo(
     () =>
       Object.entries(
-        Object.values(friendBalances).reduce(
+        Object.values(friendBalances).reduce< Record<string, bigint>>(
           (acc, balances) => {
             if (balances) {
               Object.entries(balances).forEach(([currency, amount]) => {
@@ -61,7 +61,7 @@ const GroupMyBalance: React.FC<GroupMyBalanceProps> = ({
             }
             return acc;
           },
-          {} as Record<string, bigint>,
+          {},
         ),
       ).map(([currency, amount]) => ({ currency, amount })),
     [friendBalances],
@@ -77,7 +77,7 @@ const GroupMyBalance: React.FC<GroupMyBalanceProps> = ({
           .map(([friendId, balances]) => {
             const friend = userMap[+friendId];
             return (
-              <div key={friendId} className="text-sm text-gray-500">
+              <div key={friendId} className="text-muted-foreground text-sm">
                 {Object.entries(balances).map(([currency, amount]) => (
                   <div key={currency}>
                     {0 < amount
@@ -91,7 +91,7 @@ const GroupMyBalance: React.FC<GroupMyBalanceProps> = ({
           })}
 
         {2 < Object.keys(friendBalances).length ? (
-          <div className="text-sm text-gray-500">
+          <div className="text-muted-foreground text-sm">
             +{Object.keys(friendBalances).length - 2}{' '}
             {Object.keys(friendBalances).length === 3 ? t('ui.balance') : t('ui.balances')}...
           </div>

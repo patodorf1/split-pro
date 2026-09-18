@@ -44,7 +44,7 @@ export const DeleteFriend: React.FC<{
       variant="destructive"
     >
       <Button variant="ghost" className="px-0">
-        <Trash2 className="text-red-500" size={20} />
+        <Trash2 className="text-destructive" size={20} />
       </Button>
     </SimpleConfirmationDialog>
   );

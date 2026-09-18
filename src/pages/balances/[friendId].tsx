@@ -179,7 +179,7 @@ const FriendPage: NextPageWithUser = ({ user }) => {
               <SettleUp balances={balances.data} friend={friendQuery.data}>
                 <Button
                   size="sm"
-                  className="flex w-[150px] items-center gap-2 rounded-md border bg-cyan-500 px-3 text-sm font-normal text-black focus:bg-cyan-600 focus:ring-0 focus-visible:outline-hidden lg:w-[180px]"
+                  className="bg-primary text-primary-foreground focus:bg-primary/90 flex w-[150px] items-center gap-2 rounded-md border px-3 text-sm font-normal focus:ring-0 focus-visible:outline-hidden lg:w-[180px]"
                   disabled={!balances.data?.length}
                 >
                   <HandCoins className="size-4" /> {t('actions.settle_up')}

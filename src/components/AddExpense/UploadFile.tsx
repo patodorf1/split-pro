@@ -63,7 +63,7 @@ export const UploadFile: React.FC = () => {
       {file || fileKey ? (
         <ImageUploaded className="text-primary h-6 w-6" />
       ) : (
-        <ImagePlus className="h-6 w-6 text-gray-300" />
+        <ImagePlus className="text-muted-foreground h-6 w-6" />
       )}
       <Input
         onChange={handleFileChange}

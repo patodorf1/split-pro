@@ -394,6 +394,28 @@
     "derived_delete_warning": "This expense is part of a recurrence. Only this expense will be deleted. Future recurring expenses will continue.",
     "view_recurring_page": "View Recurring page"
   },
+  "themes": {
+    "title": "Theme",
+    "section_label": "Palettes",
+    "system": {
+      "title": "Automatic",
+      "description": "Follow your device's light or dark mode"
+    },
+    "preview": {
+      "label": "Spent this month",
+      "amount": "ARS 12,345",
+      "chip_one": "brunch",
+      "chip_two": "gym"
+    },
+    "names": {
+      "lavanda": "Lavanda",
+      "matcha": "Matcha",
+      "cafe": "Café",
+      "rosa": "Rosa",
+      "noche": "Noche",
+      "terminal": "Terminal"
+    }
+  },
   "ui": {
     "added_by": "Added by",
     "and": "and",

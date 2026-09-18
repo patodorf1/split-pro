@@ -100,12 +100,12 @@ export const SubscribeNotification: React.FC = () => {
     <AccountButton onClick={isSubscribed ? unSubscribeNotification : onRequestNotification}>
       {!isSubscribed ? (
         <>
-          <Bell className="h-5 w-5 text-red-400" />
+          <Bell className="text-primary h-5 w-5" />
           {t('account.notifications.enable_notification')}
         </>
       ) : (
         <>
-          <BellOff className="h-5 w-5 text-red-400" />
+          <BellOff className="text-primary h-5 w-5" />
           {t('account.notifications.disable_notification')}
         </>
       )}

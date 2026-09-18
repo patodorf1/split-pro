@@ -62,7 +62,7 @@ const ExpenseDetails: React.FC<ExpenseDetailsProps> = ({ user, expense }) => {
       <div className="mb-4 flex items-start justify-between gap-2">
         <div className="flex items-start gap-4">
           <div className="rounded-lg border p-2 text-xl">
-            <CategoryIcon category={expense.category} className="text-gray-400" size={24} />
+            <CategoryIcon category={expense.category} className="text-muted-foreground" size={24} />
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex w-full items-center gap-2">
@@ -71,12 +71,12 @@ const ExpenseDetails: React.FC<ExpenseDetailsProps> = ({ user, expense }) => {
             </div>
             <p className="text-2xl font-semibold">{toUIString(expense.amount)}</p>
             {!isSameDay(expense.expenseDate, expense.createdAt) ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-muted-foreground text-sm">
                 {toUIDate(expense.expenseDate, { year: true })}
               </p>
             ) : null}
             {expense.updatedByUser ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-muted-foreground text-sm">
                 {t('ui.edited_by')} {displayName(expense.updatedByUser, user.id, 'dativus')}{' '}
                 {t('ui.on')} {toUIDate(expense.updatedAt, { year: true })}
               </p>
@@ -87,7 +87,7 @@ const ExpenseDetails: React.FC<ExpenseDetailsProps> = ({ user, expense }) => {
                 {t('ui.on')} {toUIDate(expense.deletedAt ?? expense.createdAt, { year: true })}
               </p>
             ) : (
-              <p className="text-sm text-gray-500">
+              <p className="text-muted-foreground text-sm">
                 {t('ui.added_by')} {displayName(expense.addedByUser, user.id, 'dativus')}{' '}
                 {t('ui.on')} {toUIDate(expense.createdAt, { year: true })}
               </p>
@@ -127,7 +127,7 @@ const ExpenseDetails: React.FC<ExpenseDetailsProps> = ({ user, expense }) => {
             <span>{displayName(expense.paidByUser, user.id)}</span>
           </Button>
         </Link>
-        <span className="text-gray-500">
+        <span className="text-muted-foreground">
           {t(
             `ui.expense.${expense.paidByUser.id === user.id ? 'you' : 'user'}.${expense.amount < 0 ? 'received' : 'paid'}`,
           )}
@@ -186,7 +186,7 @@ const ExpenseParticipantEntry: React.FC<{
           <span>{displayName(participant.user, userId)}</span>
         </Button>
       </Link>
-      <span className="text-gray-500">
+      <span className="text-muted-foreground">
         {t(`ui.expense.${isCurrentUser ? 'you' : 'user'}.${isPositive ? 'get' : 'owe'}`)}
       </span>
       <span className={amountColorClass}>{toUIString(participant.amount)}</span>
@@ -348,14 +348,14 @@ export const EditSettlement: React.FC<{ expense: ExpenseDetailsOutput }> = ({ ex
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-5">
             <EntityAvatar entity={sender} />
-            <ArrowRightIcon className="h-6 w-6 text-gray-600" />
+            <ArrowRightIcon className="text-muted-foreground h-6 w-6" />
             <EntityAvatar entity={receiver} />
           </div>
-          <p className="mt-2 text-center text-sm text-gray-400">
+          <p className="text-muted-foreground mt-2 text-center text-sm">
             {displayName(sender)} {t('ui.expense.user.pay')} {displayName(receiver)}
           </p>
           {expense.group ? (
-            <p className="mt-1 text-center text-xs text-gray-500">{expense.group.name}</p>
+            <p className="text-muted-foreground mt-1 text-center text-xs">{expense.group.name}</p>
           ) : null}
         </div>
         <CurrencyInput

@@ -17,7 +17,7 @@ export const AccountButton: React.FC<React.PropsWithChildren<ButtonProps> & { hr
       {...buttonProps}
     >
       <div className="flex items-center gap-4">{children}</div>
-      <ChevronRight className="h-6 w-6 text-gray-500" />
+      <ChevronRight className="text-muted-foreground h-6 w-6" />
     </Button>
   </WithLink>
 );

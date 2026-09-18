@@ -7,6 +7,7 @@ import {
   FileDown,
   HeartHandshakeIcon,
   Languages,
+  Palette,
   Star,
 } from 'lucide-react';
 import type { GetServerSideProps } from 'next';
@@ -36,6 +37,8 @@ import {
 import { api } from '~/utils/api';
 import type { NextPageWithUser } from '~/types';
 import { DebugInfo } from '~/components/Account/DebugInfo';
+import { ThemePicker } from '~/components/Theme/ThemePicker';
+import { Card } from '~/components/ui/card';
 import { useAppStore } from '~/store/appStore';
 
 const AccountPage: NextPageWithUser<{
@@ -99,12 +102,12 @@ const AccountPage: NextPageWithUser<{
         <title>{t('account.title')}</title>
       </Head>
       <MainLayout title={t('account.title')} header={header}>
-        <div className="flex items-center justify-between gap-2">
+        <Card className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <EntityAvatar entity={userQuery.data} size={50} />
-            <div>
-              <div className="text-xl font-semibold">{userQuery.data?.name}</div>
-              <div className="text-sm text-gray-500">{userQuery.data?.email}</div>
+            <div className="min-w-0">
+              <div className="truncate text-xl font-semibold">{userQuery.data?.name}</div>
+              <div className="text-muted-foreground truncate text-sm">{userQuery.data?.email}</div>
             </div>
           </div>
           {!userQuery.isPending && (
@@ -116,11 +119,18 @@ const AccountPage: NextPageWithUser<{
               onNameSubmit={onNameUpdate}
             />
           )}
-        </div>
-        <div className="mt-8 flex flex-col gap-4">
+        </Card>
+        <Card className="mt-6 flex flex-col gap-4">
+          <ThemePicker>
+            <AccountButton>
+              <Palette className="text-primary size-5" />
+              {t('themes.title')}
+            </AccountButton>
+          </ThemePicker>
+
           <LanguagePicker>
             <AccountButton>
-              <Languages className="size-5 text-green-500" />
+              <Languages className="text-primary size-5" />
               {t('account.change_language')}
             </AccountButton>
           </LanguagePicker>
@@ -130,7 +140,7 @@ const AccountPage: NextPageWithUser<{
             bankConnection={bankConnection}
           >
             <AccountButton>
-              <CreditCard className="size-5 text-teal-500" />
+              <CreditCard className="text-primary size-5" />
               {userQuery.data?.obapiProviderId ? t('actions.reconnect') : t('actions.connect')}{' '}
               {t('bank_transactions.to_bank')}
             </AccountButton>
@@ -142,7 +152,7 @@ const AccountPage: NextPageWithUser<{
           </AccountButton>
 
           <AccountButton href="https://github.com/sponsors/krokosik">
-            <HeartHandshakeIcon className="size-5 text-pink-600" />
+            <HeartHandshakeIcon className="text-primary size-5" />
             {t('account.support_us')}
           </AccountButton>
 
@@ -151,39 +161,39 @@ const AccountPage: NextPageWithUser<{
           <SubscribeNotification />
 
           <AccountButton href="https://www.producthunt.com/products/splitpro/reviews/new">
-            <Star className="size-5 text-yellow-400" />
+            <Star className="text-primary size-5" />
             {t('account.write_review')}
           </AccountButton>
 
           <DownloadAppDrawer>
             <AccountButton>
-              <Download className="size-5 text-blue-500" />
+              <Download className="text-primary size-5" />
               {t('account.download_app')}
             </AccountButton>
           </DownloadAppDrawer>
 
           <AccountButton onClick={downloadData} disabled={downloading} loading={downloading}>
-            <FileDown className="size-5 text-teal-500" />
+            <FileDown className="text-primary size-5" />
             {t('account.download_splitpro_data')}
           </AccountButton>
 
           <AccountButton href="/import-splitwise">
-            <DownloadCloud className="size-5 text-violet-500" />
+            <DownloadCloud className="text-primary size-5" />
             {t('account.import_from_splitwise')}
           </AccountButton>
 
           <DebugInfo>
             <AccountButton>
-              <BadgeInfo className="size-5 text-red-700" />
+              <BadgeInfo className="text-primary size-5" />
               {t('account.debug_info')}
             </AccountButton>
           </DebugInfo>
-        </div>
+        </Card>
 
-        <div className="mt-2 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <Button
             variant="ghost"
-            className="text-orange-600 hover:text-orange-600/90"
+            className="text-destructive hover:text-destructive/90"
             onClick={onSignOut}
           >
             {t('account.logout')}

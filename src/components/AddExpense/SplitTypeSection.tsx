@@ -67,7 +67,7 @@ const PayerRow = ({ p, isPaying }: { p: Participant; isPaying: boolean }) => {
         <EntityAvatar entity={p} size={30} />
         <p className="ml-4 truncate">{displayName(p, currentUser?.id)}</p>
       </div>
-      {isPaying ? <Check className="h-6 w-6 text-cyan-500" /> : null}
+      {isPaying ? <Check className="text-primary h-6 w-6" /> : null}
     </AppDrawerClose>
   );
 };
@@ -298,7 +298,7 @@ const SplitSection: React.FC<SplitSectionProps> = (props) => {
     <div className="mt-4 flex flex-col gap-6 px-2">
       <p
         className={cn(
-          canSplitScreenClosed ? 'text-gray-300' : 'text-red-500',
+          canSplitScreenClosed ? 'text-foreground' : 'text-destructive',
           'wrap-break-words min-h-6 flex-1 text-center',
         )}
       >
@@ -307,7 +307,7 @@ const SplitSection: React.FC<SplitSectionProps> = (props) => {
       {isBoolean && (
         <Button
           variant="outline"
-          className="mx-auto h-8 w-fit gap-2 p-2 text-gray-500"
+          className="text-muted-foreground mx-auto h-8 w-fit gap-2 p-2"
           onClick={selectAll}
         >
           {allSelected ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
@@ -389,7 +389,7 @@ const ParticipantRow = ({
       <UserAndAmount user={p} currency={currency} />
       {isBoolean ? (
         0n !== share ? (
-          <Check className="h-6 w-6 text-cyan-500" />
+          <Check className="text-primary h-6 w-6" />
         ) : null
       ) : isCurrency ? (
         <div className="flex w-1/2 items-center gap-1">
@@ -441,7 +441,7 @@ export const UserAndAmount: React.FC<{ user: Participant; currency: CurrencyCode
         <p
           className={cn(
             canSplitScreenClosed || 'hidden',
-            'max-w-18 truncate text-sm text-gray-400',
+            'text-muted-foreground max-w-18 truncate text-sm',
           )}
         >
           {paidBy && 0n < (shareAmount ?? 0n) ? '-' : ''} {toUIString(shareAmount)}
