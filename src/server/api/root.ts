@@ -4,6 +4,7 @@ import { createTRPCRouter } from '~/server/api/trpc';
 import { userRouter } from './routers/user';
 import { bankTransactionsRouter } from './routers/bankTransactions';
 import { expenseRouter } from './routers/expense';
+import { shoppingRouter } from './routers/shopping';
 import { statsRouter } from './routers/stats';
 
 /**
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   user: userRouter,
   bankTransactions: bankTransactionsRouter,
   expense: expenseRouter,
+  shopping: shoppingRouter,
   stats: statsRouter,
 });
 

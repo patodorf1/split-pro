@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { AddOrEditExpensePage } from '~/components/AddExpense/AddExpensePage';
 import MainLayout from '~/components/Layout/MainLayout';
 import { env } from '~/env';
+import { CATEGORIES } from '~/lib/category';
 import { cronFromBackend } from '~/lib/cron';
 import { parseCurrencyCode } from '~/lib/currency';
 import { isBankConnectionConfigured } from '~/server/bankTransactionHelper';
@@ -16,6 +17,13 @@ import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { toast } from 'sonner';
 import { deserializeDefaultSplit } from '~/lib/defaultSplit';
 import { useAppStore } from '~/store/appStore';
+
+const MAX_QUERY_DESCRIPTION_LENGTH = 200;
+
+/** Solo aceptamos categorías que existan de verdad, así una URL rara no rompe el selector. */
+const isKnownCategory = (value: string): boolean =>
+  value in CATEGORIES ||
+  Object.values(CATEGORIES).some((items) => (items as readonly string[]).includes(value));
 
 const AddPage: NextPageWithUser<{
   enableSendingInvites: boolean;
@@ -43,6 +51,7 @@ const AddPage: NextPageWithUser<{
   const initializedGroupIdRef = useRef<number | null>(null);
   const initializedFriendIdRef = useRef<number | null>(null);
   const initializedExpenseIdRef = useRef<string | null>(null);
+  const prefilledRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -50,6 +59,7 @@ const AddPage: NextPageWithUser<{
       initializedExpenseIdRef.current = null;
       initializedGroupIdRef.current = null;
       initializedFriendIdRef.current = null;
+      prefilledRef.current = false;
     },
     [resetState],
   );
@@ -59,7 +69,27 @@ const AddPage: NextPageWithUser<{
   setMaxUploadFileSizeMB(maxUploadFileSizeMB);
 
   const router = useRouter();
-  const { friendId, groupId, expenseId } = router.query;
+  const { friendId, groupId, expenseId, description, category } = router.query;
+
+  /**
+   * Prefill por query string: lo usa la lista de compras para abrir el gasto del súper ya titulado
+   * y con la categoría puesta. Solo aplica al crear, nunca al editar un gasto existente.
+   */
+  useEffect(() => {
+    if (!router.isReady || prefilledRef.current || expenseId) {
+      return;
+    }
+
+    prefilledRef.current = true;
+
+    if ('string' === typeof description && description) {
+      setDescription(description.slice(0, MAX_QUERY_DESCRIPTION_LENGTH));
+    }
+
+    if ('string' === typeof category && isKnownCategory(category)) {
+      setCategory(category);
+    }
+  }, [router.isReady, description, category, expenseId, setDescription, setCategory]);
 
   useEffect(() => {
     setCurrentUser({

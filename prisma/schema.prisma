@@ -65,6 +65,8 @@ model User {
   friendDefaultSplitsB FriendDefaultSplit[] @relation("FriendDefaultSplitUserB")
   sessions             Session[]
   hiddenFriendIds      Int[]                @default([])
+  addedShoppingItems   ShoppingItem[]       @relation("ShoppingItemAddedBy")
+  checkedShoppingItems ShoppingItem[]       @relation("ShoppingItemCheckedBy")
 
   @@schema("public")
 }
@@ -111,6 +113,7 @@ model Group {
   groupUsers        GroupUser[]
   groupBalances     BalanceView[]
   groupDefaultSplit GroupDefaultSplit?
+  shoppingItems     ShoppingItem[]
 
   @@schema("public")
 }
@@ -144,8 +147,8 @@ model GroupUser {
   groupId Int
   userId  Int
   pinned  Boolean @default(false)
-  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([groupId, userId])
   @@schema("public")
@@ -280,6 +283,34 @@ model AppMetadata {
   @@schema("public")
 }
 
+/// Casa: lista de compras compartida por grupo.
+/// `externalId` permite que una sincronización externa (Home Assistant / Alexa) haga upsert
+/// sin pisar los ítems que cargó una persona desde la app (esos tienen externalId = null).
+model ShoppingItem {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId       Int
+  name          String
+  quantity      String?
+  note          String?
+  checked       Boolean            @default(false)
+  checkedAt     DateTime?
+  checkedBy     Int?
+  addedBy       Int?
+  source        ShoppingItemSource @default(APP)
+  externalId    String?
+  sortOrder     Int?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  group         Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  addedByUser   User?              @relation("ShoppingItemAddedBy", fields: [addedBy], references: [id], onDelete: SetNull)
+  checkedByUser User?              @relation("ShoppingItemCheckedBy", fields: [checkedBy], references: [id], onDelete: SetNull)
+
+  @@unique([groupId, externalId])
+  @@index([groupId])
+  @@index([groupId, checked])
+  @@schema("public")
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model job {
   jobid      BigInt             @id @default(autoincrement())
@@ -330,6 +361,14 @@ view BalanceView {
   user   User   @relation("UserBalanceView", fields: [userId], references: [id], onDelete: Cascade)
   friend User   @relation("FriendBalanceView", fields: [friendId], references: [id], onDelete: Cascade)
   group  Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@schema("public")
+}
+
+enum ShoppingItemSource {
+  APP
+  ALEXA
+  API
 
   @@schema("public")
 }
