@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   DoorOpen,
   Info,
+  ListPlus,
   Merge,
   Pin,
   PlusIcon,
@@ -63,6 +64,7 @@ const BalancePage: NextPageWithUser<{
   const toggleArchiveMutation = api.group.toggleArchive.useMutation();
   const toggleSimplifyDebtsMutation = api.group.toggleSimplifyDebts.useMutation();
   const togglePinnedMutation = api.group.togglePinned.useMutation();
+  const toggleDefaultForAddMutation = api.group.toggleDefaultForAdd.useMutation();
   const apiUtils = api.useUtils();
   const updateGroupDetailsMutation = api.group.updateGroupDetails.useMutation();
   const upsertDefaultSplitMutation = api.group.upsertDefaultSplit.useMutation();
@@ -401,6 +403,33 @@ const BalancePage: NextPageWithUser<{
                             onSuccess: () => {
                               void groupDetailQuery.refetch();
                               void apiUtils.group.getAllGroupsWithBalances.invalidate();
+                            },
+                            onError: () => {
+                              toast.error(t('errors.setting_update_failed'));
+                            },
+                          },
+                        );
+                      }}
+                    />
+                  </Label>
+                  <Label className="flex cursor-pointer items-center justify-between">
+                    <p className="flex items-center">
+                      <ListPlus className="mr-2 size-4" />{' '}
+                      {t('group_details.group_info.default_for_add')}
+                    </p>
+                    <Switch
+                      id="default-for-add"
+                      checked={
+                        groupDetailQuery.data?.groupUsers.find((gu) => gu.userId === user.id)
+                          ?.defaultForAdd ?? false
+                      }
+                      onCheckedChange={() => {
+                        toggleDefaultForAddMutation.mutate(
+                          { groupId },
+                          {
+                            onSuccess: () => {
+                              void groupDetailQuery.refetch();
+                              void apiUtils.group.getAllGroups.invalidate();
                             },
                             onError: () => {
                               toast.error(t('errors.setting_update_failed'));

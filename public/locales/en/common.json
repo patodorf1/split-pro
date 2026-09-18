@@ -284,6 +284,7 @@
         "add_more_friends": "Search friends, groups or add email",
         "cannot_change_group": "Cannot change group while editing",
         "remove_group": "Press delete to remove group",
+        "remove_group_action": "Remove group",
         "search_friends": "Search friends, groups or add email"
       }
     },
@@ -355,6 +356,7 @@
         "cant_remove": "Can't remove member until their outstanding balance is settled",
         "title": "Are you absolutely sure?"
       },
+      "default_for_add": "Use by default when adding an expense",
       "pin_group": "Pin to top",
       "simplify_debts": "Simplify debts",
       "title": "Group info"

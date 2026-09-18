@@ -273,6 +273,7 @@
         "add_more_friends": "Buscar amigos, grupos o añadir correo electrónico",
         "cannot_change_group": "No se puede cambiar el grupo mientras se edita",
         "remove_group": "Pulsa eliminar para quitar el grupo",
+        "remove_group_action": "Quitar grupo",
         "search_friends": "Buscar amigos, grupos o añadir correo electrónico"
       }
     },
@@ -340,6 +341,7 @@
         "cant_remove": "No se puede eliminar al miembro hasta que su saldo pendiente esté liquidado",
         "title": "¿Estás absolutamente seguro?"
       },
+      "default_for_add": "Usar por defecto al agregar gasto",
       "pin_group": "Fijar arriba",
       "simplify_debts": "Simplificar deudas",
       "title": "Información del grupo"

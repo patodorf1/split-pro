@@ -8,6 +8,11 @@ import { env } from '~/env';
 import { CATEGORIES } from '~/lib/category';
 import { cronFromBackend } from '~/lib/cron';
 import { parseCurrencyCode } from '~/lib/currency';
+import {
+  pickDefaultGroup,
+  resolveGroupCurrency,
+  shouldPreselectDefaultGroup,
+} from '~/lib/defaultGroup';
 import { isBankConnectionConfigured } from '~/server/bankTransactionHelper';
 import { useAddExpenseStore } from '~/store/addStore';
 import { type NextPageWithUser } from '~/types';
@@ -46,12 +51,14 @@ const AddPage: NextPageWithUser<{
     setCronExpression,
     setFileKey,
     applySplitPreset,
+    selectGroup,
   } = useAddExpenseStore((s) => s.actions);
   const currentUser = useAddExpenseStore((s) => s.currentUser);
   const initializedGroupIdRef = useRef<number | null>(null);
   const initializedFriendIdRef = useRef<number | null>(null);
   const initializedExpenseIdRef = useRef<string | null>(null);
   const prefilledRef = useRef(false);
+  const defaultGroupAppliedRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -60,6 +67,7 @@ const AddPage: NextPageWithUser<{
       initializedGroupIdRef.current = null;
       initializedFriendIdRef.current = null;
       prefilledRef.current = false;
+      defaultGroupAppliedRef.current = false;
     },
     [resetState],
   );
@@ -139,6 +147,52 @@ const AddPage: NextPageWithUser<{
       refetchOnWindowFocus: false,
     },
   );
+
+  /**
+   * Grupo por defecto: si /add se abre en blanco (sin grupo, amigo ni gasto en la URL) arrancamos
+   * con el grupo que el usuario marcó como "usar por defecto al agregar gasto", igual que si
+   * hubiera tocado su botón en el selector. Se aplica una sola vez por visita: si después lo saca,
+   * no vuelve solo.
+   */
+  const defaultGroupQuery = api.group.getAllGroups.useQuery(undefined, {
+    enabled: shouldPreselectDefaultGroup({
+      isReady: router.isReady,
+      alreadyApplied: false,
+      query: { groupId, friendId, expenseId },
+    }),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (
+      !shouldPreselectDefaultGroup({
+        isReady: router.isReady,
+        alreadyApplied: defaultGroupAppliedRef.current,
+        query: { groupId, friendId, expenseId },
+      }) ||
+      !currentUser
+    ) {
+      return;
+    }
+
+    const defaultGroupUser = pickDefaultGroup(defaultGroupQuery.data);
+
+    if (!defaultGroupUser) {
+      return;
+    }
+
+    defaultGroupAppliedRef.current = true;
+    selectGroup(defaultGroupUser.group, resolveGroupCurrency(currentUser, defaultGroupUser.group));
+  }, [
+    router.isReady,
+    groupId,
+    friendId,
+    expenseId,
+    currentUser,
+    defaultGroupQuery.data,
+    selectGroup,
+  ]);
 
   useEffect(() => {
     if (!groupId || !_groupId) {

@@ -11,6 +11,8 @@ import { cyrb128, splitmix32 } from '~/utils/random';
 
 export type Participant = User & { amount?: bigint };
 export type SplitShares = Record<number, Record<SplitType, bigint | undefined>>;
+/** Grupo con sus miembros: lo mínimo para poder elegirlo como destino del gasto. */
+export type GroupWithUsers = Group & { groupUsers: { user: User }[] };
 
 export interface AddExpenseState {
   amount: bigint;
@@ -41,6 +43,7 @@ export interface AddExpenseState {
     setAmountStr: (amountStr: string) => void;
     setSplitType: (splitType: SplitType) => void;
     setGroup: (group: Group | undefined) => void;
+    selectGroup: (group: GroupWithUsers, currency?: CurrencyCode) => void;
     addOrUpdateParticipant: (user: Participant) => void;
     setSplitShare: (splitType: SplitType, userId: number, share: bigint) => void;
     applySplitPreset: (splitType: SplitType, shares: Record<number, bigint>) => void;
@@ -131,6 +134,40 @@ export const useAddExpenseStore = create<AddExpenseState>()((set) => ({
     setGroup: (group) => {
       set({ group });
     },
+    /**
+     * Elegir un grupo como destino del gasto: lo fija, pone a todos sus miembros como
+     * participantes, limpia el buscador y cierra la lista de amigos. Es la misma acción que
+     * dispara el botón del grupo en el selector y la preselección del grupo por defecto, así que
+     * vive en un solo lugar. `currency` es opcional: solo lo pasa quien ya resolvió la moneda.
+     */
+    selectGroup: (group, currency) =>
+      set((state) => {
+        const { currentUser } = state;
+        const participants = currentUser
+          ? [
+              currentUser,
+              ...group.groupUsers.map((gu) => gu.user).filter((u) => u.id !== currentUser.id),
+            ]
+          : state.participants;
+
+        const splitShares = participants.reduce<SplitShares>((res, p) => {
+          res[p.id] = initSplitShares();
+          return res;
+        }, {});
+
+        return {
+          ...calculateParticipantSplit({
+            ...state,
+            participants,
+            splitType: SplitType.EQUAL,
+            splitShares,
+          }),
+          group,
+          nameOrEmail: '',
+          showFriends: false,
+          ...(currency ? { currency } : {}),
+        };
+      }),
     addOrUpdateParticipant: (user) =>
       set((state) => {
         const participants = [...state.participants];

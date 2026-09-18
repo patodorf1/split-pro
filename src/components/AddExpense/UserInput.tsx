@@ -1,5 +1,7 @@
+import { X } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import Router from 'next/router';
+import { useCallback } from 'react';
 import { z } from 'zod';
 
 import { cn } from '~/lib/utils';
@@ -30,19 +32,27 @@ export const UserInput: React.FC<{
 
   const isEmail = z.string().email().safeParse(nameOrEmail);
 
+  /**
+   * Sacar el grupo del gasto. Antes solo se podía con Backspace sobre el buscador vacío; ahora que
+   * el grupo puede venir preseleccionado (grupo por defecto) hace falta un botón visible.
+   */
+  const removeGroup = useCallback(() => {
+    const currentPath = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.delete('groupId');
+    Router.push(`${currentPath}?${searchParams.toString()}`).catch(console.error);
+
+    setGroup(undefined);
+
+    if (currentUser) {
+      setParticipants([currentUser]);
+    }
+  }, [setGroup, setParticipants, currentUser]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if ('Backspace' === e.key && '' === nameOrEmail) {
       if (group) {
-        const currentPath = window.location.pathname;
-        const searchParams = new URLSearchParams(window.location.search);
-        searchParams.delete('groupId');
-        Router.push(`${currentPath}?${searchParams.toString()}`).catch(console.error);
-
-        setGroup(undefined);
-
-        if (currentUser) {
-          setParticipants([currentUser]);
-        }
+        removeGroup();
       } else {
         removeLastParticipant(); // Assuming deleteUser is the function you want to call
       }
@@ -81,9 +91,19 @@ export const UserInput: React.FC<{
       )}
     >
       {group ? (
-        <div className="bg-muted flex items-center gap-2 rounded-full p-0.5 pr-4">
+        <div className="bg-muted flex items-center gap-2 rounded-full p-0.5 pr-1">
           <EntityAvatar entity={group} size={30} />
           <p className="text-xs">{group.name}</p>
+          {!isEditing && (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground flex size-6 shrink-0 items-center justify-center rounded-full"
+              aria-label={t('expense_details.add_expense_details.user_input.remove_group_action')}
+              onClick={removeGroup}
+            >
+              <X className="size-4" />
+            </button>
+          )}
         </div>
       ) : (
         participants.map((p) =>
