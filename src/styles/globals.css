@@ -1,21 +1,38 @@
 @import 'tailwindcss';
 
-@custom-variant dark (&:is(.dark *));
+/*
+  Los temas se aplican con `data-theme` en <html> (next-themes). El variant `dark:`
+  de Tailwind se activa en los temas oscuros, que están listados acá.
+  Si se agrega un tema oscuro nuevo, hay que sumarlo a esta lista.
+*/
+@custom-variant dark (&:is([data-theme='noche'] *, [data-theme='dark'] *, [data-theme='terminal'] *));
 
 @theme inline {
   --breakpoint-xs: 30rem;
 
+  /* Fuente de la app. Los temas pueden pisarla con --theme-font-family. */
+  --font-app: var(--theme-font-family, var(--font-poppins), ui-sans-serif, system-ui, sans-serif);
+
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-input-background: var(--input-background);
   --color-ring: var(--ring);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --color-positive: var(--color-emerald-500);
-  --color-negative: var(--color-orange-600);
+  --color-positive: var(--positive);
+  --color-positive-foreground: var(--positive-foreground);
+  --color-positive-soft: var(--positive-soft);
+
+  --color-negative: var(--negative);
+  --color-negative-foreground: var(--negative-foreground);
+  --color-negative-soft: var(--negative-soft);
+
+  --color-overlay: var(--overlay);
 
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
 
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -38,6 +55,8 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+  /* Radio de tarjeta del estilo base: 16px */
+  --radius-card: 1rem;
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -93,6 +112,28 @@
 }
 
 /*
+  Estilo base compartido por todos los temas.
+  `card-surface` es la tarjeta del estilo nuevo: fondo de tarjeta, borde fino
+  del token border y radio generoso. Se puede usar suelta o vía <Card />.
+*/
+@utility card-surface {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+/* Etiqueta de sección: chica, mayúscula, con tracking y en color de acento. */
+@utility section-label {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+/*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.
@@ -106,7 +147,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--border, currentcolor);
   }
 
   button:not([disabled]),
@@ -115,66 +156,326 @@
   }
 }
 
-:root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(224 71.4% 4.1%);
+/*
+  ----------------------------------------------------------------------------
+  TEMAS
+  ----------------------------------------------------------------------------
+  Cada bloque define la paleta completa. Los selectores son de atributo (no
+  `:root[...]`) a propósito: así se puede previsualizar un tema poniendo
+  data-theme en cualquier elemento (lo usa la grilla de temas de Cuenta).
 
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(224 71.4% 4.1%);
+  Tokens semánticos disponibles:
+    background / foreground      fondo de pantalla y tinta principal
+    card / card-foreground       superficie de tarjeta
+    popover / popover-foreground superficie flotante (menús, command)
+    primary / primary-foreground acento de marca (botones, links, etiquetas)
+    primary-soft                 tinte suave del acento (pistas de barras, chips)
+    secondary / -foreground      superficie secundaria (botones suaves)
+    muted / muted-foreground     superficie apagada y texto secundario
+    accent / accent-foreground   superficie de hover/selección
+    destructive / -foreground    acciones peligrosas
+    positive / -foreground / -soft   saldo a favor ("te deben")
+    negative / -foreground / -soft   saldo en contra ("debés")
+    border / input / input-background / ring
+    overlay                      velo detrás de diálogos y drawers
+*/
 
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(224 71.4% 4.1%);
+/*
+  Lavanda — tema por defecto: crema cálido + acento lavanda.
+  `light` es el alias que usa el modo Automático cuando el sistema está en claro.
+*/
+:root,
+[data-theme='lavanda'],
+[data-theme='light'] {
+  color-scheme: light;
+  --theme-font-family: initial;
 
-  --primary: hsl(220.9 39.3% 11%);
-  --primary-foreground: hsl(210 20% 98%);
+  --background: hsl(38 42% 93%);
+  --foreground: hsl(264 24% 14%);
 
-  --secondary: hsl(220 14.3% 95.9%);
-  --secondary-foreground: hsl(220.9 39.3% 11%);
+  --card: hsl(40 53% 97%);
+  --card-foreground: hsl(264 24% 14%);
 
-  --muted: hsl(220 14.3% 95.9%);
-  --muted-foreground: hsl(220 8.9% 46.1%);
+  --popover: hsl(40 53% 97%);
+  --popover-foreground: hsl(264 24% 14%);
 
-  --accent: hsl(220 14.3% 95.9%);
-  --accent-foreground: hsl(220.9 39.3% 11%);
+  --primary: hsl(259 45% 53%);
+  --primary-foreground: hsl(40 53% 97%);
+  --primary-soft: hsl(259 52% 90%);
 
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(210 20% 98%);
+  --secondary: hsl(38 38% 89%);
+  --secondary-foreground: hsl(264 24% 14%);
 
-  --border: hsl(220 13% 91%);
-  --input: hsl(220 13% 91%);
-  --ring: hsl(224 71.4% 4.1%);
+  --muted: hsl(38 38% 89%);
+  --muted-foreground: hsl(262 12% 42%);
 
-  --radius: 0.5rem;
+  --accent: hsl(38 38% 89%);
+  --accent-foreground: hsl(264 24% 14%);
+
+  --destructive: hsl(0 62% 45%);
+  --destructive-foreground: hsl(40 53% 97%);
+
+  --positive: hsl(161 70% 28%);
+  --positive-foreground: hsl(40 53% 97%);
+  --positive-soft: hsl(161 45% 88%);
+
+  --negative: hsl(10 62% 45%);
+  --negative-foreground: hsl(40 53% 97%);
+  --negative-soft: hsl(10 60% 91%);
+
+  --border: hsl(36 28% 84%);
+  --input: hsl(36 28% 84%);
+  --input-background: hsl(40 53% 97%);
+  --ring: hsl(259 45% 53%);
+
+  --overlay: hsl(264 24% 14% / 0.45);
+
+  --radius: 0.625rem;
 }
 
-.dark {
-  --background: hsl(224 71.4% 4.1%);
-  --foreground: hsl(222 2% 83%);
+/* Matcha — crema verdoso + acento verde hoja */
+[data-theme='matcha'] {
+  color-scheme: light;
+  --theme-font-family: initial;
 
-  --card: hsl(224 71.4% 4.1%);
-  --card-foreground: hsl(210 20% 98%);
+  --background: hsl(75 28% 92%);
+  --foreground: hsl(120 22% 12%);
 
-  --popover: hsl(224 71.4% 4.1%);
-  --popover-foreground: hsl(210 20% 98%);
+  --card: hsl(72 40% 97%);
+  --card-foreground: hsl(120 22% 12%);
 
-  --primary: hsl(189 94% 43%);
-  --primary-foreground: hsl(220.9 39.3% 11%);
+  --popover: hsl(72 40% 97%);
+  --popover-foreground: hsl(120 22% 12%);
 
-  --secondary: hsl(215 27.9% 16.9%);
-  --secondary-foreground: hsl(210 20% 98%);
+  --primary: hsl(136 42% 28%);
+  --primary-foreground: hsl(72 40% 97%);
+  --primary-soft: hsl(136 33% 86%);
 
-  --muted: hsl(215 27.9% 16.9%);
-  --muted-foreground: hsl(217.9 10.6% 64.9%);
+  --secondary: hsl(75 25% 88%);
+  --secondary-foreground: hsl(120 22% 12%);
 
-  --accent: hsl(215 27.9% 16.9%);
-  --accent-foreground: hsl(210 20% 98%);
+  --muted: hsl(75 25% 88%);
+  --muted-foreground: hsl(120 12% 34%);
 
-  --destructive: hsl(0 74% 42%);
-  --destructive-foreground: hsl(210 20% 98%);
+  --accent: hsl(75 25% 88%);
+  --accent-foreground: hsl(120 22% 12%);
 
-  --border: hsl(215 27.9% 16.9%);
-  --input: hsl(215 27.9% 16.9%);
-  --ring: hsl(221 39% 11%);
+  --destructive: hsl(0 62% 45%);
+  --destructive-foreground: hsl(72 40% 97%);
+
+  --positive: hsl(172 78% 25%);
+  --positive-foreground: hsl(72 40% 97%);
+  --positive-soft: hsl(172 45% 87%);
+
+  --negative: hsl(8 65% 44%);
+  --negative-foreground: hsl(72 40% 97%);
+  --negative-soft: hsl(8 62% 91%);
+
+  --border: hsl(75 20% 82%);
+  --input: hsl(75 20% 82%);
+  --input-background: hsl(72 40% 97%);
+  --ring: hsl(136 42% 28%);
+
+  --overlay: hsl(120 22% 12% / 0.45);
+
+  --radius: 0.625rem;
+}
+
+/* Café — crema tostado + acento marrón caramelo */
+[data-theme='cafe'] {
+  color-scheme: light;
+  --theme-font-family: initial;
+
+  --background: hsl(34 40% 92%);
+  --foreground: hsl(25 30% 13%);
+
+  --card: hsl(36 50% 97%);
+  --card-foreground: hsl(25 30% 13%);
+
+  --popover: hsl(36 50% 97%);
+  --popover-foreground: hsl(25 30% 13%);
+
+  --primary: hsl(26 62% 34%);
+  --primary-foreground: hsl(36 50% 97%);
+  --primary-soft: hsl(28 55% 87%);
+
+  --secondary: hsl(34 34% 88%);
+  --secondary-foreground: hsl(25 30% 13%);
+
+  --muted: hsl(34 34% 88%);
+  --muted-foreground: hsl(26 15% 36%);
+
+  --accent: hsl(34 34% 88%);
+  --accent-foreground: hsl(25 30% 13%);
+
+  --destructive: hsl(0 62% 45%);
+  --destructive-foreground: hsl(36 50% 97%);
+
+  --positive: hsl(161 70% 27%);
+  --positive-foreground: hsl(36 50% 97%);
+  --positive-soft: hsl(161 45% 88%);
+
+  --negative: hsl(4 66% 43%);
+  --negative-foreground: hsl(36 50% 97%);
+  --negative-soft: hsl(4 62% 91%);
+
+  --border: hsl(32 26% 82%);
+  --input: hsl(32 26% 82%);
+  --input-background: hsl(36 50% 97%);
+  --ring: hsl(26 62% 34%);
+
+  --overlay: hsl(25 30% 13% / 0.45);
+
+  --radius: 0.625rem;
+}
+
+/* Rosa — crema rosado + acento frambuesa */
+[data-theme='rosa'] {
+  color-scheme: light;
+  --theme-font-family: initial;
+
+  --background: hsl(348 45% 95%);
+  --foreground: hsl(340 25% 14%);
+
+  --card: hsl(350 55% 98%);
+  --card-foreground: hsl(340 25% 14%);
+
+  --popover: hsl(350 55% 98%);
+  --popover-foreground: hsl(340 25% 14%);
+
+  --primary: hsl(340 58% 40%);
+  --primary-foreground: hsl(350 55% 98%);
+  --primary-soft: hsl(344 62% 91%);
+
+  --secondary: hsl(348 40% 92%);
+  --secondary-foreground: hsl(340 25% 14%);
+
+  --muted: hsl(348 40% 92%);
+  --muted-foreground: hsl(340 12% 38%);
+
+  --accent: hsl(348 40% 92%);
+  --accent-foreground: hsl(340 25% 14%);
+
+  --destructive: hsl(0 62% 45%);
+  --destructive-foreground: hsl(350 55% 98%);
+
+  --positive: hsl(161 70% 27%);
+  --positive-foreground: hsl(350 55% 98%);
+  --positive-soft: hsl(161 45% 89%);
+
+  --negative: hsl(18 74% 36%);
+  --negative-foreground: hsl(350 55% 98%);
+  --negative-soft: hsl(18 70% 90%);
+
+  --border: hsl(345 30% 87%);
+  --input: hsl(345 30% 87%);
+  --input-background: hsl(350 55% 98%);
+  --ring: hsl(340 58% 40%);
+
+  --overlay: hsl(340 25% 14% / 0.45);
+
+  --radius: 0.625rem;
+}
+
+/*
+  Noche — oscuro violáceo + acento lavanda claro.
+  `dark` es el alias que usa el modo Automático cuando el sistema está en oscuro.
+*/
+[data-theme='noche'],
+[data-theme='dark'] {
+  color-scheme: dark;
+  --theme-font-family: initial;
+
+  --background: hsl(263 30% 9%);
+  --foreground: hsl(260 20% 92%);
+
+  --card: hsl(263 26% 13%);
+  --card-foreground: hsl(260 20% 92%);
+
+  --popover: hsl(263 26% 13%);
+  --popover-foreground: hsl(260 20% 92%);
+
+  --primary: hsl(262 78% 78%);
+  --primary-foreground: hsl(263 35% 12%);
+  --primary-soft: hsl(262 38% 26%);
+
+  --secondary: hsl(263 22% 18%);
+  --secondary-foreground: hsl(260 20% 92%);
+
+  --muted: hsl(263 22% 18%);
+  --muted-foreground: hsl(258 14% 68%);
+
+  --accent: hsl(263 22% 20%);
+  --accent-foreground: hsl(260 20% 92%);
+
+  --destructive: hsl(0 65% 58%);
+  --destructive-foreground: hsl(263 35% 12%);
+
+  --positive: hsl(158 62% 58%);
+  --positive-foreground: hsl(263 35% 12%);
+  --positive-soft: hsl(158 35% 22%);
+
+  --negative: hsl(14 85% 68%);
+  --negative-foreground: hsl(263 35% 12%);
+  --negative-soft: hsl(14 45% 24%);
+
+  --border: hsl(263 20% 22%);
+  --input: hsl(263 20% 24%);
+  --input-background: hsl(263 24% 16%);
+  --ring: hsl(262 78% 78%);
+
+  --overlay: hsl(263 40% 4% / 0.6);
+
+  --radius: 0.625rem;
+}
+
+/* Terminal — casi negro azulado + acento ámbar y tipografía monoespaciada */
+[data-theme='terminal'] {
+  color-scheme: dark;
+
+  --theme-font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+  --background: hsl(215 30% 7%);
+  --foreground: hsl(210 20% 90%);
+
+  --card: hsl(215 28% 11%);
+  --card-foreground: hsl(210 20% 90%);
+
+  --popover: hsl(215 28% 11%);
+  --popover-foreground: hsl(210 20% 90%);
+
+  --primary: hsl(38 92% 62%);
+  --primary-foreground: hsl(215 35% 8%);
+  --primary-soft: hsl(38 42% 24%);
+
+  --secondary: hsl(215 25% 16%);
+  --secondary-foreground: hsl(210 20% 90%);
+
+  --muted: hsl(215 25% 16%);
+  --muted-foreground: hsl(212 16% 65%);
+
+  --accent: hsl(215 25% 18%);
+  --accent-foreground: hsl(210 20% 90%);
+
+  --destructive: hsl(0 70% 60%);
+  --destructive-foreground: hsl(215 35% 8%);
+
+  --positive: hsl(150 62% 55%);
+  --positive-foreground: hsl(215 35% 8%);
+  --positive-soft: hsl(150 32% 20%);
+
+  --negative: hsl(8 85% 68%);
+  --negative-foreground: hsl(215 35% 8%);
+  --negative-soft: hsl(8 40% 22%);
+
+  --border: hsl(215 22% 20%);
+  --input: hsl(215 22% 22%);
+  --input-background: hsl(215 26% 14%);
+  --ring: hsl(38 92% 62%);
+
+  --overlay: hsl(215 40% 3% / 0.6);
+
+  --radius: 0.625rem;
 }
 
 @layer base {
@@ -231,8 +532,8 @@ input[type='number'] {
   width: 100px;
   height: 100%;
   box-shadow:
-    0 0 10px #29d,
-    0 0 5px #29d;
+    0 0 10px var(--primary),
+    0 0 5px var(--primary);
   opacity: 1;
 
   -webkit-transform: rotate(3deg) translate(0px, -4px);
@@ -255,8 +556,8 @@ input[type='number'] {
   box-sizing: border-box;
 
   border: solid 2px transparent;
-  border-top-color: #29d;
-  border-left-color: #29d;
+  border-top-color: var(--primary);
+  border-left-color: var(--primary);
   border-radius: 50%;
 
   -webkit-animation: nprogress-spinner 400ms linear infinite;

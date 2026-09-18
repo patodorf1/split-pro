@@ -8,9 +8,11 @@ import { Poppins } from 'next/font/google';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Toaster } from 'sonner';
+import { Toaster } from '~/components/ui/sonner';
 import { LoadingSpinner } from '~/components/ui/spinner';
 import { ThemeProvider } from 'next-themes';
+import { ThemeColorMeta } from '~/components/Theme/ThemeColorMeta';
+import { DEFAULT_THEME, NEXT_THEMES_LIST } from '~/lib/themes';
 import { CurrencyHelpersProvider } from '~/contexts/CurrencyHelpersContext';
 import { useAddExpenseStore } from '~/store/addStore';
 import { useAppStore } from '~/store/appStore';
@@ -20,7 +22,11 @@ import { api } from '~/utils/api';
 import 'react-easy-crop/react-easy-crop.css';
 import '~/styles/globals.css';
 
-const poppins = Poppins({ weight: ['200', '300', '400', '500', '600', '700'], subsets: ['latin'] });
+const poppins = Poppins({
+  weight: ['200', '300', '400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-poppins',
+});
 const toastOptions = { duration: 1500 };
 
 const MyApp: AppType<{ session: Session | null }> = ({
@@ -41,7 +47,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
   const baseUrl = global?.window?.location?.origin;
 
   return (
-    <main className={clsx(poppins.className, 'h-full')}>
+    <main className={clsx(poppins.variable, 'font-app h-full')}>
       <Head>
         <title>{t('meta.title')}</title>
         <link rel="icon" href="/favicon.ico" />
@@ -54,9 +60,6 @@ const MyApp: AppType<{ session: Session | null }> = ({
         <meta name="msapplication-config" content="/icons/browserconfig.xml" />
         <meta name="msapplication-TileColor" content="#2B5797" />
         <meta name="msapplication-tap-highlight" content="no" />
-
-        <meta name="theme-color" content="#030711" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
         <link rel="apple-touch-icon" href="/icons/ios/144.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/icons/ios/152.png" />
@@ -84,7 +87,14 @@ const MyApp: AppType<{ session: Session | null }> = ({
       </Head>
       <SessionProvider session={session}>
         <CurrencyHelpersProvider>
-          <ThemeProvider attribute="class" defaultTheme="dark">
+          <ThemeProvider
+            attribute="data-theme"
+            defaultTheme={DEFAULT_THEME}
+            themes={NEXT_THEMES_LIST}
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ThemeColorMeta />
             <Toaster toastOptions={toastOptions} />
             {(Component as NextPageWithUser).auth ? (
               <Auth pageProps={pageProps} Page={Component as NextPageWithUser} />
