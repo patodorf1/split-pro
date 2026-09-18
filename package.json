@@ -15,6 +15,7 @@
     "dev": "next dev --turbopack",
     "postinstall": "prisma generate",
     "generate": "prisma generate",
+    "icons": "node scripts/generate-icons.mjs",
     "lint": "oxlint --type-aware",
     "start": "sleep 3 && pnpm prisma:prod && next start",
     "start-with-latest-migrations": "prisma migrate deploy && next start",
