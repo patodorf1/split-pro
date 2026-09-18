@@ -394,6 +394,55 @@
     "derived_delete_warning": "This expense is part of a recurrence. Only this expense will be deleted. Future recurring expenses will continue.",
     "view_recurring_page": "View Recurring page"
   },
+  "shopping": {
+    "actions": {
+      "add": "Add",
+      "clear_bought": "Clear bought",
+      "convert_to_expense": "Turn into expense",
+      "delete": "Delete",
+      "later": "Not now",
+      "save": "Save"
+    },
+    "add_placeholder": "What's missing? Separate with commas",
+    "after_expense": {
+      "subtitle_one": "If you already saved it, we can clear the bought item.",
+      "subtitle_other": "If you already saved it, we can clear the {{count}} bought items.",
+      "title": "Did you log the groceries expense?"
+    },
+    "bought": "Bought",
+    "confirm_clear_one": "Remove the bought item from the list?",
+    "confirm_clear_other": "Remove {{count}} bought items from the list?",
+    "edit": {
+      "name": "Name",
+      "note": "Note",
+      "note_placeholder": "The cheap brand",
+      "quantity": "Quantity",
+      "quantity_placeholder": "2 kg",
+      "title": "Edit item"
+    },
+    "empty": {
+      "bought": "Nothing marked as bought yet.",
+      "no_groups": "Create a group to start a shared list.",
+      "subtitle": "Type what's missing and it shows up on both phones.",
+      "title": "List is clear"
+    },
+    "expense_description": "Groceries",
+    "group_label": "List for",
+    "pending": "To buy",
+    "requested_by": "Asked by {{name}}",
+    "source": {
+      "alexa": "Alexa"
+    },
+    "title": "Shopping",
+    "toast": {
+      "added_one": "{{count}} item added to the list",
+      "added_other": "{{count}} items added to the list",
+      "already_there": "Already there: {{names}}",
+      "cleared_one": "{{count}} bought item cleared",
+      "cleared_other": "{{count}} bought items cleared",
+      "error": "That didn't work. Try again."
+    }
+  },
   "ui": {
     "added_by": "Added by",
     "and": "and",

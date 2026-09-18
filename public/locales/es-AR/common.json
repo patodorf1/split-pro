@@ -368,6 +368,55 @@
     "title": "Recurrencia",
     "view_recurring_page": "Ver página de recurrentes"
   },
+  "shopping": {
+    "actions": {
+      "add": "Agregar",
+      "clear_bought": "Limpiar comprados",
+      "convert_to_expense": "Convertir en gasto",
+      "delete": "Borrar",
+      "later": "Ahora no",
+      "save": "Guardar"
+    },
+    "add_placeholder": "¿Qué falta? Separá con comas",
+    "after_expense": {
+      "subtitle_one": "Si ya lo cargaste, limpiamos el comprado.",
+      "subtitle_other": "Si ya lo cargaste, limpiamos los {{count}} comprados.",
+      "title": "¿Cargaste el gasto del súper?"
+    },
+    "bought": "Comprado",
+    "confirm_clear_one": "¿Sacar el comprado de la lista?",
+    "confirm_clear_other": "¿Sacar los {{count}} comprados de la lista?",
+    "edit": {
+      "name": "Nombre",
+      "note": "Nota",
+      "note_placeholder": "La marca barata",
+      "quantity": "Cantidad",
+      "quantity_placeholder": "2 kg",
+      "title": "Editar ítem"
+    },
+    "empty": {
+      "bought": "Todavía no marcaste nada como comprado.",
+      "no_groups": "Creá un grupo y arrancá la lista compartida.",
+      "subtitle": "Escribí lo que falta y le aparece al toque a los dos.",
+      "title": "Lista limpia"
+    },
+    "expense_description": "Súper",
+    "group_label": "Lista de",
+    "pending": "Para comprar",
+    "requested_by": "Pidió {{name}}",
+    "source": {
+      "alexa": "Alexa"
+    },
+    "title": "Compras",
+    "toast": {
+      "added_one": "Listo, {{count}} ítem en la lista",
+      "added_other": "Listo, {{count}} ítems en la lista",
+      "already_there": "Ya estaba: {{names}}",
+      "cleared_one": "Limpiamos {{count}} comprado",
+      "cleared_other": "Limpiamos {{count}} comprados",
+      "error": "No salió. Probá de nuevo."
+    }
+  },
   "ui": {
     "added_by": "Agregado por",
     "and": "y",
