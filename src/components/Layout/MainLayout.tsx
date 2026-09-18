@@ -76,9 +76,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       >
         <nav className="item-center -ml-[170px] hidden w-[170px] px-4 py-4 lg:flex lg:flex-col lg:gap-2">
           <Link href={HOME_LINK} className="mb-8 flex items-center gap-2">
-            <span className="text-xl font-medium">
-              {t?.('meta.application_name') ?? 'SplitPro'}
-            </span>
+            <span className="text-xl font-medium">{t?.('meta.application_name') ?? 'Split'}</span>
           </Link>
           <NavItemDesktop
             title={t?.('dashboard.nav.home') ?? 'Home'}

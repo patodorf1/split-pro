@@ -18,13 +18,13 @@
     "default_balance_currency": "Προεπιλεγμένο Νόμισμα",
     "download_app": "Κατέβασμα Εφαρμογής",
     "download_app_details": {
-      "download_as_pwa": "Μπορείτε να κατεβάσετε το SplitPro ως PWA στην αρχική σας οθόνη.",
+      "download_as_pwa": "Μπορείτε να κατεβάσετε το Split ως PWA στην αρχική σας οθόνη.",
       "title": "Κατέβασμα Εφαρμογής",
       "using_android": "Αν χρησιμοποιείτε Android, κοιτάξτε εδώ",
       "using_ios": "Αν χρησιμοποιείτε iOS, κοιτάξτε εδώ",
       "video": "βίντεο"
     },
-    "download_splitpro_data": "Λήψη Δεδομένων SplitPro",
+    "download_splitpro_data": "Λήψη Δεδομένων Split",
     "edit_name": {
       "apply_avatar": "Εφαρμογή Avatar",
       "avatar_label": "Φωτογραφία Προφίλ",
@@ -109,7 +109,7 @@
       "description_placeholder": "Εισάγετε περιγραφή",
       "pick_a_date": "Επιλέξτε ημερομηνία",
       "select_user_or_group": {
-        "add_to_split_pro": "Προσθήκη στο Split Pro"
+        "add_to_split_pro": "Προσθήκη στο Split"
       },
       "split_type_section": {
         "types": {

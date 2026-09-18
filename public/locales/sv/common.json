@@ -25,13 +25,13 @@
     "default_balance_currency": "Standardsaldovaluta",
     "download_app": "Ladda ner app",
     "download_app_details": {
-      "download_as_pwa": "Du kan ladda ner SplitPro som en PWA till din hemskärm.",
+      "download_as_pwa": "Du kan ladda ner Split som en PWA till din hemskärm.",
       "title": "Ladda ner app",
       "using_android": "Om du använder Android, kolla in denna",
       "using_ios": "Om du använder iOS, kolla in denna",
       "video": "video"
     },
-    "download_splitpro_data": "Ladda ner SplitPro data",
+    "download_splitpro_data": "Ladda ner Split data",
     "edit_name": {
       "apply_avatar": "Använd avatar",
       "avatar_label": "Profil bild",
@@ -192,11 +192,11 @@
       "description_placeholder": "Ange beskrivning",
       "pick_a_date": "Välj datum",
       "select_user_or_group": {
-        "add_to_split_pro": "Lägg till i SplitPro",
+        "add_to_split_pro": "Lägg till i Split",
         "note": "Notera: Skicka inbjudan är för tillfället inaktiverat på grund av spam",
         "only_one_group_time": "Du kan bara välja en grupp åt gången",
         "send_invite": "Skicka inbjudan till användare",
-        "warning": "Varning: Skicka inte en inbjudan om det är ogiltig e-postadress. Använd istället lägg till i SplitPro. Ditt konto kommer att blockeras om denna funktion används felaktigt"
+        "warning": "Varning: Skicka inte en inbjudan om det är ogiltig e-postadress. Använd istället lägg till i Split. Ditt konto kommer att blockeras om denna funktion används felaktigt"
       },
       "split_type_section": {
         "split_equally": "dela lika",
@@ -326,12 +326,12 @@
     "no_members": {
       "add_members": "Lägg till medlemmar",
       "add_members_details": {
-        "add_to_split_pro": "Lägg till i Split Pro",
+        "add_to_split_pro": "Lägg till i Split",
         "note": "Notera: Skicka inbjudan är inaktiverat för tillfället på grund av skräppost",
         "placeholder": "Ange namn eller email",
         "send_invite": "Skicka inbjudan till användare",
         "title": "Lägg till medlemmar",
-        "warning": "Varning: Skicka inte en inbjudan om det är ogiltlig email. Använd istället lägg till i Split Pro. Ditt konto kommer att blockeras om denna funktion används felaktigt"
+        "warning": "Varning: Skicka inte en inbjudan om det är ogiltlig email. Använd istället lägg till i Split. Ditt konto kommer att blockeras om denna funktion används felaktigt"
       },
       "invite_link": "Inbjudningslänk",
       "no_members": "Inga medlemmar i gruppen ännu."
@@ -343,14 +343,14 @@
     "title": "Saldon"
   },
   "invite_message": {
-    "in_splitpro": "i Splitpro",
+    "in_splitpro": "i Split",
     "join_to": "Gå med",
     "text": "Gå med i gruppen så kan du lägga till, hantera utgifter och följa dina saldon"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Dela utgifter med dina vänner gratis",
-    "title": "SplitPro: Dela utgifter med dina vänner gratis"
+    "title": "Split: Dela utgifter med dina vänner gratis"
   },
   "navigation": {
     "account": "Konto",
@@ -439,7 +439,7 @@
     "settle_up_name": "Gör kvitt",
     "settled_up": "Kvitt",
     "settlement": "Kvittning",
-    "share_text": "Kolla in SplitPro. Det är ett gratis open source-alternativ till Splitwise",
+    "share_text": "Kolla in Split. Det är ett gratis open source-alternativ till Splitwise",
     "show_all_currencies": "Visa alla valutor",
     "today": "Idag",
     "total_balance": "Totalt saldo"

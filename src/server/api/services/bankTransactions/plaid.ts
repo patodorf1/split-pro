@@ -138,7 +138,7 @@ export class PlaidService extends AbstractBankProvider {
       user: {
         client_user_id: id,
       },
-      client_name: 'Split Pro',
+      client_name: 'Split',
       products: [Products.Transactions],
       country_codes: env.PLAID_COUNTRY_CODES
         ? (env.PLAID_COUNTRY_CODES.split(',') as CountryCode[])
@@ -213,8 +213,8 @@ export class PlaidService extends AbstractBankProvider {
   }
 
   private formatTransactions(transactions: Transaction[]): TransactionOutput {
-    const bookedTransactions = transactions.filter((t) => t.pending === false);
-    const pendingTransactions = transactions.filter((t) => t.pending === true);
+    const bookedTransactions = transactions.filter((t) => ! t.pending);
+    const pendingTransactions = transactions.filter((t) =>  t.pending);
 
     return {
       transactions: {

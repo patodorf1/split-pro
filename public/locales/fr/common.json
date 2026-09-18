@@ -25,13 +25,13 @@
     "default_balance_currency": "Monnaie par défaut des soldes",
     "download_app": "Télécharger l'app",
     "download_app_details": {
-      "download_as_pwa": "Tu peux télécharger SplitPro en tant que PWA (Aplication Web Progressive) sur ton écran d'accueil.",
+      "download_as_pwa": "Tu peux télécharger Split en tant que PWA (Aplication Web Progressive) sur ton écran d'accueil.",
       "title": "Télécharger l'app",
       "using_android": "Pour Android, regarder cette",
       "using_ios": "Pour iOS, regarder cette",
       "video": "vidéo"
     },
-    "download_splitpro_data": "Télécharger les données de SplitPro",
+    "download_splitpro_data": "Télécharger les données de Split",
     "edit_name": {
       "apply_avatar": "Enregistrer l'avatar",
       "avatar_label": "Image de profil",
@@ -192,11 +192,11 @@
       "description_placeholder": "Description de la dépense",
       "pick_a_date": "Choisir une date",
       "select_user_or_group": {
-        "add_to_split_pro": "Inviter sur SplitPro",
+        "add_to_split_pro": "Inviter sur Split",
         "note": "Note : l'envoi de mails d'invitation est désactivé pour le moment pour éviter le spam",
         "only_one_group_time": "Une dépense ne peut concerner qu'un seul groupe à la fois",
         "send_invite": "Envoyer une invitation",
-        "warning": "Attention : N'envoyez pas d'invitation à des adresses mail non enregistrées ici, utilisez plutôt la fonction « inviter sur SplitPro ». Votre compte sera bloqué si vous utilisez mal cette fonctionnalité"
+        "warning": "Attention : N'envoyez pas d'invitation à des adresses mail non enregistrées ici, utilisez plutôt la fonction « inviter sur Split ». Votre compte sera bloqué si vous utilisez mal cette fonctionnalité"
       },
       "split_type_section": {
         "split_equally": "partagé à parts égales",
@@ -331,7 +331,7 @@
         "placeholder": "Entrer un pseudo ou un mail",
         "send_invite": "Envoyer une invitation",
         "title": "Ajouter des membres",
-        "warning": "Attention : N'envoyez pas d'invitation à des adresses mail non enregistrées ici, utilisez plutôt la fonction « inviter sur SplitPro ». Votre compte sera bloqué si vous utilisez mal cette fonctionnalité"
+        "warning": "Attention : N'envoyez pas d'invitation à des adresses mail non enregistrées ici, utilisez plutôt la fonction « inviter sur Split ». Votre compte sera bloqué si vous utilisez mal cette fonctionnalité"
       },
       "invite_link": "Lien d'invitation",
       "no_members": "Aucun⋅e membre dans ce groupe pour l'instant."
@@ -343,14 +343,14 @@
     "title": "Soldes en cours du groupe"
   },
   "invite_message": {
-    "in_splitpro": "sur SplitPro",
+    "in_splitpro": "sur Split",
     "join_to": "Rejoindre",
     "text": "Rejoins le groupe pour ajouter et gérer tes dépenses, et suivre tes soldes auprès des autres"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Partagez gratuitement vos dépenses entre ami⋅es",
-    "title": "SplitPro : partagez gratuitement vos dépenses entre ami⋅es"
+    "title": "Split : partagez gratuitement vos dépenses entre ami⋅es"
   },
   "navigation": {
     "account": "Compte",
@@ -439,7 +439,7 @@
     "settle_up_name": "Régler une dette",
     "settled_up": "À l'équilibre",
     "settlement": "Règlement de dette",
-    "share_text": "Jette un œil à SplitPro : c'est une alternative open source et gratuite à Splitwise",
+    "share_text": "Jette un œil à Split : c'est une alternative open source et gratuite à Splitwise",
     "show_all_currencies": "Montrer toutes les devises",
     "today": "Aujourd'hui",
     "total_balance": "Solde global"

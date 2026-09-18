@@ -20,13 +20,13 @@
     },
     "download_app": "Stáhnout aplikaci",
     "download_app_details": {
-      "download_as_pwa": "SplitPro si můžete stáhnout na domovskou obrazovku jako PWA.",
+      "download_as_pwa": "Split si můžete stáhnout na domovskou obrazovku jako PWA.",
       "title": "Stáhnout aplikaci",
       "using_android": "Používáte-li Android, podívejte se zde",
       "using_ios": "Používáte-li iOS, podívejte se zde",
       "video": "video"
     },
-    "download_splitpro_data": "Stáhnout data SplitPro",
+    "download_splitpro_data": "Stáhnout data Split",
     "edit_name": {
       "placeholder": "Zadejte jméno",
       "title": "Upravit jméno"
@@ -170,11 +170,11 @@
       "description_placeholder": "Zadejte popis",
       "pick_a_date": "Vyberte datum",
       "select_user_or_group": {
-        "add_to_split_pro": "Přidat do Split Pro",
+        "add_to_split_pro": "Přidat do Split",
         "note": "Poznámka: odesílání pozvánek je prozatím vypnuto kvůli spamu",
         "only_one_group_time": "Můžete mít jen jednu skupinu najednou",
         "send_invite": "Odeslat uživateli pozvánku",
-        "warning": "Varování: Pokud email není platný, nepoužívejte odeslat pozvánku. Místo toho použijte přidat do Split Pro. Při zneužití této funkce bude váš účet zablokován"
+        "warning": "Varování: Pokud email není platný, nepoužívejte odeslat pozvánku. Místo toho použijte přidat do Split. Při zneužití této funkce bude váš účet zablokován"
       },
       "split_type_section": {
         "split_equally": "rozdělit rovnoměrně",
@@ -296,12 +296,12 @@
     "no_members": {
       "add_members": "Přidat členy",
       "add_members_details": {
-        "add_to_split_pro": "Přidat do Split Pro",
+        "add_to_split_pro": "Přidat do Split",
         "note": "Poznámka: odesílání pozvánek emailem je vypnuto",
         "placeholder": "Zadejte jméno nebo email",
         "send_invite": "Odeslat uživateli pozvánku",
         "title": "Přidat členy",
-        "warning": "Varování: Pokud email není platný, nepoužívejte odeslat pozvánku. Místo toho použijte přidat do Split Pro. Při zneužití této funkce bude váš účet zablokován"
+        "warning": "Varování: Pokud email není platný, nepoužívejte odeslat pozvánku. Místo toho použijte přidat do Split. Při zneužití této funkce bude váš účet zablokován"
       },
       "invite_link": "Pozvánka",
       "no_members": "Ve skupině zatím nejsou žádní členové."
@@ -313,14 +313,14 @@
     "title": "Dluhy skupiny"
   },
   "invite_message": {
-    "in_splitpro": "ve Splitpro",
+    "in_splitpro": "ve Split",
     "join_to": "Připojte se k",
     "text": "Připojte se ke skupině a můžete přidávat a spravovat výdaje a sledovat své zůstatky"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Rozdělte si zdarma výdaje se svými přáteli",
-    "title": "SplitPro: Rozdělte si zdarma výdaje se svými přáteli"
+    "title": "Split: Rozdělte si zdarma výdaje se svými přáteli"
   },
   "navigation": {
     "account": "Účet",
@@ -409,7 +409,7 @@
     "settle_up_name": "Vyrovnat se",
     "settled_up": "Vyrovnáno",
     "settlement": "Vyrovnání",
-    "share_text": "Mrkni na SplitPro. Je to otevřená alternative ke Splitwise",
+    "share_text": "Mrkni na Split. Je to otevřená alternative ke Splitwise",
     "show_all_currencies": "Zobrazit všechny měny",
     "today": "Dnes",
     "total_balance": "Celkový zůstatek"

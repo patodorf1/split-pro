@@ -25,13 +25,13 @@
     "default_balance_currency": "Mata uang saldo bawaan",
     "download_app": "Unduh aplikasi",
     "download_app_details": {
-      "download_as_pwa": "Anda dapat mengunduh SplitPro sebagai PWA ke layar utama Anda.",
+      "download_as_pwa": "Anda dapat mengunduh Split sebagai PWA ke layar utama Anda.",
       "title": "Unduh aplikasi",
       "using_android": "Jika Anda menggunakan Android, lihat ini",
       "using_ios": "Jika Anda menggunakan iOS, lihat ini",
       "video": "video"
     },
-    "download_splitpro_data": "Unduh data SplitPro",
+    "download_splitpro_data": "Unduh data Split",
     "edit_name": {
       "apply_avatar": "Terapkan avatar",
       "avatar_label": "Foto profil",
@@ -192,11 +192,11 @@
       "description_placeholder": "Masukkan deskripsi",
       "pick_a_date": "Pilih tanggal",
       "select_user_or_group": {
-        "add_to_split_pro": "Tambahkan ke Split Pro",
+        "add_to_split_pro": "Tambahkan ke Split",
         "note": "Catatan: pengiriman undangan dinonaktifkan untuk saat ini karena spam",
         "only_one_group_time": "Anda hanya dapat memiliki satu kelompok dalam satu waktu",
         "send_invite": "Kirim undangan ke pengguna",
-        "warning": "Peringatan: Jangan gunakan kirim undangan jika email tidak valid. Gunakan tambahkan ke Split Pro sebagai gantinya. Akun Anda akan diblokir jika fitur ini disalahgunakan"
+        "warning": "Peringatan: Jangan gunakan kirim undangan jika email tidak valid. Gunakan tambahkan ke Split sebagai gantinya. Akun Anda akan diblokir jika fitur ini disalahgunakan"
       },
       "split_type_section": {
         "split_equally": "bagi rata",
@@ -326,12 +326,12 @@
     "no_members": {
       "add_members": "Tambah anggota",
       "add_members_details": {
-        "add_to_split_pro": "Tambahkan ke Split Pro",
+        "add_to_split_pro": "Tambahkan ke Split",
         "note": "Catatan: pengiriman undangan email dinonaktifkan",
         "placeholder": "Masukkan nama atau email",
         "send_invite": "Kirim undangan ke pengguna",
         "title": "Tambah anggota",
-        "warning": "Peringatan: Jangan gunakan kirim undangan jika email tidak valid. Gunakan tambahkan ke Split Pro sebagai gantinya. Akun Anda akan diblokir jika fitur ini disalahgunakan"
+        "warning": "Peringatan: Jangan gunakan kirim undangan jika email tidak valid. Gunakan tambahkan ke Split sebagai gantinya. Akun Anda akan diblokir jika fitur ini disalahgunakan"
       },
       "invite_link": "Tautan undangan",
       "no_members": "Belum ada anggota di kelompok ini."
@@ -343,14 +343,14 @@
     "title": "Saldo tertunggak kelompok"
   },
   "invite_message": {
-    "in_splitpro": "di Splitpro",
+    "in_splitpro": "di Split",
     "join_to": "Bergabung ke",
     "text": "Bergabunglah ke kelompok dan Anda dapat menambahkan, mengelola pengeluaran, serta melacak saldo Anda"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Bagi Pengeluaran dengan teman-teman Anda secara gratis",
-    "title": "SplitPro: Bagi Pengeluaran dengan teman-teman Anda secara gratis"
+    "title": "Split: Bagi Pengeluaran dengan teman-teman Anda secara gratis"
   },
   "navigation": {
     "account": "Akun",
@@ -439,7 +439,7 @@
     "settle_up_name": "Lunasi",
     "settled_up": "Sudah dilunasi",
     "settlement": "Pelunasan",
-    "share_text": "Coba SplitPro. Ini adalah alternatif gratis dan sumber terbuka untuk Splitwise",
+    "share_text": "Coba Split. Ini adalah alternatif gratis dan sumber terbuka untuk Splitwise",
     "show_all_currencies": "Tampilkan semua mata uang",
     "today": "Hari ini",
     "total_balance": "Total saldo"

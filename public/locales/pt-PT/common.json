@@ -25,13 +25,13 @@
     "default_balance_currency": "Moeda de saldo padrão",
     "download_app": "Descarregar app",
     "download_app_details": {
-      "download_as_pwa": "Poderás descarregar o SplitPro como PWA.",
+      "download_as_pwa": "Poderás descarregar o Split como PWA.",
       "title": "Descarregar app",
       "using_android": "Se estás a usar Android, vê isto",
       "using_ios": "Se estás a usar iOS, vê isto",
       "video": "vídeo"
     },
-    "download_splitpro_data": "Descarregar dados do SplitPro",
+    "download_splitpro_data": "Descarregar dados do Split",
     "edit_name": {
       "apply_avatar": "Aplicar avatar",
       "avatar_label": "Foto de perfil",
@@ -194,11 +194,11 @@
       "description_placeholder": "Insira a descrição",
       "pick_a_date": "Selecionar uma data",
       "select_user_or_group": {
-        "add_to_split_pro": "Adicionar ao Split Pro",
+        "add_to_split_pro": "Adicionar ao Split",
         "note": "Nota: opção de envio de convite está desativa para já devido ao spam",
         "only_one_group_time": "Só podes ter um grupo de cada vez",
         "send_invite": "Enviar convite para o utilizador",
-        "warning": "Atenção: Não envie um convite se o e-mail for inválido. Use a opção de adicionar ao Split Pro em vez disso. O uso indevido dos convites resultará no bloqueio da sua conta"
+        "warning": "Atenção: Não envie um convite se o e-mail for inválido. Use a opção de adicionar ao Split em vez disso. O uso indevido dos convites resultará no bloqueio da sua conta"
       },
       "split_type_section": {
         "split_equally": "dividir igualmente",
@@ -328,12 +328,12 @@
     "no_members": {
       "add_members": "Adicionar membros",
       "add_members_details": {
-        "add_to_split_pro": "Adicionar ao Split Pro",
+        "add_to_split_pro": "Adicionar ao Split",
         "note": "Nota: opção de envio de convite está desativa para já devido ao spam",
         "placeholder": "Insira o nome ou email",
         "send_invite": "Enviar convite para o utilizador",
         "title": "Adicionar membros",
-        "warning": "Atenção: Não envie um convite para um e-mail inválido. Em vez disso, use adicionar ao Split Pro. O uso indevido de convites resultará no bloqueio da sua conta"
+        "warning": "Atenção: Não envie um convite para um e-mail inválido. Em vez disso, use adicionar ao Split. O uso indevido de convites resultará no bloqueio da sua conta"
       },
       "copied": "Copiado",
       "invite_link": "Partilhar link de convite",
@@ -346,21 +346,21 @@
     "title": "Saldos em aberto do grupo"
   },
   "invite_message": {
-    "in_splitpro": "no Splitpro",
+    "in_splitpro": "no Split",
     "join_to": "Junte-se a",
     "text": "Junte-se ao grupo e poderá adicionar, gerir despesas e acompanhar os seus saldos"
   },
   "meta": {
-    "application_name": "SplitPro",
-    "description": "SplitPro: Divide as tuas despesas com os teus amigos gratuitamente",
-    "title": "SplitPro: Divide as tuas despesas com os teus amigos gratuitamente"
+    "application_name": "Split",
+    "description": "Split: Divide as tuas despesas com os teus amigos gratuitamente",
+    "title": "Split: Divide as tuas despesas com os teus amigos gratuitamente"
   },
   "navigation": {
     "account": "Conta",
     "activity": "Atividade",
     "add": "Adicionar",
     "add_expense": "Adicionar Despesa",
-    "app_name": "SplitPro",
+    "app_name": "Split",
     "balances": "Balancetes",
     "groups": "Grupos",
     "recurring": "Recorrente"
@@ -443,7 +443,7 @@
     "settle_up_name": "Acertar contas",
     "settled_up": "Acertou contas",
     "settlement": "Acerto de contas",
-    "share_text": "Testa o SplitPro. É uma alternativa gratuita ao Splitwise",
+    "share_text": "Testa o Split. É uma alternativa gratuita ao Splitwise",
     "show_all_currencies": "Mostrar todas as moedas",
     "today": "Hoje",
     "total_balance": "Saldo total"
