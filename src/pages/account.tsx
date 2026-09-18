@@ -5,7 +5,6 @@ import {
   Download,
   DownloadCloud,
   FileDown,
-  HeartHandshakeIcon,
   Languages,
   Palette,
   Star,
@@ -149,11 +148,6 @@ const AccountPage: NextPageWithUser<{
           <AccountButton href="https://github.com/oss-apps/split-pro">
             <SiGithub className="size-5" />
             {t('account.star_on_github')}
-          </AccountButton>
-
-          <AccountButton href="https://github.com/sponsors/krokosik">
-            <HeartHandshakeIcon className="text-primary size-5" />
-            {t('account.support_us')}
           </AccountButton>
 
           {feedBackPossible && <SubmitFeedback />}

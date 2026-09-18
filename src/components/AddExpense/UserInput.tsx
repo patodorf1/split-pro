@@ -2,6 +2,7 @@ import { useTranslation } from 'next-i18next';
 import Router from 'next/router';
 import { z } from 'zod';
 
+import { cn } from '~/lib/utils';
 import { useAddExpenseStore } from '~/store/addStore';
 import { api } from '~/utils/api';
 
@@ -9,7 +10,8 @@ import { EntityAvatar } from '../ui/avatar';
 
 export const UserInput: React.FC<{
   isEditing?: boolean;
-}> = ({ isEditing }) => {
+  className?: string;
+}> = ({ isEditing, className }) => {
   const { t } = useTranslation();
   const {
     setNameOrEmail,
@@ -72,7 +74,12 @@ export const UserInput: React.FC<{
   };
 
   return (
-    <div className="mt-4 flex gap-2 overflow-x-auto border-b pb-4 sm:flex-wrap">
+    <div
+      className={cn(
+        'mt-4 flex items-center gap-2 overflow-x-auto border-b pb-4 sm:flex-wrap',
+        className,
+      )}
+    >
       {group ? (
         <div className="bg-muted flex items-center gap-2 rounded-full p-0.5 pr-4">
           <EntityAvatar entity={group} size={30} />
@@ -107,7 +114,6 @@ export const UserInput: React.FC<{
         onChange={(e) => setNameOrEmail(e.target.value)}
         onKeyDown={handleKeyDown}
         className="min-w-[100px] grow bg-transparent outline-hidden placeholder:text-sm focus:ring-0"
-        autoFocus
         disabled={isEditing && Boolean(group)}
       />
     </div>

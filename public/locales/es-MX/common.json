@@ -232,6 +232,7 @@
         "add_to_split_pro": "Añadir a Split Pro",
         "note": "Nota: el envío de invitaciones está deshabilitado por ahora debido al spam",
         "only_one_group_time": "Solo puedes tener un grupo a la vez",
+        "search_label": "Buscar",
         "send_invite": "Enviar invitación al usuario",
         "warning": "Advertencia: No uses enviar invitación si el correo electrónico no es válido. Usa añadir a Split Pro en su lugar. Tu cuenta será bloqueada si se abusa de esta función"
       },

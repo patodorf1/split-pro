@@ -1,6 +1,4 @@
-import { HeartHandshakeIcon, Landmark, RefreshCcwDot, X } from 'lucide-react';
-import { useTranslation } from 'next-i18next';
-import Link from 'next/link';
+import { Landmark, RefreshCcwDot, X } from 'lucide-react';
 import { useRouter } from 'next/router';
 import React, { useCallback } from 'react';
 
@@ -282,6 +280,9 @@ export const AddOrEditExpensePage: React.FC<{
     router.back();
   }, [router]);
 
+  /** Todavía no se eligió con quién: es el paso de grupos/amigos con el buscador abajo. */
+  const isPickingFirstParticipant = !group && 1 === participants.length;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -302,11 +303,17 @@ export const AddOrEditExpensePage: React.FC<{
           {t('actions.save')}
         </Button>{' '}
       </div>
-      <UserInput isEditing={Boolean(expenseId)} />
-      {showFriends || (1 === participants.length && !group) ? (
-        <SelectUserOrGroup enableSendingInvites={enableSendingInvites} />
+      {isPickingFirstParticipant ? (
+        // Primer paso: grupos y amigos arriba, buscador abajo (lo pone SelectUserOrGroup).
+        <SelectUserOrGroup enableSendingInvites={enableSendingInvites} withSearch />
+      ) : showFriends ? (
+        <>
+          <UserInput isEditing={Boolean(expenseId)} />
+          <SelectUserOrGroup enableSendingInvites={enableSendingInvites} />
+        </>
       ) : (
         <>
+          <UserInput isEditing={Boolean(expenseId)} />
           <div className="mt-4 flex gap-2 sm:mt-10">
             <CategoryPicker category={category} onCategoryPick={setCategory} />
             <Input
@@ -402,7 +409,6 @@ export const AddOrEditExpensePage: React.FC<{
                 </Button>
               </RecurrenceInput>
             )}
-            <SponsorUs />
             <div className="flex gap-2">
               <AddBankTransactions bankConnectionEnabled={bankConnectionEnabled}>
                 <Button
@@ -429,25 +435,6 @@ export const AddOrEditExpensePage: React.FC<{
           </div>
         </>
       )}
-    </div>
-  );
-};
-
-const SponsorUs = () => {
-  const { t } = useTranslation();
-  return (
-    <div className="flex justify-center">
-      <Link href="https://github.com/sponsors/krokosik" target="_blank" className="mx-auto">
-        <Button
-          variant="outline"
-          className="text-md hover:text-foreground/80 border-primary justify-between rounded-full"
-        >
-          <div className="flex items-center gap-4">
-            <HeartHandshakeIcon className="text-primary h-5 w-5" />
-            {t('expense_details.add_expense_details.sponsor_us')}
-          </div>
-        </Button>
-      </Link>
     </div>
   );
 };
