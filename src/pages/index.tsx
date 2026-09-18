@@ -8,7 +8,7 @@ export default function Index() {
 
 export const getServerSideProps: GetServerSideProps = async () => ({
   redirect: {
-    destination: env.DEFAULT_HOMEPAGE ?? '/home',
+    destination: env.DEFAULT_HOMEPAGE ?? '/dashboard',
     permanent: true,
   },
 });

@@ -6,8 +6,10 @@ import { type YearMonth } from '~/lib/stats';
 import { cn } from '~/lib/utils';
 
 export const formatMonthLabel = (month: YearMonth, locale: string): string => {
-  // The date is built in UTC, so it must be formatted in UTC too: formatting it
-  // In a negative-offset zone would fall back to the previous month.
+  /*
+   * The date is built in UTC, so it must be formatted in UTC too: formatting
+   * it in a negative-offset zone would fall back to the previous month.
+   */
   const label = new Intl.DateTimeFormat(locale, {
     month: 'long',
     year: 'numeric',
