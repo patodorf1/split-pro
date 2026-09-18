@@ -7,6 +7,7 @@ import {
   DoorOpen,
   Info,
   Merge,
+  Pin,
   PlusIcon,
   Share,
   Trash2,
@@ -61,6 +62,8 @@ const BalancePage: NextPageWithUser<{
   const leaveGroupMutation = api.group.leaveGroup.useMutation();
   const toggleArchiveMutation = api.group.toggleArchive.useMutation();
   const toggleSimplifyDebtsMutation = api.group.toggleSimplifyDebts.useMutation();
+  const togglePinnedMutation = api.group.togglePinned.useMutation();
+  const apiUtils = api.useUtils();
   const updateGroupDetailsMutation = api.group.updateGroupDetails.useMutation();
   const upsertDefaultSplitMutation = api.group.upsertDefaultSplit.useMutation();
   const clearDefaultSplitMutation = api.group.clearDefaultSplit.useMutation();
@@ -381,6 +384,32 @@ const BalancePage: NextPageWithUser<{
               <div className="mt-8">
                 <p className="font-semibold">{t('group_details.group_info.actions')}</p>
                 <div className="child:h-7 mt-2 flex flex-col gap-4">
+                  <Label className="flex cursor-pointer items-center justify-between">
+                    <p className="flex items-center">
+                      <Pin className="mr-2 size-4" /> {t('group_details.group_info.pin_group')}
+                    </p>
+                    <Switch
+                      id="pin-group"
+                      checked={
+                        groupDetailQuery.data?.groupUsers.find((gu) => gu.userId === user.id)
+                          ?.pinned ?? false
+                      }
+                      onCheckedChange={() => {
+                        togglePinnedMutation.mutate(
+                          { groupId },
+                          {
+                            onSuccess: () => {
+                              void groupDetailQuery.refetch();
+                              void apiUtils.group.getAllGroupsWithBalances.invalidate();
+                            },
+                            onError: () => {
+                              toast.error(t('errors.setting_update_failed'));
+                            },
+                          },
+                        );
+                      }}
+                    />
+                  </Label>
                   <Label className="flex cursor-pointer items-center justify-between">
                     <p className="flex items-center">
                       <Merge className="mr-2 size-4" />{' '}

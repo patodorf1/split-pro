@@ -296,6 +296,7 @@
         "cant_remove": "Can't remove member until their outstanding balance is settled",
         "title": "Are you absolutely sure?"
       },
+      "pin_group": "Pin to top",
       "simplify_debts": "Simplify debts",
       "title": "Group info"
     },

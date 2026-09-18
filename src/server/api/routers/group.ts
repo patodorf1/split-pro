@@ -83,6 +83,10 @@ export const groupRouter = createTRPCRouter({
       });
 
       const sortedGroupsByLatestExpense = groups.sort((a, b) => {
+        // Pinned groups always come first; within each block, latest expense wins
+        if (a.pinned !== b.pinned) {
+          return a.pinned ? -1 : 1;
+        }
         const aDate = a.group.expenses[0]?.createdAt ?? new Date(0);
         const bDate = b.group.expenses[0]?.createdAt ?? new Date(0);
         return bDate.getTime() - aDate.getTime();
@@ -98,6 +102,7 @@ export const groupRouter = createTRPCRouter({
         return {
           ...g.group,
           balances,
+          pinned: g.pinned,
         };
       });
 
@@ -198,6 +203,19 @@ export const groupRouter = createTRPCRouter({
 
       return groupUsers;
     }),
+
+  togglePinned: groupProcedure.mutation(async ({ input, ctx }) => {
+    const groupUser = await ctx.db.groupUser.findUniqueOrThrow({
+      where: { groupId_userId: { groupId: input.groupId, userId: ctx.session.user.id } },
+    });
+
+    const updated = await ctx.db.groupUser.update({
+      where: { groupId_userId: { groupId: input.groupId, userId: ctx.session.user.id } },
+      data: { pinned: !groupUser.pinned },
+    });
+
+    return { pinned: updated.pinned };
+  }),
 
   toggleSimplifyDebts: groupProcedure
     .input(z.object({ groupId: z.number() }))

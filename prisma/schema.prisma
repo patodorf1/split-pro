@@ -143,6 +143,7 @@ model FriendDefaultSplit {
 model GroupUser {
   groupId Int
   userId  Int
+  pinned  Boolean @default(false)
   group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 

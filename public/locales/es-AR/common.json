@@ -282,6 +282,7 @@
         "cant_remove": "No se puede eliminar al miembro hasta que su saldo pendiente esté liquidado",
         "title": "¿Estás absolutamente seguro?"
       },
+      "pin_group": "Fijar arriba",
       "simplify_debts": "Simplificar deudas",
       "title": "Información del grupo"
     },
