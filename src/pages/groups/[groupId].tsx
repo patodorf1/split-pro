@@ -155,8 +155,8 @@ const BalancePage: NextPageWithUser<{
     }
   }, [groupDetailQuery.data?.defaultCurrency, setGroupDefaultCurrency, groupId]);
 
-  // Grupo inaccesible (borrado, o ya no soy miembro): que el arranque de la app
-  // No siga apuntando acá.
+  /* Grupo inaccesible (borrado, o ya no soy miembro): que el arranque de la app
+   * no siga apuntando acá. */
   const groupIsGone =
     groupDetailQuery.isError || (groupDetailQuery.isSuccess && !groupDetailQuery.data);
 
@@ -663,8 +663,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   });
 
   if (!group) {
-    // El grupo ya no existe: si el arranque de la app apuntaba acá, se borra el
-    // Recuerdo para no quedar rebotando contra una pantalla que no está.
+    /* El grupo ya no existe: si el arranque de la app apuntaba acá, se borra el
+     * recuerdo para no quedar rebotando contra una pantalla que no está. */
     const rememberedRaw = readCookieValue(context.req.headers.cookie, LAST_ROUTE_COOKIE);
 
     if (isRememberedRoute(rememberedRaw, `/groups/${Number(context.query.groupId)}`)) {

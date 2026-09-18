@@ -62,8 +62,8 @@ const FriendPage: NextPageWithUser = ({ user }) => {
       .map(([currency, amount]) => ({ currency, amount }));
   }, [balances.data]);
 
-  // Amigo inaccesible (eliminado, o sin permiso): que el arranque de la app no
-  // Siga apuntando acá.
+  /* Amigo inaccesible (eliminado, o sin permiso): que el arranque de la app no
+   * siga apuntando acá. */
   const friendIsGone = friendQuery.isError || (friendQuery.isSuccess && !friendQuery.data);
 
   useEffect(() => {

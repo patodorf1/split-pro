@@ -5,7 +5,7 @@ import { NetworkOnly, Serwist } from 'serwist';
 
 // This declares the value of `injectionPoint` to TypeScript.
 // `injectionPoint` is the string that will be replaced by the
-// Actual precache manifest. By default, this string is set to
+// actual precache manifest. By default, this string is set to
 // `"self.__SW_MANIFEST"`.
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
