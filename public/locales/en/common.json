@@ -511,8 +511,8 @@
     "preview": {
       "label": "Spent this month",
       "amount": "ARS 12,345",
-      "chip_one": "brunch",
-      "chip_two": "gym"
+      "chip_one": "groceries",
+      "chip_two": "fuel"
     },
     "names": {
       "lavanda": "Lavanda",

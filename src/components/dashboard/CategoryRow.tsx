@@ -2,10 +2,9 @@ import React from 'react';
 import { useTranslation } from 'next-i18next';
 
 import { CategoryIcon } from '~/components/ui/categoryIcons';
+import { ProgressBar } from '~/components/ui/progress-bar';
 import { getCategoryTranslationKey } from '~/lib/stats';
 import { cn } from '~/lib/utils';
-
-import { ProgressBar } from './ProgressBar';
 
 /** Translated name of a stored `Expense.category` value. */
 export const useCategoryLabel = () => {
@@ -33,6 +32,7 @@ export const CategoryRow: React.FC<{
       </div>
       <span className="text-foreground shrink-0 text-sm font-medium">{value}</span>
     </div>
-    <ProgressBar value={barValue} />
+    {/* Decorativa: la proporción ya está escrita al lado, así que el lector de pantalla la saltea. */}
+    <ProgressBar value={barValue} aria-hidden="true" />
   </div>
 );

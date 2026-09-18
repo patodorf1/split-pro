@@ -150,7 +150,7 @@ const SuggestionChip: React.FC<{ name: string; onPick: (name: string) => void }>
     <button
       type="button"
       onClick={onClick}
-      className="border-border text-muted-foreground hover:text-foreground shrink-0 rounded-full border px-3 py-1 text-sm whitespace-nowrap transition-colors"
+      className="bg-primary-soft text-primary shrink-0 rounded-full px-3 py-1 text-sm whitespace-nowrap transition-opacity hover:opacity-80"
     >
       {name}
     </button>

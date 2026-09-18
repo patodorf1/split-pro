@@ -97,16 +97,12 @@ export const ShoppingItemActions: React.FC<{ groupId: number; item: ShoppingItem
     >
       <div className="flex flex-col gap-4 px-1 pb-4 text-left">
         <label className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-xs tracking-wide uppercase">
-            {t('shopping.edit.name')}
-          </span>
+          <span className="section-label">{t('shopping.edit.name')}</span>
           <Input value={name} onChange={onNameChange} maxLength={MAX_SHOPPING_ITEM_NAME_LENGTH} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-xs tracking-wide uppercase">
-            {t('shopping.edit.quantity')}
-          </span>
+          <span className="section-label">{t('shopping.edit.quantity')}</span>
           <Input
             value={quantity}
             onChange={onQuantityChange}
@@ -116,9 +112,7 @@ export const ShoppingItemActions: React.FC<{ groupId: number; item: ShoppingItem
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-xs tracking-wide uppercase">
-            {t('shopping.edit.note')}
-          </span>
+          <span className="section-label">{t('shopping.edit.note')}</span>
           <Input
             value={note}
             onChange={onNoteChange}

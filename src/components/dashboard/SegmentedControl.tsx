@@ -64,7 +64,7 @@ export const SegmentedControl = <T extends string>({
     role="group"
     aria-label={label}
     className={cn(
-      'bg-primary/10 flex items-center gap-1 rounded-full',
+      'bg-primary-soft flex items-center gap-1 rounded-full',
       'sm' === size ? 'p-0.5' : 'p-1',
       className,
     )}

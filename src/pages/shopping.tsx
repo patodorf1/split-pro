@@ -16,7 +16,9 @@ import {
   AccordionTrigger,
 } from '~/components/ui/accordion';
 import { Button } from '~/components/ui/button';
+import { Card } from '~/components/ui/card';
 import { NativeSelect, NativeSelectOption } from '~/components/ui/native-select';
+import { SectionLabel } from '~/components/ui/section-label';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { type NextPageWithUser } from '~/types';
 import { api } from '~/utils/api';
@@ -289,9 +291,7 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
           <div className="flex flex-col gap-4 pb-36">
             {1 < groups.length ? (
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs tracking-wide uppercase">
-                  {t('shopping.group_label')}
-                </span>
+                <SectionLabel>{t('shopping.group_label')}</SectionLabel>
                 <NativeSelect
                   value={groupId ?? ''}
                   onChange={onGroupChange}
@@ -314,7 +314,7 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
             ) : null}
 
             {showAfterExpense ? (
-              <div className="border-border bg-card flex flex-col gap-3 rounded-2xl border p-4">
+              <Card className="flex flex-col gap-3">
                 <div>
                   <p className="text-sm font-medium">{t('shopping.after_expense.title')}</p>
                   <p className="text-muted-foreground text-sm">
@@ -329,7 +329,7 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
                     {t('shopping.actions.later')}
                   </Button>
                 </div>
-              </div>
+              </Card>
             ) : null}
 
             {0 === pending.length && 0 === checkedTotal && !listQuery.isPending ? (
@@ -344,10 +344,10 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
 
             {0 < pending.length ? (
               <section className="flex flex-col gap-2">
-                <h2 className="text-muted-foreground text-xs tracking-wide uppercase">
+                <SectionLabel>
                   {t('shopping.pending')} · {pending.length}
-                </h2>
-                <ul className="border-border divide-border divide-y rounded-2xl border px-3">
+                </SectionLabel>
+                <ul className="card-surface divide-border divide-y px-3">
                   {pending.map((item) => (
                     <ShoppingItemRow
                       key={item.id}
@@ -379,11 +379,14 @@ const ShoppingPage: NextPageWithUser = ({ user }) => {
 
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="bought" className="border-none">
-                    <AccordionTrigger className="text-muted-foreground text-xs tracking-wide uppercase">
-                      {t('shopping.bought')} · {checkedTotal}
+                    <AccordionTrigger className="text-primary py-3">
+                      {/* Va un span y no un <p>: adentro de un button sólo entra contenido de frase. */}
+                      <span className="section-label">
+                        {t('shopping.bought')} · {checkedTotal}
+                      </span>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <ul className="border-border divide-border divide-y rounded-2xl border px-3">
+                      <ul className="card-surface divide-border divide-y px-3">
                         {checked.map((item) => (
                           <ShoppingItemRow
                             key={item.id}

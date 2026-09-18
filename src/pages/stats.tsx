@@ -5,12 +5,13 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
-import { DashboardCard, SectionLabel } from '~/components/dashboard/DashboardCard';
 import { MonthSwitcher } from '~/components/dashboard/MonthSwitcher';
 import { SegmentedControl } from '~/components/dashboard/SegmentedControl';
 import { useMonthNavigation, useSelectedCurrency, useTimeZone } from '~/components/dashboard/hooks';
 import MainLayout from '~/components/Layout/MainLayout';
+import { Card } from '~/components/ui/card';
 import { NativeSelect, NativeSelectOption } from '~/components/ui/native-select';
+import { SectionLabel } from '~/components/ui/section-label';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { type YearMonth, monthOverMonthChange, percentageOf } from '~/lib/stats';
 import { cn } from '~/lib/utils';
@@ -146,9 +147,7 @@ const CategoryBreakdown: React.FC<{
 
   return (
     <div className="mt-4">
-      <SectionLabel className="text-muted-foreground">
-        {t('dashboard.stats.by_category')}
-      </SectionLabel>
+      <SectionLabel>{t('dashboard.stats.by_category')}</SectionLabel>
       <div className="mt-3 flex flex-col gap-4">
         {sorted.map(({ category, amount }) => (
           <div key={category}>
@@ -194,7 +193,7 @@ const MonthComparison: React.FC<{ current: bigint; previous: bigint; currency: s
   const Icon = isUp ? TrendingUpIcon : TrendingDownIcon;
 
   return (
-    <DashboardCard className="flex items-center gap-2">
+    <Card className="flex items-center gap-2">
       <Icon className={cn('size-4 shrink-0', isUp ? 'text-negative' : 'text-positive')} />
       <p className="text-muted-foreground text-sm">
         {0 === rounded
@@ -204,7 +203,7 @@ const MonthComparison: React.FC<{ current: bigint; previous: bigint; currency: s
           ({getCurrencyHelpersCached(currency).toUIString(previous)})
         </span>
       </p>
-    </DashboardCard>
+    </Card>
   );
 };
 
@@ -265,7 +264,7 @@ const StatsPage: NextPageWithUser = ({ user }) => {
         loading={summaryQuery.isPending && !summaryQuery.data}
       >
         <div className="flex flex-col gap-4 pb-8">
-          <DashboardCard>
+          <Card>
             <MonthSwitcher
               month={selected}
               canGoForward={canGoForward}
@@ -312,7 +311,7 @@ const StatsPage: NextPageWithUser = ({ user }) => {
               groupId={groupId}
               currency={currency || user.currency}
             />
-          </DashboardCard>
+          </Card>
 
           <MonthComparison
             current={total}

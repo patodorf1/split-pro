@@ -5,10 +5,10 @@ import React, { useMemo } from 'react';
 
 import { useIntlCronParser } from '~/hooks/useIntlCronParser';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
+import { Card, CardHeader } from '~/components/ui/card';
+import { SectionLabel } from '~/components/ui/section-label';
 import { cronFromBackend } from '~/lib/cron';
 import { api } from '~/utils/api';
-
-import { CardHeader, DashboardCard, SectionLabel } from './DashboardCard';
 
 /**
  * Next scheduled recurring expense. Renders nothing when there is none, so the
@@ -44,11 +44,11 @@ export const NextRecurringCard: React.FC = () => {
   const { toUIString } = getCurrencyHelpersCached(expense.currency);
 
   return (
-    <DashboardCard>
+    <Card>
       <CardHeader>
         <SectionLabel>{t('dashboard.recurring.title')}</SectionLabel>
       </CardHeader>
-      <Link href="/recurring" className="mt-3 flex items-start gap-2">
+      <Link href="/recurring" className="flex items-start gap-2">
         <RefreshCcwDot className="text-muted-foreground mt-0.5 size-4 shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
@@ -64,6 +64,6 @@ export const NextRecurringCard: React.FC = () => {
           ) : null}
         </div>
       </Link>
-    </DashboardCard>
+    </Card>
   );
 };

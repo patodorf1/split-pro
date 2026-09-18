@@ -4,7 +4,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
-import { CardHeader, DashboardCard, SectionLabel } from '~/components/dashboard/DashboardCard';
 import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
 import { NextRecurringCard } from '~/components/dashboard/NextRecurringCard';
@@ -14,7 +13,9 @@ import {
   useTimeZone,
 } from '~/components/dashboard/hooks';
 import MainLayout from '~/components/Layout/MainLayout';
+import { Card, CardHeader } from '~/components/ui/card';
 import { CategoryIcon, SettleupIcon } from '~/components/ui/categoryIcons';
+import { SectionLabel } from '~/components/ui/section-label';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { percentageOf } from '~/lib/stats';
 import { type NextPageWithUser } from '~/types';
@@ -39,13 +40,13 @@ const SpentThisMonthCard: React.FC<{ amount: bigint; currency: string }> = ({
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
 
   return (
-    <DashboardCard>
+    <Card>
       <SectionLabel>{t('dashboard.spent.title')}</SectionLabel>
       <p className="text-foreground mt-2 text-3xl font-semibold">
         {getCurrencyHelpersCached(currency).toUIString(amount)}
       </p>
       <p className="text-muted-foreground mt-1 text-sm">{t('dashboard.spent.subtitle')}</p>
-    </DashboardCard>
+    </Card>
   );
 };
 
@@ -72,7 +73,7 @@ const BalanceCard: React.FC<{ balances: Balances }> = ({ balances }) => {
   const settleHref = 1 === friendIds.size ? `/balances/${lines[0]!.friendId}` : '/balances';
 
   return (
-    <DashboardCard>
+    <Card>
       <SectionLabel>{t('dashboard.balance.title')}</SectionLabel>
       {0 === lines.length ? (
         <p className="text-muted-foreground mt-2 text-sm">{t('dashboard.balance.settled_up')}</p>
@@ -103,7 +104,7 @@ const BalanceCard: React.FC<{ balances: Balances }> = ({ balances }) => {
         {t('dashboard.balance.settle')}
         <ChevronRightIcon className="size-4" />
       </Link>
-    </DashboardCard>
+    </Card>
   );
 };
 
@@ -128,13 +129,13 @@ const TopCategoriesCard: React.FC<{ categories: CategoryTotals; total: bigint }>
   }
 
   return (
-    <DashboardCard>
+    <Card>
       <Link href="/stats" className="block">
         <CardHeader>
           <SectionLabel>{t('dashboard.top_categories.title')}</SectionLabel>
           <ChevronRightIcon className="text-primary size-4" />
         </CardHeader>
-        <div className="mt-3 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {top.map(({ category, mine }) => {
             const percentage = percentageOf(mine, total);
 
@@ -150,7 +151,7 @@ const TopCategoriesCard: React.FC<{ categories: CategoryTotals; total: bigint }>
           })}
         </div>
       </Link>
-    </DashboardCard>
+    </Card>
   );
 };
 
@@ -207,19 +208,19 @@ const RecentMovementsCard: React.FC<{ movements: RecentMovement[]; userId: numbe
   }
 
   return (
-    <DashboardCard>
+    <Card>
       <CardHeader>
         <SectionLabel>{t('dashboard.recent.title')}</SectionLabel>
         <Link href="/activity" className="text-primary text-xs font-medium">
           {t('dashboard.recent.view_all')}
         </Link>
       </CardHeader>
-      <ul className="mt-3 flex flex-col gap-3">
+      <ul className="flex flex-col gap-3">
         {movements.map((movement) => (
           <MovementRow key={movement.id} movement={movement} userId={userId} />
         ))}
       </ul>
-    </DashboardCard>
+    </Card>
   );
 };
 
