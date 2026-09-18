@@ -368,6 +368,28 @@
     "title": "Recurrencia",
     "view_recurring_page": "Ver página de recurrentes"
   },
+  "themes": {
+    "title": "Tema",
+    "section_label": "Paletas",
+    "system": {
+      "title": "Automático",
+      "description": "Sigue el modo claro u oscuro del sistema"
+    },
+    "preview": {
+      "label": "Gastado este mes",
+      "amount": "ARS 12.345",
+      "chip_one": "brunch",
+      "chip_two": "gym"
+    },
+    "names": {
+      "lavanda": "Lavanda",
+      "matcha": "Matcha",
+      "cafe": "Café",
+      "rosa": "Rosa",
+      "noche": "Noche",
+      "terminal": "Terminal"
+    }
+  },
   "ui": {
     "added_by": "Agregado por",
     "and": "y",
