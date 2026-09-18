@@ -20,13 +20,13 @@
     },
     "download_app": "Descargar aplicación",
     "download_app_details": {
-      "download_as_pwa": "Puedes descargar SplitPro como una PWA a tu pantalla de inicio.",
+      "download_as_pwa": "Puedes descargar Split como una PWA a tu pantalla de inicio.",
       "title": "Descargar aplicación",
       "using_android": "Si estás usando Android, comprueba lo siguiente",
       "using_ios": "Si estás usando iOS, comprueba lo siguiente",
       "video": "video"
     },
-    "download_splitpro_data": "Descargar datos de SplitPro",
+    "download_splitpro_data": "Descargar datos de Split",
     "edit_name": {
       "placeholder": "Nombre",
       "title": "Editar nombre"
@@ -228,12 +228,12 @@
       "description_placeholder": "Descripción",
       "pick_a_date": "Fecha",
       "select_user_or_group": {
-        "add_to_split_pro": "Añadir a SplitPro",
+        "add_to_split_pro": "Añadir a Split",
         "note": "Nota: el envío de invitaciones está deshabilitado por ahora debido al spam",
         "only_one_group_time": "Solo puedes tener un grupo a la vez",
         "search_label": "Buscar",
         "send_invite": "Enviar invitación",
-        "warning": "Advertencia: No uses enviar invitación si el correo electrónico no es válido. Usa añadir a SplitPro en su lugar. Tu cuenta será bloqueada si se abusa de esta función"
+        "warning": "Advertencia: No uses enviar invitación si el correo electrónico no es válido. Usa añadir a Split en su lugar. Tu cuenta será bloqueada si se abusa de esta función"
       },
       "split_type_section": {
         "split_equally": "dividir por igual",
@@ -358,12 +358,12 @@
     "no_members": {
       "add_members": "Añadir miembros",
       "add_members_details": {
-        "add_to_split_pro": "Añadir a SplitPro",
+        "add_to_split_pro": "Añadir a Split",
         "note": "Nota: el envío de invitaciones está deshabilitado",
         "placeholder": "Nombre o correo electrónico",
         "send_invite": "Enviar invitación",
         "title": "Añadir miembros",
-        "warning": "Advertencia: No uses enviar invitación si el correo electrónico no es válido. Usa añadir a SplitPro en su lugar. Tu cuenta será bloqueada si se abusa de esta función"
+        "warning": "Advertencia: No uses enviar invitación si el correo electrónico no es válido. Usa añadir a Split en su lugar. Tu cuenta será bloqueada si se abusa de esta función"
       },
       "invite_link": "Invitar miembros",
       "no_members": "Aún no hay miembros en el grupo."
@@ -375,14 +375,14 @@
     "title": "Saldos pendientes del grupo"
   },
   "invite_message": {
-    "in_splitpro": "en SlipPro",
+    "in_splitpro": "en Split",
     "join_to": "Únete a",
     "text": "Únete al grupo y podrás añadir, gestionar gastos y seguir tus saldos"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Divide gastos con tus amigos gratis",
-    "title": "SplitPro: Divide gastos con tus amigos gratis"
+    "title": "Split: Divide gastos con tus amigos gratis"
   },
   "navigation": {
     "account": "Cuenta",
@@ -542,7 +542,7 @@
     "settle_up_name": "Liquidar deuda",
     "settled_up": "Deuda liquidada",
     "settlement": "Liquidación",
-    "share_text": "Echa un vistazo a SplitPro. Una alternativa gratuita de código abierto a Splitwise",
+    "share_text": "Echa un vistazo a Split. Una alternativa gratuita de código abierto a Splitwise",
     "show_all_currencies": "Mostrar todas las monedas",
     "today": "Hoy",
     "total_balance": "Saldo total"

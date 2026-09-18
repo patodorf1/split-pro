@@ -29,7 +29,7 @@
       "using_ios": "आईओएस प्रयोग गर्दै",
       "video": "भिडियो ट्यूटोरियल"
     },
-    "download_splitpro_data": "SplitPro डाटा डाउनलोड गर्नुहोस्",
+    "download_splitpro_data": "Split डाटा डाउनलोड गर्नुहोस्",
     "edit_name": {
       "apply_avatar": "अभतार लागू गर्नुहोस्",
       "avatar_label": "प्रोफाइल तस्वीर",
@@ -190,7 +190,7 @@
       "description_placeholder": "विवरण (उदा: खाजा, भाडा)",
       "pick_a_date": "मिति छान्नुहोस्",
       "select_user_or_group": {
-        "add_to_split_pro": "Split Pro मा थप्नुहोस्",
+        "add_to_split_pro": "Split मा थप्नुहोस्",
         "note": "नोट",
         "only_one_group_time": "एक पटकमा एउटा मात्र समूह",
         "send_invite": "निमन्त्रणा पठाउनुहोस्",
@@ -321,7 +321,7 @@
     "no_members": {
       "add_members": "सदस्य थप्नुहोस्",
       "add_members_details": {
-        "add_to_split_pro": "Split Pro मा थप्नुहोस्",
+        "add_to_split_pro": "Split मा थप्नुहोस्",
         "note": "नोट",
         "placeholder": "नाम वा इमेल",
         "send_invite": "निमन्त्रणा पठाउनुहोस्",
@@ -338,14 +338,14 @@
     "title": "समूह विवरण"
   },
   "invite_message": {
-    "in_splitpro": "SplitPro मा",
+    "in_splitpro": "Split मा",
     "join_to": "सामेल हुनुहोस्",
     "text": "समूहमा सामेल हुनुहोस् र तपाईंले खर्चहरू थप्न, व्यवस्थापन गर्न र आफ्नो बाँकी हिसाब ट्र्याक गर्न सक्नुहुन्छ"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "आफ्ना साथीहरूसँग नि:शुल्क खर्च बाँड्नुहोस्",
-    "title": "SplitPro - आफ्ना साथीहरूसँग नि:शुल्क खर्च बाँड्नुहोस्"
+    "title": "Split - आफ्ना साथीहरूसँग नि:शुल्क खर्च बाँड्नुहोस्"
   },
   "navigation": {
     "account": "खाता",

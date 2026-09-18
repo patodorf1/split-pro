@@ -37,7 +37,7 @@
       "title": "Push notifikace"
     },
     "pwa_support": {
-      "description": "Milujete mobilní aplikace? Tak to jste u nás správně. Nainstalujte si SplitPro jako PWA a nepoznáte rozdíl!",
+      "description": "Milujete mobilní aplikace? Tak to jste u nás správně. Nainstalujte si Split jako PWA a nepoznáte rozdíl!",
       "title": "Podpora PWA"
     },
     "recurring_transactions": {
@@ -66,11 +66,11 @@
     "title_part1": "Rozdělte si výdaje s přáteli"
   },
   "meta": {
-    "description": "SplitPro: Rozdělte si zdarma výdaje s přáteli",
-    "title": "SplitPro: Rozdělte si zdarma výdaje se svými přáteli"
+    "description": "Split: Rozdělte si zdarma výdaje s přáteli",
+    "title": "Split: Rozdělte si zdarma výdaje se svými přáteli"
   },
   "nav": {
-    "app_name": "SplitPro",
+    "app_name": "Split",
     "privacy": "Soukromí",
     "terms": "Podmínky"
   }

@@ -20,13 +20,13 @@
     },
     "download_app": "Скачать приложение",
     "download_app_details": {
-      "download_as_pwa": "Вы можете установить SplitPro как PWA на свой рабочий стол.",
+      "download_as_pwa": "Вы можете установить Split как PWA на свой рабочий стол.",
       "title": "Загрузить приложение",
       "using_android": "Если вы используете Android, посмотрите это",
       "using_ios": "Если вы используете iOS, посмотрите это",
       "video": "видео"
     },
-    "download_splitpro_data": "Скачать данные SplitPro",
+    "download_splitpro_data": "Скачать данные Split",
     "edit_name": {
       "placeholder": "Введите имя",
       "title": "Изменить имя"

@@ -25,13 +25,13 @@
     "default_balance_currency": "Standaard saldo munteenheid",
     "download_app": "App downloaden",
     "download_app_details": {
-      "download_as_pwa": "Je kan SplitPro downloaden naar je startscherm als PWA.",
+      "download_as_pwa": "Je kan Split downloaden naar je startscherm als PWA.",
       "title": "App downloaden",
       "using_android": "Als je Android gebruikt, kijk dan hier eens naar",
       "using_ios": "Als je iOS gebruikt, kijk dan hier eens naar",
       "video": "video"
     },
-    "download_splitpro_data": "SplitPro gegevens downloaden",
+    "download_splitpro_data": "Split gegevens downloaden",
     "edit_name": {
       "apply_avatar": "Avatar toepassen",
       "avatar_label": "Profielfoto",
@@ -192,11 +192,11 @@
       "description_placeholder": "Beschrijving invullen",
       "pick_a_date": "Kies een datum",
       "select_user_or_group": {
-        "add_to_split_pro": "Toevoegen aan SplitPro",
+        "add_to_split_pro": "Toevoegen aan Split",
         "note": "Info: uitnodigingen versturen is voorlopig uitgeschakeld omwille van spam",
         "only_one_group_time": "Je kunt maar één groep tegelijk hebben",
         "send_invite": "Uitnodiging naar gebruiker versturen",
-        "warning": "Waarschuwing: Gebruik de functie 'Uitnodiging versturen' niet als het e-mailadres ongeldig is. Gebruik in plaats daarvan 'Toevoegen aan SplitPro'. Je account wordt geblokkeerd als deze functie wordt misbruikt"
+        "warning": "Waarschuwing: Gebruik de functie 'Uitnodiging versturen' niet als het e-mailadres ongeldig is. Gebruik in plaats daarvan 'Toevoegen aan Split'. Je account wordt geblokkeerd als deze functie wordt misbruikt"
       },
       "split_type_section": {
         "split_equally": "gelijk verdelen",
@@ -326,12 +326,12 @@
     "no_members": {
       "add_members": "Leden toevoegen",
       "add_members_details": {
-        "add_to_split_pro": "Toevoegen aan SplitPro",
+        "add_to_split_pro": "Toevoegen aan Split",
         "note": "Info: uitnodigingen per e-mail zijn uitgeschakeld",
         "placeholder": "Naam of e-mailadres invoeren",
         "send_invite": "Uitnodiging naar gebruiker versturen",
         "title": "Leden toevoegen",
-        "warning": "Waarschuwing: Gebruik de functie 'Uitnodiging versturen' niet als het e-mailadres ongeldig is. Gebruik in plaats daarvan 'Toevoegen aan SplitPro'. Je account wordt geblokkeerd als deze functie wordt misbruikt"
+        "warning": "Waarschuwing: Gebruik de functie 'Uitnodiging versturen' niet als het e-mailadres ongeldig is. Gebruik in plaats daarvan 'Toevoegen aan Split'. Je account wordt geblokkeerd als deze functie wordt misbruikt"
       },
       "invite_link": "Uitnodigingslink",
       "no_members": "Nog geen leden in de groep."
@@ -343,14 +343,14 @@
     "title": "Openstaande groepssaldo's"
   },
   "invite_message": {
-    "in_splitpro": "in SplitPro",
+    "in_splitpro": "in Split",
     "join_to": "Doe mee met",
     "text": "Word lid van de groep en voeg uitgaven toe, beheer ze en houd je saldo bij"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Deel uitgaven gratis met je vrienden",
-    "title": "SplitPro: Deel uitgaven gratis met je vrienden"
+    "title": "Split: Deel uitgaven gratis met je vrienden"
   },
   "navigation": {
     "account": "Account",
@@ -439,7 +439,7 @@
     "settle_up_name": "Vereffenen",
     "settled_up": "Vereffend",
     "settlement": "Schikking",
-    "share_text": "Bekijk SplitPro. Het is een gratis open source alternatief voor Splitwise",
+    "share_text": "Bekijk Split. Het is een gratis open source alternatief voor Splitwise",
     "show_all_currencies": "Alle munteenheden tonen",
     "today": "Vandaag",
     "total_balance": "Totaal saldo"

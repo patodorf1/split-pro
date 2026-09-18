@@ -25,13 +25,13 @@
     "default_balance_currency": "Standardwährung",
     "download_app": "App herunterladen",
     "download_app_details": {
-      "download_as_pwa": "Du kannst SplitPro als App auf deinen Startbildschirm herunterladen.",
+      "download_as_pwa": "Du kannst Split als App auf deinen Startbildschirm herunterladen.",
       "title": "App herunterladen",
       "using_android": "Wenn du Android benutzt, schau dir das an",
       "using_ios": "Wenn du iOS benutzt, schau dir das an",
       "video": "Video"
     },
-    "download_splitpro_data": "SplitPro-Daten herunterladen",
+    "download_splitpro_data": "Split-Daten herunterladen",
     "edit_name": {
       "apply_avatar": "Profilbild speichern",
       "avatar_label": "Profilbild",
@@ -199,7 +199,7 @@
         "note": "Hinweis: Einladung senden ist momentan wegen Spam deaktiviert",
         "only_one_group_time": "Du kannst jeweils nur eine Gruppe haben",
         "send_invite": "Einladung an Nutzer senden",
-        "warning": "Warnung: Versende keine Einladungen an ungültige E-Mail-Adressen. Nutze stattdessen 'Zu Split Pro hinzufügen'. Dein Konto wird bei Missbrauch gesperrt"
+        "warning": "Warnung: Versende keine Einladungen an ungültige E-Mail-Adressen. Nutze stattdessen 'Zu Split hinzufügen'. Dein Konto wird bei Missbrauch gesperrt"
       },
       "split_type_section": {
         "split_equally": "gleichmäßig verteilt",
@@ -346,14 +346,14 @@
     "title": "Ausstehende Gruppensalden"
   },
   "invite_message": {
-    "in_splitpro": "in SplitPro",
+    "in_splitpro": "in Split",
     "join_to": "Tritt bei",
     "text": "Tritt der Gruppe bei und du kannst Ausgaben hinzufügen, verwalten und deine Salden verfolgen"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Ausgaben mit deinen Freunden kostenlos teilen",
-    "title": "SplitPro: Teile Ausgaben mit deinen Freunden. Kostenlos"
+    "title": "Split: Teile Ausgaben mit deinen Freunden. Kostenlos"
   },
   "navigation": {
     "account": "Konto",
@@ -442,7 +442,7 @@
     "settle_up_name": "Ausgleichen",
     "settled_up": "Ausgeglichen",
     "settlement": "Ausgleich",
-    "share_text": "Schau dir SplitPro an, eine kostenlose Open-Source-Alternative zu Splitwise",
+    "share_text": "Schau dir Split an, eine kostenlose Open-Source-Alternative zu Splitwise",
     "show_all_currencies": "Alle Währungen anzeigen",
     "today": "Heute",
     "total_balance": "Gesamtguthaben"

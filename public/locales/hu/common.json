@@ -25,13 +25,13 @@
     "default_balance_currency": "Egyenleg alapértelmezett pénzneme",
     "download_app": "Alkalmazás letöltése",
     "download_app_details": {
-      "download_as_pwa": "A SplitPro-t PWA-ként letöltheted a kezdőképernyődre.",
+      "download_as_pwa": "A Splitet PWA-ként letöltheted a kezdőképernyődre.",
       "title": "Alkalmazás letöltése",
       "using_android": "Ha Androidot használsz, nézd meg ezt",
       "using_ios": "Ha iOS-t használsz, nézd meg ezt",
       "video": "videó"
     },
-    "download_splitpro_data": "SplitPro adatok letöltése",
+    "download_splitpro_data": "Split adatok letöltése",
     "edit_name": {
       "apply_avatar": "Avatar alkalmazása",
       "avatar_label": "Profilkép",
@@ -192,11 +192,11 @@
       "description_placeholder": "Írd be a leírást",
       "pick_a_date": "Válassz egy dátumot",
       "select_user_or_group": {
-        "add_to_split_pro": "Hozzáadás a SplitPro-hoz",
+        "add_to_split_pro": "Hozzáadás a Splithez",
         "note": "Megjegyzés: a meghívó küldése jelenleg le van tiltva a spam miatt",
         "only_one_group_time": "Egyszerre csak egy csoportod lehet",
         "send_invite": "Meghívó küldése felhasználónak",
-        "warning": "Figyelmeztetés: Ne használd a „meghívó küldése” funkciót, ha érvénytelen az e-mail cím. Helyette használd a „hozzáadás a SplitPro-hoz” funkciót. Fiókod blokkolásra kerül, ha ezt a funkciót nem rendeltetésszerűen használod"
+        "warning": "Figyelmeztetés: Ne használd a „meghívó küldése” funkciót, ha érvénytelen az e-mail cím. Helyette használd a „hozzáadás a Splithez” funkciót. Fiókod blokkolásra kerül, ha ezt a funkciót nem rendeltetésszerűen használod"
       },
       "split_type_section": {
         "split_equally": "egyenlően elosztva",
@@ -326,12 +326,12 @@
     "no_members": {
       "add_members": "Tagok hozzáadása",
       "add_members_details": {
-        "add_to_split_pro": "Hozzáadás a SplitPro-hoz",
+        "add_to_split_pro": "Hozzáadás a Splithez",
         "note": "Megjegyzés: az e-mail meghívók küldése le van tiltva",
         "placeholder": "Írd be a neved vagy az e-mail címed",
         "send_invite": "Meghívó küldése felhasználónak",
         "title": "Tagok hozzáadása",
-        "warning": "Figyelmeztetés: Ne használd a „meghívó küldése” funkciót, ha érvénytelen az e-mail cím. Helyette használd a „hozzáadás a SplitPro-hoz” funkciót. Fiókod blokkolásra kerül, ha ezt a funkciót nem rendeltetésszerűen használod"
+        "warning": "Figyelmeztetés: Ne használd a „meghívó küldése” funkciót, ha érvénytelen az e-mail cím. Helyette használd a „hozzáadás a Splithez” funkciót. Fiókod blokkolásra kerül, ha ezt a funkciót nem rendeltetésszerűen használod"
       },
       "invite_link": "Meghívólink",
       "no_members": "Még nincsenek tagok a csoportban."
@@ -343,14 +343,14 @@
     "title": "Csoportszintű kintlévőségek"
   },
   "invite_message": {
-    "in_splitpro": "a SplitPro-ban",
+    "in_splitpro": "a Splitben",
     "join_to": "Csatlakozás",
     "text": "Csatlakozz a csoporthoz, és hozzáadhatsz, kezelhetsz kiadásokat és nyomon követheted az egyenlegeidet"
   },
   "meta": {
-    "application_name": "SplitPro",
+    "application_name": "Split",
     "description": "Oszd meg költségeidet a barátaiddal ingyen",
-    "title": "SplitPro: Oszd meg költségeidet a barátaiddal ingyen"
+    "title": "Split: Oszd meg költségeidet a barátaiddal ingyen"
   },
   "navigation": {
     "account": "Fiók",
@@ -439,7 +439,7 @@
     "settle_up_name": "Kiegyenlítés",
     "settled_up": "Kiegyenlítve",
     "settlement": "Elszámolás",
-    "share_text": "Nézd meg a SplitPro-t. Ez egy nyílt forráskódú, ingyenes alternatívája a Splitwise-nak",
+    "share_text": "Nézd meg a Splitet. Ez egy nyílt forráskódú, ingyenes alternatívája a Splitwise-nak",
     "show_all_currencies": "Összes pénznem megjelenítése",
     "today": "Ma",
     "total_balance": "Összes egyenleg"
