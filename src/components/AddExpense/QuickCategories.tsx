@@ -10,8 +10,12 @@ import { api } from '~/utils/api';
 import { CategoryIcon } from '../ui/categoryIcons';
 import { Skeleton } from '../ui/skeleton';
 
-/** Alto fijo del renglón: reservado también mientras carga, así no salta el formulario. */
-const ROW_HEIGHT = 'h-[54px]';
+/**
+ * Alto fijo del renglón: reservado también mientras carga, así no salta el formulario. Da lugar al
+ * ícono y a dos líneas de texto, para que a 390 px los nombres largos ("Comestibles",
+ * "Electricidad") se lean enteros en vez de quedar cortados.
+ */
+const ROW_HEIGHT = 'h-[62px]';
 
 const QuickCategoryButton: React.FC<{
   category: string;
@@ -40,7 +44,7 @@ const QuickCategoryButton: React.FC<{
       )}
     >
       <CategoryIcon category={category} size={18} className="shrink-0" />
-      <span className="w-full truncate text-center text-[10px] leading-none">
+      <span className="line-clamp-2 w-full text-center text-[9px] leading-tight break-words hyphens-auto">
         {t(getCategoryTranslationKey(category))}
       </span>
     </button>
