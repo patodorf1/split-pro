@@ -20,6 +20,14 @@ export const CATEGORIES = {
 
 export const DEFAULT_CATEGORY = 'general';
 
+/**
+ * Solo aceptamos categorías que existan de verdad: una URL rara o un valor viejo guardado en la
+ * base no tienen que romper el selector ni los botones de categorías rápidas.
+ */
+export const isKnownCategory = (value: string): boolean =>
+  value in CATEGORIES ||
+  Object.values(CATEGORIES).some((items) => (items as readonly string[]).includes(value));
+
 export type CategorySection = keyof typeof CATEGORIES;
 
 type CategoryValues = (typeof CATEGORIES)[CategorySection][number];

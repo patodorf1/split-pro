@@ -397,6 +397,9 @@
     "groups": "Grupos",
     "recurring": "Recurrente"
   },
+  "quick_categories": {
+    "label": "Categorías más usadas"
+  },
   "recurrence": {
     "cron_expression": "Expresión Cron",
     "days_of_month": "Días del mes",

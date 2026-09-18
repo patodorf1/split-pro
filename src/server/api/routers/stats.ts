@@ -1,7 +1,15 @@
 import { Prisma, SplitType } from '@prisma/client';
 import { z } from 'zod';
 
+import { DEFAULT_CATEGORY } from '~/lib/category';
 import { addMonths, computeShare, getMonthRange, toUtcTimestampLiteral } from '~/lib/stats';
+import {
+  type CategoryUsage,
+  TOP_CATEGORIES_LIMIT,
+  TOP_CATEGORIES_RECENT_MONTHS,
+  monthsAgo,
+  rankTopCategories,
+} from '~/lib/topCategories';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import { db } from '~/server/db';
 
@@ -217,6 +225,59 @@ export const statsRouter = createTRPCRouter({
       });
 
       return expenses.map((expense) => withMyShare(expense, userId));
+    }),
+
+  /**
+   * Categorías más usadas, para los botones rápidos de "Agregar gasto". Con `groupId` mira solo
+   * ese grupo (previa verificación de que el usuario sea miembro); sin grupo, los gastos en los
+   * que participa. Cuenta los últimos 12 meses y, si no llegan a llenar el renglón, completa con
+   * el histórico. Las cuentas las hace la base, acá solo se ordena.
+   */
+  topCategories: protectedProcedure
+    .input(z.object({ groupId: z.number().int().positive().nullish() }).optional())
+    .query(async ({ ctx, input }): Promise<string[]> => {
+      const userId = ctx.session.user.id;
+      const groupId = input?.groupId ?? null;
+
+      if (groupId) {
+        const membership = await db.groupUser.findUnique({
+          where: { groupId_userId: { groupId, userId } },
+          select: { groupId: true },
+        });
+
+        if (!membership) {
+          return [];
+        }
+      }
+
+      const scope: Prisma.ExpenseWhereInput = {
+        deletedAt: null,
+        splitType: { not: SplitType.SETTLEMENT },
+        category: { not: DEFAULT_CATEGORY },
+        ...(groupId ? { groupId } : { expenseParticipants: { some: { userId } } }),
+      };
+
+      const countByCategory = async (where: Prisma.ExpenseWhereInput): Promise<CategoryUsage[]> => {
+        const rows = await db.expense.groupBy({
+          by: ['category'],
+          where,
+          _count: { _all: true },
+        });
+
+        return rows.map(({ category, _count }) => ({ category, count: _count._all }));
+      };
+
+      const recent = await countByCategory({
+        ...scope,
+        expenseDate: { gte: monthsAgo(TOP_CATEGORIES_RECENT_MONTHS) },
+      });
+      const topOfRecent = rankTopCategories(recent);
+
+      if (TOP_CATEGORIES_LIMIT <= topOfRecent.length) {
+        return topOfRecent;
+      }
+
+      return rankTopCategories(recent, await countByCategory(scope));
     }),
 
   /** Last movements of the user, settlements included. */

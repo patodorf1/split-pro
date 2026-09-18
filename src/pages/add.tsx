@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { AddOrEditExpensePage } from '~/components/AddExpense/AddExpensePage';
 import MainLayout from '~/components/Layout/MainLayout';
 import { env } from '~/env';
-import { CATEGORIES } from '~/lib/category';
+import { isKnownCategory } from '~/lib/category';
 import { cronFromBackend } from '~/lib/cron';
 import { parseCurrencyCode } from '~/lib/currency';
 import {
@@ -24,11 +24,6 @@ import { deserializeDefaultSplit } from '~/lib/defaultSplit';
 import { useAppStore } from '~/store/appStore';
 
 const MAX_QUERY_DESCRIPTION_LENGTH = 200;
-
-/** Solo aceptamos categorías que existan de verdad, así una URL rara no rompe el selector. */
-const isKnownCategory = (value: string): boolean =>
-  value in CATEGORIES ||
-  Object.values(CATEGORIES).some((items) => (items as readonly string[]).includes(value));
 
 const AddPage: NextPageWithUser<{
   enableSendingInvites: boolean;

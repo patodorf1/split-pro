@@ -423,6 +423,9 @@
     "balances": "Balances",
     "groups": "Groups"
   },
+  "quick_categories": {
+    "label": "Most used categories"
+  },
   "recurrence": {
     "title": "Recurrence",
     "description": "Set up automatic recurrence for this expense.",

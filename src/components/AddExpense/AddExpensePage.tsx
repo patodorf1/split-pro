@@ -15,6 +15,7 @@ import { Input } from '../ui/input';
 import AddBankTransactions from './AddBankTransactions';
 import { CategoryPicker } from './CategoryPicker';
 import { CurrencyPicker } from './CurrencyPicker';
+import { QuickCategories } from './QuickCategories';
 import { DateSelector } from './DateSelector';
 import { RecurrenceInput } from './RecurrenceInput';
 import { SelectUserOrGroup } from './SelectUserOrGroup';
@@ -314,7 +315,10 @@ export const AddOrEditExpensePage: React.FC<{
       ) : (
         <>
           <UserInput isEditing={Boolean(expenseId)} />
-          <div className="mt-4 flex gap-2 sm:mt-10">
+          <div className="mt-4 sm:mt-10">
+            <QuickCategories groupId={group?.id} category={category} onCategoryPick={setCategory} />
+          </div>
+          <div className="flex gap-2">
             <CategoryPicker category={category} onCategoryPick={setCategory} />
             <Input
               placeholder={t('expense_details.add_expense_details.description_placeholder')}
