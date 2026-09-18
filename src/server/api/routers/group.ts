@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
+import { resolveDefaultForAddToggle } from '~/lib/defaultGroup';
 import { simplifyDebts } from '~/lib/simplify';
 import { createTRPCRouter, groupProcedure, protectedProcedure } from '~/server/api/trpc';
 import { sendGroupSimplifyDebtsToggleNotification } from '~/server/api/services/notificationService';
@@ -215,6 +216,39 @@ export const groupRouter = createTRPCRouter({
     });
 
     return { pinned: updated.pinned };
+  }),
+
+  /**
+   * Marca (o desmarca) el grupo que viene preseleccionado al abrir "Agregar gasto".
+   * Solo puede haber uno por usuario, así que al activar uno se apagan los demás en la misma
+   * transacción. `groupProcedure` ya garantiza que quien llama es miembro del grupo.
+   */
+  toggleDefaultForAdd: groupProcedure.mutation(async ({ input, ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const groupUsers = await ctx.db.groupUser.findMany({
+      where: { userId },
+      select: { groupId: true, defaultForAdd: true },
+    });
+
+    const toggle = resolveDefaultForAddToggle(groupUsers, input.groupId);
+
+    if (!toggle) {
+      throw new TRPCError({ message: 'Not a group member', code: 'FORBIDDEN' });
+    }
+
+    await ctx.db.$transaction([
+      ctx.db.groupUser.updateMany({
+        where: { userId, groupId: { in: toggle.groupIdsToClear } },
+        data: { defaultForAdd: false },
+      }),
+      ctx.db.groupUser.update({
+        where: { groupId_userId: { groupId: input.groupId, userId } },
+        data: { defaultForAdd: toggle.defaultForAdd },
+      }),
+    ]);
+
+    return { defaultForAdd: toggle.defaultForAdd };
   }),
 
   toggleSimplifyDebts: groupProcedure

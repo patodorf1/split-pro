@@ -144,11 +144,13 @@ model FriendDefaultSplit {
 }
 
 model GroupUser {
-  groupId Int
-  userId  Int
-  pinned  Boolean @default(false)
-  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId       Int
+  userId        Int
+  pinned        Boolean @default(false)
+  /// Grupo preseleccionado al abrir "Agregar gasto". Como mucho uno por usuario.
+  defaultForAdd Boolean @default(false)
+  group         Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([groupId, userId])
   @@schema("public")
