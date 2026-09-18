@@ -1,0 +1,251 @@
+import { Prisma, SplitType } from '@prisma/client';
+import { z } from 'zod';
+
+import { addMonths, computeShare, getMonthRange, toUtcTimestampLiteral } from '~/lib/stats';
+import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
+import { db } from '~/server/db';
+
+/** Movements that are not spending and must never show up in the stats. */
+const NON_EXPENSE_SPLIT_TYPES = [SplitType.SETTLEMENT, SplitType.CURRENCY_CONVERSION];
+
+const monthInput = z.object({
+  year: z.number().int().min(1970).max(9999),
+  month: z.number().int().min(1).max(12),
+  timeZone: z.string().min(1).max(64),
+  groupId: z.number().int().positive().nullish(),
+});
+
+interface MonthlyAggregateRow {
+  period: 'current' | 'previous';
+  currency: string;
+  category: string;
+  ours: bigint;
+  mine: bigint;
+  count: number;
+}
+
+export interface CategoryTotal {
+  category: string;
+  ours: bigint;
+  mine: bigint;
+  count: number;
+}
+
+export interface CurrencyTotal {
+  currency: string;
+  ours: bigint;
+  mine: bigint;
+  categories: CategoryTotal[];
+}
+
+const getMyGroupIds = async (userId: number): Promise<number[]> => {
+  const rows = await db.groupUser.findMany({ where: { userId }, select: { groupId: true } });
+
+  return rows.map(({ groupId }) => groupId);
+};
+
+const emptyCurrencyTotal = (currency: string): CurrencyTotal => ({
+  currency,
+  ours: 0n,
+  mine: 0n,
+  categories: [],
+});
+
+/** Replaces the raw participant row by the plain share of the current user. */
+const withMyShare = <
+  T extends { amount: bigint; paidBy: number; expenseParticipants: { amount: bigint }[] },
+>(
+  expense: T,
+  userId: number,
+): Omit<T, 'expenseParticipants'> & { mine: bigint } => {
+  const { expenseParticipants, ...rest } = expense;
+
+  return {
+    ...rest,
+    mine: computeShare({
+      expenseAmount: expense.amount,
+      paidBy: expense.paidBy,
+      userId,
+      participantAmount: expenseParticipants[0]?.amount,
+    }),
+  };
+};
+
+export const statsRouter = createTRPCRouter({
+  /**
+   * Totals and per-category breakdown of a month, plus the previous month's
+   * totals so the UI can show the variation. Everything is aggregated by the
+   * database in a single pass; amounts are never mixed across currencies.
+   */
+  monthlySummary: protectedProcedure.input(monthInput).query(async ({ ctx, input }) => {
+    const userId = ctx.session.user.id;
+    const { year, month, timeZone, groupId } = input;
+
+    const previous = addMonths({ year, month }, -1);
+    const { from, to } = getMonthRange(year, month, timeZone);
+    const { from: previousFrom } = getMonthRange(previous.year, previous.month, timeZone);
+
+    const fromLiteral = toUtcTimestampLiteral(from);
+    const toLiteral = toUtcTimestampLiteral(to);
+    const previousFromLiteral = toUtcTimestampLiteral(previousFrom);
+
+    /*
+     * Without a group filter the scope is "every expense that concerns me":
+     * anything in one of my groups plus one-to-one expenses I take part in.
+     * With a group filter, the membership check keeps other groups out.
+     */
+    const groupFilter = groupId
+      ? Prisma.sql`
+          AND e."groupId" = ${groupId}
+          AND e."groupId" IN (SELECT "groupId" FROM "GroupUser" WHERE "userId" = ${userId})`
+      : Prisma.sql`
+          AND (
+            p."userId" IS NOT NULL
+            OR e."groupId" IN (SELECT "groupId" FROM "GroupUser" WHERE "userId" = ${userId})
+          )`;
+
+    const rows = await db.$queryRaw<MonthlyAggregateRow[]>`
+      WITH scoped AS (
+        SELECT
+          CASE
+            WHEN e."expenseDate" >= ${fromLiteral}::timestamp THEN 'current'
+            ELSE 'previous'
+          END AS period,
+          e.currency AS currency,
+          e.category AS category,
+          e.amount AS ours,
+          COALESCE(
+            CASE WHEN e."paidBy" = ${userId} THEN e.amount - p.amount ELSE -p.amount END,
+            0
+          ) AS mine
+        FROM "Expense" e
+        LEFT JOIN "ExpenseParticipant" p
+          ON p."expenseId" = e.id AND p."userId" = ${userId}
+        WHERE e."deletedAt" IS NULL
+          AND e."splitType" NOT IN ('SETTLEMENT', 'CURRENCY_CONVERSION')
+          AND e."expenseDate" >= ${previousFromLiteral}::timestamp
+          AND e."expenseDate" < ${toLiteral}::timestamp
+          ${groupFilter}
+      )
+      SELECT
+        period,
+        currency,
+        category,
+        SUM(ours)::bigint AS ours,
+        SUM(mine)::bigint AS mine,
+        COUNT(*)::int AS count
+      FROM scoped
+      GROUP BY period, currency, category
+    `;
+
+    const current = new Map<string, CurrencyTotal>();
+    const previousTotals = new Map<string, { currency: string; ours: bigint; mine: bigint }>();
+
+    for (const row of rows) {
+      if ('previous' === row.period) {
+        const entry = previousTotals.get(row.currency) ?? {
+          currency: row.currency,
+          ours: 0n,
+          mine: 0n,
+        };
+        entry.ours += row.ours;
+        entry.mine += row.mine;
+        previousTotals.set(row.currency, entry);
+      } else {
+        const entry = current.get(row.currency) ?? emptyCurrencyTotal(row.currency);
+        entry.ours += row.ours;
+        entry.mine += row.mine;
+        entry.categories.push({
+          category: row.category,
+          ours: row.ours,
+          mine: row.mine,
+          count: row.count,
+        });
+        current.set(row.currency, entry);
+      }
+    }
+
+    const sortedCurrent = [...current.values()].sort((a, b) => (a.ours > b.ours ? -1 : 1));
+    sortedCurrent.forEach((entry) => {
+      entry.categories.sort((a, b) => (a.ours > b.ours ? -1 : 1));
+    });
+
+    return {
+      current: sortedCurrent,
+      previous: [...previousTotals.values()],
+    };
+  }),
+
+  /** Expenses behind one category of one month, for the drill-down. */
+  categoryExpenses: protectedProcedure
+    .input(monthInput.extend({ currency: z.string().min(1).max(8), category: z.string().max(64) }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const { from, to } = getMonthRange(input.year, input.month, input.timeZone);
+      const myGroupIds = await getMyGroupIds(userId);
+
+      const expenses = await db.expense.findMany({
+        where: {
+          deletedAt: null,
+          splitType: { notIn: NON_EXPENSE_SPLIT_TYPES },
+          currency: input.currency,
+          category: input.category,
+          expenseDate: { gte: from, lt: to },
+          ...(input.groupId
+            ? { groupId: { in: myGroupIds.filter((id) => id === input.groupId) } }
+            : {
+                OR: [
+                  { groupId: { in: myGroupIds } },
+                  { expenseParticipants: { some: { userId } } },
+                ],
+              }),
+        },
+        select: {
+          id: true,
+          name: true,
+          amount: true,
+          currency: true,
+          category: true,
+          expenseDate: true,
+          paidBy: true,
+          groupId: true,
+          paidByUser: { select: { id: true, name: true, email: true, image: true } },
+          expenseParticipants: { where: { userId }, select: { amount: true } },
+        },
+        orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
+        take: 100,
+      });
+
+      return expenses.map((expense) => withMyShare(expense, userId));
+    }),
+
+  /** Last movements of the user, settlements included. */
+  recentActivity: protectedProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(20).default(5) }).optional())
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const expenses = await db.expense.findMany({
+        where: { deletedAt: null, expenseParticipants: { some: { userId } } },
+        select: {
+          id: true,
+          name: true,
+          amount: true,
+          currency: true,
+          category: true,
+          splitType: true,
+          expenseDate: true,
+          paidBy: true,
+          groupId: true,
+          paidByUser: { select: { id: true, name: true, email: true, image: true } },
+          expenseParticipants: { where: { userId }, select: { amount: true } },
+        },
+        orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
+        take: input?.limit ?? 5,
+      });
+
+      return expenses.map((expense) => withMyShare(expense, userId));
+    }),
+});
+
+export type StatsRouter = typeof statsRouter;

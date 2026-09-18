@@ -275,12 +275,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { callbackUrl, error } = context.query;
 
   if (session) {
-    const redirectUrl = env.DEFAULT_HOMEPAGE == '/home' ? '/balances' : env.DEFAULT_HOMEPAGE;
+    const redirectUrl = env.DEFAULT_HOMEPAGE == '/home' ? '/dashboard' : env.DEFAULT_HOMEPAGE;
     const destination = callbackUrl && !Array.isArray(callbackUrl) ? callbackUrl : redirectUrl;
 
     return {
       redirect: {
-        destination: destination ?? '/balances',
+        destination: destination ?? '/dashboard',
         permanent: false,
       },
     };

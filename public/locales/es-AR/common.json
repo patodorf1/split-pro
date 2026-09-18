@@ -128,6 +128,64 @@
     "success_toast": "Conversión de moneda configurada exitosamente",
     "title": "Conversión de moneda"
   },
+  "dashboard": {
+    "balance": {
+      "owes_you": "{{name}} te debe {{amount}}",
+      "settle": "Saldar",
+      "settled_up": "Están a mano",
+      "title": "Balance",
+      "you_owe": "Le debés {{amount}}"
+    },
+    "more": {
+      "account": "Cuenta",
+      "activity": "Actividad",
+      "balances": "Saldos por persona",
+      "recurring": "Recurrentes",
+      "stats": "Estadísticas",
+      "title": "Más"
+    },
+    "nav": {
+      "expenses": "Gastos",
+      "home": "Inicio",
+      "more": "Más",
+      "shopping": "Compras"
+    },
+    "recent": {
+      "title": "Últimos movimientos",
+      "view_all": "Ver todos"
+    },
+    "recurring": {
+      "title": "Próxima recurrente"
+    },
+    "spent": {
+      "subtitle": "Tu parte de los gastos compartidos",
+      "title": "Gastado este mes"
+    },
+    "stats": {
+      "all_groups": "Todos",
+      "by_category": "Por categoría",
+      "change": {
+        "down": "{{percent}}% menos que el mes pasado",
+        "same": "Igual que el mes pasado",
+        "up": "{{percent}}% más que el mes pasado"
+      },
+      "empty": "No hay gastos para mostrar",
+      "group": "Grupo",
+      "loading": "Cargando…",
+      "next_month": "Mes siguiente",
+      "previous_month": "Mes anterior",
+      "scope": {
+        "label": "Gastos de quién",
+        "mine": "Yo",
+        "ours": "Nosotros"
+      },
+      "title": "En qué se fue el mes"
+    },
+    "title": "Inicio",
+    "top_categories": {
+      "title": "Top categorías"
+    }
+  },
   "errors": {
     "amount_required": "La cantidad es requerida",
     "currency_conversion_error": "Error al configurar la conversión de moneda",

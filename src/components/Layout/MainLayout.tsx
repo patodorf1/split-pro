@@ -1,12 +1,17 @@
-import {
-  ListBulletIcon as SolidListBulletIcon,
-  PlusCircleIcon as SolidPlusCircleIcon,
-  ChartPieIcon as SolidScaleIcon,
-  UserCircleIcon as SolidUserCircleIcon,
-  UserGroupIcon as SolidUserGroupIcon,
-} from '@heroicons/react/24/solid';
 import { clsx } from 'clsx';
-import { type LucideIcon } from 'lucide-react';
+import {
+  ChartPieIcon,
+  EllipsisIcon,
+  HouseIcon,
+  ListIcon,
+  type LucideIcon,
+  PlusIcon,
+  ReceiptTextIcon,
+  RefreshCcwDotIcon,
+  ScaleIcon,
+  ShoppingCartIcon,
+  UserCircleIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
@@ -21,6 +26,33 @@ interface MainLayoutProps {
   loading?: boolean;
   hideAppBar?: boolean;
 }
+
+const HOME_LINK = '/dashboard';
+const EXPENSES_LINK = '/groups';
+const ADD_LINK = '/add';
+const SHOPPING_LINK = '/shopping';
+const MORE_LINK = '/more';
+
+/** Pages reachable from the "More" sheet keep that tab highlighted. */
+const MORE_SECTION_LINKS = [
+  MORE_LINK,
+  '/balances',
+  '/activity',
+  '/stats',
+  '/recurring',
+  '/account',
+];
+
+const isActiveLink = (currentPath: string | undefined, link: string) => {
+  if (!currentPath) {
+    return false;
+  }
+  if (MORE_LINK === link) {
+    return MORE_SECTION_LINKS.some((section) => currentPath.startsWith(section));
+  }
+
+  return currentPath === link || currentPath.startsWith(`${link}/`);
+};
 
 const MainLayout: React.FC<MainLayoutProps> = ({
   children,
@@ -43,38 +75,62 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         )}
       >
         <nav className="item-center -ml-[170px] hidden w-[170px] px-4 py-4 lg:flex lg:flex-col lg:gap-2">
-          <Link href="/balances" className="mb-8 flex items-center gap-2">
+          <Link href={HOME_LINK} className="mb-8 flex items-center gap-2">
             <span className="text-xl font-medium">
               {t?.('meta.application_name') ?? 'SplitPro'}
             </span>
           </Link>
           <NavItemDesktop
-            title={t?.('navigation.balances') ?? 'Balances'}
-            Icon={SolidScaleIcon}
-            link="/balances"
+            title={t?.('dashboard.nav.home') ?? 'Home'}
+            Icon={HouseIcon}
+            link={HOME_LINK}
             currentPath={currentPath}
           />
           <NavItemDesktop
-            title={t?.('navigation.groups') ?? 'Groups'}
-            Icon={SolidUserGroupIcon}
-            link="/groups"
+            title={t?.('dashboard.nav.expenses') ?? 'Expenses'}
+            Icon={ReceiptTextIcon}
+            link={EXPENSES_LINK}
             currentPath={currentPath}
           />
           <NavItemDesktop
             title={t?.('navigation.add_expense') ?? 'Add Expense'}
-            Icon={SolidPlusCircleIcon}
-            link="/add"
+            Icon={PlusIcon}
+            link={ADD_LINK}
             currentPath={currentPath}
           />
           <NavItemDesktop
-            title={t?.('navigation.activity') ?? 'Activity'}
-            Icon={SolidListBulletIcon}
+            title={t?.('dashboard.nav.shopping') ?? 'Shopping'}
+            Icon={ShoppingCartIcon}
+            link={SHOPPING_LINK}
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
+            title={t?.('dashboard.more.balances') ?? 'Balances'}
+            Icon={ScaleIcon}
+            link="/balances"
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
+            title={t?.('dashboard.more.activity') ?? 'Activity'}
+            Icon={ListIcon}
             link="/activity"
             currentPath={currentPath}
           />
           <NavItemDesktop
-            title={t?.('navigation.account') ?? 'Account'}
-            Icon={SolidUserCircleIcon}
+            title={t?.('dashboard.more.stats') ?? 'Stats'}
+            Icon={ChartPieIcon}
+            link="/stats"
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
+            title={t?.('dashboard.more.recurring') ?? 'Recurring'}
+            Icon={RefreshCcwDotIcon}
+            link="/recurring"
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
+            title={t?.('dashboard.more.account') ?? 'Account'}
+            Icon={UserCircleIcon}
             link="/account"
             currentPath={currentPath}
           />
@@ -99,35 +155,30 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
       </div>
 
-      <nav className="bg-background/85 border-border fixed bottom-0 flex w-full justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
+      <nav className="bg-background/80 border-border fixed bottom-0 flex w-full items-end justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
         <NavItem
-          title={t?.('navigation.balances') ?? 'Balances'}
-          Icon={SolidScaleIcon}
-          link="/balances"
+          title={t?.('dashboard.nav.home') ?? 'Home'}
+          Icon={HouseIcon}
+          link={HOME_LINK}
           currentPath={currentPath}
         />
         <NavItem
-          title={t?.('navigation.groups') ?? 'Groups'}
-          Icon={SolidUserGroupIcon}
-          link="/groups"
+          title={t?.('dashboard.nav.expenses') ?? 'Expenses'}
+          Icon={ReceiptTextIcon}
+          link={EXPENSES_LINK}
+          currentPath={currentPath}
+        />
+        <AddExpenseNavItem title={t?.('navigation.add') ?? 'Add'} link={ADD_LINK} />
+        <NavItem
+          title={t?.('dashboard.nav.shopping') ?? 'Shopping'}
+          Icon={ShoppingCartIcon}
+          link={SHOPPING_LINK}
           currentPath={currentPath}
         />
         <NavItem
-          title={t?.('navigation.add') ?? 'Add'}
-          Icon={SolidPlusCircleIcon}
-          link="/add"
-          currentPath={currentPath}
-        />
-        <NavItem
-          title={t?.('navigation.activity') ?? 'Activity'}
-          Icon={SolidListBulletIcon}
-          link="/activity"
-          currentPath={currentPath}
-        />
-        <NavItem
-          title={t?.('navigation.account') ?? 'Account'}
-          Icon={SolidUserCircleIcon}
-          link="/account"
+          title={t?.('dashboard.nav.more') ?? 'More'}
+          Icon={EllipsisIcon}
+          link={MORE_LINK}
           currentPath={currentPath}
         />
       </nav>
@@ -143,14 +194,15 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ title, Icon, link, currentPath }) => {
-  const isActive = currentPath?.startsWith(link);
+  const isActive = isActiveLink(currentPath, link);
 
   return (
     <Link
       href={link}
-      className={clsx('flex w-32 flex-col items-center justify-between gap-2 py-4')}
+      aria-current={isActive ? 'page' : undefined}
+      className="flex flex-1 flex-col items-center justify-end gap-1.5 py-4"
     >
-      <Icon className={clsx('h-7 w-7', isActive ? 'text-primary' : 'text-muted-foreground')} />
+      <Icon className={clsx('h-6 w-6', isActive ? 'text-primary' : 'text-muted-foreground')} />
       <span
         className={clsx('text-xs', isActive ? 'text-primary font-medium' : 'text-muted-foreground')}
       >
@@ -160,12 +212,25 @@ const NavItem: React.FC<NavItemProps> = ({ title, Icon, link, currentPath }) => 
   );
 };
 
+/** Center action of the bottom bar: a raised circular button. */
+const AddExpenseNavItem: React.FC<{ title: string; link: string }> = ({ title, link }) => (
+  <Link href={link} aria-label={title} className="flex flex-1 flex-col items-center py-4">
+    <span className="bg-primary text-primary-foreground flex size-13 items-center justify-center rounded-full shadow-lg">
+      <PlusIcon className="size-7" />
+    </span>
+  </Link>
+);
+
 const NavItemDesktop: React.FC<NavItemProps> = ({ title, Icon, link, currentPath }) => {
-  const isActive = currentPath?.startsWith(link);
+  const isActive = isActiveLink(currentPath, link);
 
   return (
-    <Link href={link} className={clsx('flex w-[150px] items-center gap-2 py-4')}>
-      <Icon className={clsx('h-7 w-7', isActive ? 'text-primary' : 'text-muted-foreground')} />
+    <Link
+      href={link}
+      aria-current={isActive ? 'page' : undefined}
+      className={clsx('flex w-[150px] items-center gap-2 py-3')}
+    >
+      <Icon className={clsx('h-6 w-6', isActive ? 'text-primary' : 'text-muted-foreground')} />
       <span
         className={clsx(
           'capitalize',
