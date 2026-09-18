@@ -72,6 +72,11 @@ export const env = createEnv({
     OIDC_WELL_KNOWN_URL: z.string().optional(),
     OIDC_ALLOW_DANGEROUS_EMAIL_LINKING: z.boolean().optional(),
     UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().int().positive().default(10),
+    /**
+     * Clave para la API externa de la lista de compras (Home Assistant / n8n).
+     * Si no está seteada, los endpoints `/api/external/*` responden 404 y no existen.
+     */
+    EXTERNAL_API_KEY: z.string().min(16).optional(),
   },
 
   /**
@@ -143,6 +148,7 @@ export const env = createEnv({
     UPLOAD_MAX_FILE_SIZE_MB: process.env.UPLOAD_MAX_FILE_SIZE_MB
       ? Number(process.env.UPLOAD_MAX_FILE_SIZE_MB)
       : 10,
+    EXTERNAL_API_KEY: process.env.EXTERNAL_API_KEY,
     NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
     NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA,
   },
