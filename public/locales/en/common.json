@@ -127,6 +127,64 @@
     "success_toast": "Currency conversion set successfully",
     "title": "Currency conversion"
   },
+  "dashboard": {
+    "balance": {
+      "owes_you": "{{name}} owes you {{amount}}",
+      "settle": "Settle up",
+      "settled_up": "You are all settled up",
+      "title": "Balance",
+      "you_owe": "You owe {{amount}}"
+    },
+    "more": {
+      "account": "Account",
+      "activity": "Activity",
+      "balances": "Balances by person",
+      "recurring": "Recurring",
+      "stats": "Stats",
+      "title": "More"
+    },
+    "nav": {
+      "expenses": "Expenses",
+      "home": "Home",
+      "more": "More",
+      "shopping": "Shopping"
+    },
+    "recent": {
+      "title": "Latest movements",
+      "view_all": "See all"
+    },
+    "recurring": {
+      "title": "Next recurring"
+    },
+    "spent": {
+      "subtitle": "Your share of the shared expenses",
+      "title": "Spent this month"
+    },
+    "stats": {
+      "all_groups": "All groups",
+      "by_category": "By category",
+      "change": {
+        "down": "{{percent}}% less than last month",
+        "same": "Same as last month",
+        "up": "{{percent}}% more than last month"
+      },
+      "empty": "No expenses to show",
+      "group": "Group",
+      "loading": "Loading…",
+      "next_month": "Next month",
+      "previous_month": "Previous month",
+      "scope": {
+        "label": "Whose expenses",
+        "mine": "Me",
+        "ours": "Us"
+      },
+      "title": "Where the month went"
+    },
+    "title": "Home",
+    "top_categories": {
+      "title": "Top categories"
+    }
+  },
   "errors": {
     "currency_conversion_error": "Error while setting currency conversion",
     "email_invalid": "Email is invalid, please try the signin flow again.",
