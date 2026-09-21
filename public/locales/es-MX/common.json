@@ -178,6 +178,89 @@
       "title": "Top categorías"
     }
   },
+  "documents": {
+    "actions": {
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "delete": "Borrar",
+      "download": "Descargar",
+      "menu": "Opciones de {{name}}",
+      "move": "Mover a…",
+      "rename": "Renombrar",
+      "save": "Guardar",
+      "share": "Compartir"
+    },
+    "confirm_delete": {
+      "description": "“{{name}}” deja de verse en la app para los dos.",
+      "title": "¿Borrar el documento?"
+    },
+    "count_one": "{{count}} documento",
+    "count_other": "{{count}} documentos",
+    "count_zero": "Vacía",
+    "empty": {
+      "no_folders": "Todavía no hay secciones. Crea la primera: una por persona, auto o lo que quieras.",
+      "search": "No encontramos documentos con “{{query}}”.",
+      "subtitle": "Sube el seguro, la tarjeta de circulación, la INE… lo que quieras tener a mano.",
+      "title": "Todavía no hay documentos en {{name}}."
+    },
+    "errors": {
+      "empty": "“{{name}}” está vacío.",
+      "generic": "No salió. Inténtalo de nuevo.",
+      "not_found": "Esa sección ya no existe.",
+      "share_failed": "No se pudo compartir. Intenta descargarlo.",
+      "too_large": "“{{name}}” pesa más de {{max}} MB.",
+      "type_mismatch": "“{{name}}” no es lo que dice ser: el contenido no coincide con la extensión.",
+      "type_not_allowed": "“{{name}}” no es un tipo permitido. Sube PDF, fotos, Word, Excel o texto."
+    },
+    "expires": "Vence el {{date}}",
+    "folder": {
+      "create": "Nueva sección",
+      "delete": "Borrar sección",
+      "delete_blocked": "Para borrarla, primero mueve o borra sus documentos.",
+      "delete_confirm": "Se borra la sección “{{name}}”. No tiene documentos.",
+      "done": "Listo",
+      "edit": "Editar sección",
+      "edit_sections": "Ordenar y editar",
+      "exists": "Ya hay una sección con ese nombre.",
+      "group": "Grupo",
+      "icon": "Ícono",
+      "move_down": "Bajar",
+      "move_up": "Subir",
+      "name": "Nombre",
+      "name_placeholder": "Ej.: Abuela, Moto, Perro"
+    },
+    "groups_shortcut_hint": "Saldos y gastos de cada grupo",
+    "move": {
+      "current": "Actual",
+      "title": "Mover a…"
+    },
+    "nav": "Documentos",
+    "rename": {
+      "placeholder": "Nombre del documento",
+      "title": "Renombrar"
+    },
+    "search_placeholder": "Buscar en todos los documentos",
+    "sections": "Secciones",
+    "share_retry": "Listo. Toca Compartir de nuevo.",
+    "title": "Documentos",
+    "toast": {
+      "deleted": "Documento borrado",
+      "moved": "Movido a {{name}}",
+      "renamed": "Nombre actualizado",
+      "uploaded_one": "Subimos {{count}} documento",
+      "uploaded_other": "Subimos {{count}} documentos"
+    },
+    "upload": {
+      "button": "Subir",
+      "hint": "PDF, fotos, Word, Excel o texto. Hasta {{max}} MB por archivo.",
+      "progress": "Subiendo {{current}} de {{total}}"
+    },
+    "uploaded_by": "Subió {{name}}",
+    "viewer": {
+      "close": "Cerrar",
+      "open": "Abrir"
+    }
+  },
   "errors": {
     "currency_conversion_error": "Error al establecer la conversión de moneda",
     "currency_conversion_failed": "Error al convertir monedas",

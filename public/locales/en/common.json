@@ -177,6 +177,89 @@
       "title": "Top categories"
     }
   },
+  "documents": {
+    "actions": {
+      "cancel": "Cancel",
+      "create": "Create",
+      "delete": "Delete",
+      "download": "Download",
+      "menu": "Options for {{name}}",
+      "move": "Move to…",
+      "rename": "Rename",
+      "save": "Save",
+      "share": "Share"
+    },
+    "confirm_delete": {
+      "description": "“{{name}}” will no longer show in the app for either of you.",
+      "title": "Delete document?"
+    },
+    "count_one": "{{count}} document",
+    "count_other": "{{count}} documents",
+    "count_zero": "Empty",
+    "empty": {
+      "no_folders": "No sections yet. Create the first one: one per person, car or anything you like.",
+      "search": "No documents match “{{query}}”.",
+      "subtitle": "Upload the insurance, the registration, the ID… anything you want at hand.",
+      "title": "No documents in {{name}} yet."
+    },
+    "errors": {
+      "empty": "“{{name}}” is empty.",
+      "generic": "That didn't work. Try again.",
+      "not_found": "That section no longer exists.",
+      "share_failed": "Couldn't share it. Try downloading it.",
+      "too_large": "“{{name}}” is larger than {{max}} MB.",
+      "type_mismatch": "“{{name}}” isn't what it claims to be: its content doesn't match the extension.",
+      "type_not_allowed": "“{{name}}” isn't an allowed type. Upload PDF, photos, Word, Excel or text."
+    },
+    "expires": "Expires {{date}}",
+    "folder": {
+      "create": "New section",
+      "delete": "Delete section",
+      "delete_blocked": "To delete it, first move or delete its documents.",
+      "delete_confirm": "The section “{{name}}” will be deleted. It has no documents.",
+      "done": "Done",
+      "edit": "Edit section",
+      "edit_sections": "Reorder and edit",
+      "exists": "There's already a section with that name.",
+      "group": "Group",
+      "icon": "Icon",
+      "move_down": "Move down",
+      "move_up": "Move up",
+      "name": "Name",
+      "name_placeholder": "E.g. Grandma, Bike, Dog"
+    },
+    "groups_shortcut_hint": "Balances and expenses for each group",
+    "move": {
+      "current": "Current",
+      "title": "Move to…"
+    },
+    "nav": "Documents",
+    "rename": {
+      "placeholder": "Document name",
+      "title": "Rename"
+    },
+    "search_placeholder": "Search all documents",
+    "sections": "Sections",
+    "share_retry": "Ready. Tap Share again.",
+    "title": "Documents",
+    "toast": {
+      "deleted": "Document deleted",
+      "moved": "Moved to {{name}}",
+      "renamed": "Name updated",
+      "uploaded_one": "Uploaded {{count}} document",
+      "uploaded_other": "Uploaded {{count}} documents"
+    },
+    "upload": {
+      "button": "Upload",
+      "hint": "PDF, photos, Word, Excel or text. Up to {{max}} MB per file.",
+      "progress": "Uploading {{current}} of {{total}}"
+    },
+    "uploaded_by": "Uploaded by {{name}}",
+    "viewer": {
+      "close": "Close",
+      "open": "Open"
+    }
+  },
   "errors": {
     "currency_conversion_error": "Error while setting currency conversion",
     "email_invalid": "Email is invalid, please try the signin flow again.",

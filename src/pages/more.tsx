@@ -7,6 +7,7 @@ import {
   RefreshCcwDotIcon,
   ScaleIcon,
   UserCircleIcon,
+  UsersIcon,
 } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -38,6 +39,23 @@ const MorePage: NextPageWithUser = () => {
         <title>{t('dashboard.more.title')}</title>
       </Head>
       <MainLayout title={t('dashboard.more.title')}>
+        {/* Grupos salió de la barra inferior (su lugar lo ocupa Documentos): va destacado acá arriba. */}
+        <Card className="mb-4 px-0 py-0">
+          <Link href="/groups" className="flex w-full items-center gap-3 px-4 py-4 text-left">
+            <span className="bg-primary-soft text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
+              <UsersIcon className="size-5" />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-foreground text-base font-semibold">
+                {t('navigation.groups')}
+              </span>
+              <span className="text-muted-foreground text-xs">
+                {t('documents.groups_shortcut_hint')}
+              </span>
+            </span>
+            <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
+          </Link>
+        </Card>
         <Card className="px-0 py-1">
           <ul>
             {ENTRIES.map(({ href, labelKey, Icon }) => (

@@ -2,15 +2,16 @@ import { clsx } from 'clsx';
 import {
   ChartPieIcon,
   EllipsisIcon,
+  FolderOpenIcon,
   HouseIcon,
   ListIcon,
   type LucideIcon,
   PlusIcon,
-  ReceiptTextIcon,
   RefreshCcwDotIcon,
   ScaleIcon,
   ShoppingCartIcon,
   UserCircleIcon,
+  UsersIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -28,7 +29,9 @@ interface MainLayoutProps {
 }
 
 const HOME_LINK = '/dashboard';
-const EXPENSES_LINK = '/groups';
+const DOCUMENTS_LINK = '/documents';
+/** "Grupos" (lista de grupos y saldos): vive dentro de "Más" en el celular. */
+const GROUPS_LINK = '/groups';
 const ADD_LINK = '/add';
 const SHOPPING_LINK = '/shopping';
 const MORE_LINK = '/more';
@@ -36,6 +39,7 @@ const MORE_LINK = '/more';
 /** Pages reachable from the "More" sheet keep that tab highlighted. */
 const MORE_SECTION_LINKS = [
   MORE_LINK,
+  GROUPS_LINK,
   '/balances',
   '/activity',
   '/stats',
@@ -85,9 +89,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             currentPath={currentPath}
           />
           <NavItemDesktop
-            title={t?.('dashboard.nav.expenses') ?? 'Expenses'}
-            Icon={ReceiptTextIcon}
-            link={EXPENSES_LINK}
+            title={t?.('documents.nav') ?? 'Documents'}
+            Icon={FolderOpenIcon}
+            link={DOCUMENTS_LINK}
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
+            title={t?.('navigation.groups') ?? 'Groups'}
+            Icon={UsersIcon}
+            link={GROUPS_LINK}
             currentPath={currentPath}
           />
           <NavItemDesktop
@@ -161,9 +171,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           currentPath={currentPath}
         />
         <NavItem
-          title={t?.('dashboard.nav.expenses') ?? 'Expenses'}
-          Icon={ReceiptTextIcon}
-          link={EXPENSES_LINK}
+          title={t?.('documents.nav') ?? 'Documents'}
+          Icon={FolderOpenIcon}
+          link={DOCUMENTS_LINK}
           currentPath={currentPath}
         />
         <AddExpenseNavItem title={t?.('navigation.add') ?? 'Add'} link={ADD_LINK} />

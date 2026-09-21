@@ -28,6 +28,8 @@ describe('isRememberableRoute', () => {
     '/more',
     '/account',
     '/recurring',
+    '/documents',
+    '/documents/3',
   ])('should remember the navigation screen %s', (path) => {
     expect(isRememberableRoute(path)).toBe(true);
   });
@@ -47,6 +49,8 @@ describe('isRememberableRoute', () => {
     '/terms',
     '/404',
     '/dashboards-fake',
+    '/documents-fake',
+    '/api/documents/3f1c2a4e-1111-4222-8333-444455556666',
     '/groups/7/edit',
     '/groups/7/edit/split',
   ])('should not remember %s', (path) => {

@@ -32,6 +32,7 @@ const REMEMBERABLE_PREFIXES = [
   '/activity',
   '/balances',
   '/dashboard',
+  '/documents',
   '/groups',
   '/more',
   '/recurring',
