@@ -9,6 +9,7 @@ import {
   Palette,
   Star,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { GetServerSideProps } from 'next';
 import { signOut } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
@@ -35,6 +36,7 @@ import {
   whichBankConnectionConfigured,
 } from '~/server/bankTransactionHelper';
 import { api } from '~/utils/api';
+import { clearPersistedCache } from '~/utils/persistedQueryCache';
 import type { NextPageWithUser } from '~/types';
 import { DebugInfo } from '~/components/Account/DebugInfo';
 import { ThemePicker } from '~/components/Theme/ThemePicker';
@@ -91,12 +93,16 @@ const AccountPage: NextPageWithUser<{
 
   const header = useMemo(() => <div className="text-3xl font-semibold">Account</div>, []);
 
+  const queryClient = useQueryClient();
+
   const onSignOut = useCallback(async () => {
     // El recuerdo de "dónde la dejé" es del dispositivo: al salir, se borra.
     clearRememberedRoute();
+    // Y también los datos guardados para abrir rápido: nadie más tiene que verlos.
+    await clearPersistedCache(queryClient);
     await signOut({ redirect: false });
     void router.push('/auth/signin', '/auth/signin', { locale: 'default' });
-  }, [router]);
+  }, [router, queryClient]);
 
   return (
     <>

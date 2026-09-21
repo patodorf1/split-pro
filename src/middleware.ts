@@ -20,8 +20,9 @@ export function middleware(req: NextRequest) {
   if (req.nextUrl.locale === 'default') {
     const locale = req.cookies.get('NEXT_LOCALE')?.value ?? 'en';
 
-    return NextResponse.redirect(
-      new URL(`/${locale}${req.nextUrl.pathname}${req.nextUrl.search}`, req.url),
-    );
+    // "/" va a "/es-AR", no a "/es-AR/": la barra final sería otro redirect más.
+    const pathname = '/' === req.nextUrl.pathname ? '' : req.nextUrl.pathname;
+
+    return NextResponse.redirect(new URL(`/${locale}${pathname}${req.nextUrl.search}`, req.url));
   }
 }

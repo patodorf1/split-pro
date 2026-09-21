@@ -8,10 +8,12 @@ import { Poppins } from 'next/font/google';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { RefreshingIndicator } from '~/components/ui/refreshing-indicator';
 import { Toaster } from '~/components/ui/sonner';
 import { LoadingSpinner } from '~/components/ui/spinner';
 import { ThemeProvider } from 'next-themes';
 import { ThemeColorMeta } from '~/components/Theme/ThemeColorMeta';
+import { useDeviceCache, useUnauthenticatedHandler } from '~/hooks/useDeviceCache';
 import { useRememberLastRoute } from '~/hooks/useRememberLastRoute';
 import { DEFAULT_THEME, NEXT_THEMES_LIST } from '~/lib/themes';
 import { CurrencyHelpersProvider } from '~/contexts/CurrencyHelpersContext';
@@ -100,6 +102,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
           >
             <ThemeColorMeta />
             <Toaster toastOptions={toastOptions} />
+            <RefreshingIndicator />
             {(Component as NextPageWithUser).auth ? (
               <Auth pageProps={pageProps} Page={Component as NextPageWithUser} />
             ) : (
@@ -113,7 +116,10 @@ const MyApp: AppType<{ session: Session | null }> = ({
 };
 
 const Auth: React.FC<{ Page: NextPageWithUser; pageProps: any }> = ({ Page, pageProps }) => {
-  const { status, data, update } = useSession({ required: true });
+  // Sin esperar a la sesión: primero se pinta lo último visto (si hay), después se confirma.
+  const onUnauthenticated = useUnauthenticatedHandler();
+  const { status, data, update } = useSession({ required: true, onUnauthenticated });
+  const deviceCache = useDeviceCache(status, data);
   const [showSpinner, setShowSpinner] = useState(false);
   const updateUser = api.user.updateUserDetail.useMutation();
   const router = useRouter();
@@ -183,7 +189,12 @@ const Auth: React.FC<{ Page: NextPageWithUser; pageProps: any }> = ({ Page, page
     }
   }, [status, data?.user, setCurrency, router, updateUser, update]);
 
-  if ('loading' === status) {
+  /* Con la sesión todavía en camino se pinta con el usuario del caché guardado
+   * (lo último visto). El `key` es el id: si la sesión resulta ser de otra
+   * cuenta, la pantalla se monta de cero con datos limpios. */
+  const pageUser = 'loading' === status ? deviceCache.optimisticUser : data.user;
+
+  if (!pageUser || deviceCache.foreignCache) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         {showSpinner ? <LoadingSpinner className="text-primary" /> : null}
@@ -191,7 +202,7 @@ const Auth: React.FC<{ Page: NextPageWithUser; pageProps: any }> = ({ Page, page
     );
   }
 
-  return <Page user={data.user} {...pageProps} />;
+  return <Page key={pageUser.id} user={pageUser} {...pageProps} />;
 };
 
 export default api.withTRPC(appWithTranslation(MyApp, i18nConfig));
