@@ -419,5 +419,10 @@ Errors carry a message in Spanish and English, a stable `code` and, when it appl
 | 409  | `idempotency_key_reused`, `idempotency_in_progress`, `already_deleted`, `group_archived`                                                     |
 | 500  | unexpected error (no details are returned; they go to the server log)                                                                        |
 
+The query endpoints (`summary`, and the filters of the list) add these `400` codes: `invalid_range`
+(`from` later than `to`), `range_too_long` (more than 10 years), `unknown_parameter` (summary only),
+`unknown_category`, `not_a_member` (`paidBy`) and `invalid_field` (dates, `groupBy`, `q`, `type`,
+`offset`).
+
 Unknown fields are rejected (`400`), so a typo like `paidby` does not silently fall back to a
 default.
