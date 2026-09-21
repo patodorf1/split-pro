@@ -13,6 +13,7 @@ import {
 } from '~/lib/topCategories';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import { db } from '~/server/db';
+import { COUNTS_AS_SPENDING_SQL, expenseDateRangeSql, memberShareSql } from '~/server/statsQueries';
 
 /** Movements that are not spending and must never show up in the stats. */
 const NON_EXPENSE_SPLIT_TYPES = [SplitType.SETTLEMENT, SplitType.CURRENCY_CONVERSION];
@@ -95,8 +96,6 @@ export const statsRouter = createTRPCRouter({
     const { from: previousFrom } = getMonthRange(previous.year, previous.month, timeZone);
 
     const fromLiteral = toUtcTimestampLiteral(from);
-    const toLiteral = toUtcTimestampLiteral(to);
-    const previousFromLiteral = toUtcTimestampLiteral(previousFrom);
 
     /*
      * Without a group filter the scope is "every expense that concerns me":
@@ -123,17 +122,12 @@ export const statsRouter = createTRPCRouter({
           e.currency AS currency,
           e.category AS category,
           e.amount AS ours,
-          COALESCE(
-            CASE WHEN e."paidBy" = ${userId} THEN e.amount - p.amount ELSE -p.amount END,
-            0
-          ) AS mine
+          ${memberShareSql(Prisma.sql`${userId}`)} AS mine
         FROM "Expense" e
         LEFT JOIN "ExpenseParticipant" p
           ON p."expenseId" = e.id AND p."userId" = ${userId}
-        WHERE e."deletedAt" IS NULL
-          AND e."splitType" NOT IN ('SETTLEMENT', 'CURRENCY_CONVERSION')
-          AND e."expenseDate" >= ${previousFromLiteral}::timestamp
-          AND e."expenseDate" < ${toLiteral}::timestamp
+        WHERE ${COUNTS_AS_SPENDING_SQL}
+          AND ${expenseDateRangeSql(previousFrom, to)}
           ${groupFilter}
       )
       SELECT

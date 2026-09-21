@@ -73,14 +73,23 @@ export const getTimeZoneOffsetMs = (instant: Date, timeZone: string): number => 
   return asIfUtc - truncatedToSeconds;
 };
 
-/** The UTC instant at which the given month starts in the user's time zone. */
-export const zonedStartOfMonth = (year: number, month: number, timeZone: string): Date => {
-  const wallClock = Date.UTC(year, month - 1, 1, 0, 0, 0);
-  // Two passes so DST transitions right at the month boundary settle correctly.
+/** The UTC instant at which the given day starts (00:00) in the given time zone. */
+export const zonedStartOfDay = (
+  year: number,
+  month: number,
+  day: number,
+  timeZone: string,
+): Date => {
+  const wallClock = Date.UTC(year, month - 1, day, 0, 0, 0);
+  // Two passes so DST transitions right at the boundary settle correctly.
   const firstGuess = wallClock - getTimeZoneOffsetMs(new Date(wallClock), timeZone);
 
   return new Date(wallClock - getTimeZoneOffsetMs(new Date(firstGuess), timeZone));
 };
+
+/** The UTC instant at which the given month starts in the user's time zone. */
+export const zonedStartOfMonth = (year: number, month: number, timeZone: string): Date =>
+  zonedStartOfDay(year, month, 1, timeZone);
 
 export const addMonths = ({ year, month }: YearMonth, delta: number): YearMonth => {
   const zeroBased = year * 12 + (month - 1) + delta;
@@ -95,6 +104,16 @@ export const getCurrentYearMonth = (timeZone: string, now: Date = new Date()): Y
   const { year, month } = getDateParts(now, timeZone);
 
   return { year, month };
+};
+
+/** Calendar day (year, month 1-12, day) of an instant in the given time zone. */
+export const getZonedCalendarDay = (
+  timeZone: string,
+  now: Date = new Date(),
+): YearMonth & { day: number } => {
+  const { year, month, day } = getDateParts(now, timeZone);
+
+  return { year, month, day };
 };
 
 /**
