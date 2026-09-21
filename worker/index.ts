@@ -41,12 +41,22 @@ const startUrlRoute: RuntimeCaching = {
   }),
 };
 
+/**
+ * Documentos de la familia (DNI, pólizas…): nunca se guardan en la caché del service worker. La
+ * regla por defecto de Serwist guarda los GET de /api/ en la caché "apis" durante 24 horas; ésta
+ * va antes y los manda siempre a la red.
+ */
+const documentsRoute: RuntimeCaching = {
+  matcher: ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith('/api/documents/'),
+  handler: new NetworkOnly(),
+};
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [startUrlRoute, ...defaultCache],
+  runtimeCaching: [startUrlRoute, documentsRoute, ...defaultCache],
 });
 
 self.addEventListener('push', function (event) {

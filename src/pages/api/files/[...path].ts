@@ -4,6 +4,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 
 import { authOptions } from '~/server/auth';
+import { isInsideDocumentsRoot } from '~/server/documents/storage';
 import { fileExists } from '~/utils/file';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
@@ -29,6 +30,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!resolvedPath.startsWith(path.resolve(UPLOAD_DIR))) {
     return res.status(403).send('Forbidden');
+  }
+
+  // Los documentos de la familia viven en uploads/documents y sólo se sirven por
+  // /api/documents/[id] (que chequea la membresía del grupo). Por acá, nunca.
+  if (isInsideDocumentsRoot(resolvedPath, UPLOAD_DIR)) {
+    return res.status(404).send('File not found');
   }
 
   if (!(await fileExists(filePath))) {

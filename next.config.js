@@ -22,6 +22,14 @@ const nextConfig = {
    * @see https://github.com/vercel/next.js/issues/41980
    */
   i18n: i18nConfig.i18n,
+  experimental: {
+    /**
+     * Casa: el middleware (redirects de idioma) hace que Next copie el cuerpo de cada pedido con
+     * un tope de 10 MB y corte lo que sobra, así que las subidas más grandes llegaban truncadas a
+     * la API. Los documentos aceptan hasta 25 MB (+ margen del multipart).
+     */
+    middlewareClientMaxBodySize: '30mb',
+  },
   images: {
     remotePatterns: [
       {
