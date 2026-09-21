@@ -296,6 +296,37 @@ curl -s "$BASE/api/external/groups/1/expenses?limit=5" -H "Authorization: Bearer
   their balance (paid − share). For transfers `category` is `null`.
 - `balances` only lists non-zero debts; an empty list means the group is settled.
 
+#### Filters and pagination (optional)
+
+| param      | notes                                                                                                    |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| `from`     | `YYYY-MM-DD`, Buenos Aires day, inclusive. Only `from`: until today.                                     |
+| `to`       | `YYYY-MM-DD`, inclusive. Only `to`: from the 1st of that month. Max range 10 years; `from > to` → `400`. |
+| `category` | one or more category keys, comma separated (`groceries,diningOut`). Unknown key → `400`.                 |
+| `q`        | text in the description, case and accent insensitive (`estefi` finds `Estefí`). Up to 100 chars.         |
+| `paidBy`   | email or id of a group member (for transfers: who sent the money).                                       |
+| `type`     | `expense` (what stats count) or `transfer` (balance movements).                                          |
+| `offset`   | pagination, 0–10000. Use `pagination.nextOffset` from the previous page (`null` = no more pages).        |
+
+Same order (expense date, newest first) and same `limit`. Without any of these params the response
+is exactly the one above (unknown params are still ignored, as before); with at least one, it also
+carries `filters` and `pagination`:
+
+```bash
+# When did we last pay Estefi, and how much?
+curl -s "$BASE/api/external/groups/1/expenses?q=estefi&limit=1" -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groupId": 1,
+  "expenses": [{ "description": "Estefi", "amount": 220000, "date": "2026-09-11T15:00:00.000Z", "...": "..." }],
+  "balances": [ ... ],
+  "filters": { "from": null, "to": null, "category": null, "q": "estefi", "paidBy": null, "type": null },
+  "pagination": { "limit": 1, "offset": 0, "nextOffset": 1 }
+}
+```
+
 ### POST /api/external/groups/{groupId}/expenses — expense
 
 ```bash
@@ -394,6 +425,127 @@ curl -s -X DELETE \
 ```json
 { "groupId": 1, "deleted": true, "expense": { ..., "deleted": true }, "balances": [ ... ] }
 ```
+
+### Consultas / Summary — GET /api/external/groups/{groupId}/summary
+
+Read only. How much was spent in a period, per currency (ARS and USD are **never** added up), with
+what each member paid and what each one's share was, an optional breakdown and a sentence in
+Spanish ready to read out. Answers questions like "¿cuánto gastamos en enero?", "¿cuánto en nafta
+este año?", "¿en qué gastamos más el mes pasado?", "¿cuánto pagó Belu en agosto?".
+
+**Same numbers as the app.** `total` uses the exact criterion and SQL of "Nosotros" in /stats and
+"Gastado este mes" on the home page (shared code in `src/server/statsQueries.ts`): non-deleted
+expenses of the group, excluding transfers (`SETTLEMENT`) and currency conversions. A member's
+`shares` amount equals "Yo" in /stats filtered by that group. Months are Buenos Aires months, the
+same intervals /stats uses. Everything is aggregated by the database.
+
+| param      | notes                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `from`     | `YYYY-MM-DD`, inclusive, Buenos Aires. Default: the current month (1st to last day). Only `from`: until today.          |
+| `to`       | `YYYY-MM-DD`, inclusive. Only `to`: from the 1st of that month. Max 10 years; `from > to` → `400 invalid_range`.        |
+| `groupBy`  | optional: `month`, `category`, `payer` or a combination (`month,category`).                                             |
+| `category` | optional filter, one or more exact keys comma separated (see `src/lib/category.ts`; `food` only matches `food` itself). |
+| `q`        | optional text in the description, case and accent insensitive.                                                          |
+| `paidBy`   | optional, email or id of a member: only what that person paid.                                                          |
+
+Unknown params (`catgory=`) are rejected with `400 unknown_parameter`, so a typo never returns the
+unfiltered total.
+
+```bash
+# ¿Cuánto gastamos en enero?
+curl -s "$BASE/api/external/groups/1/summary?from=2026-01-01&to=2026-01-31" \
+  -H "Authorization: Bearer $SPLIT_API_KEY"
+
+# ¿En qué gastamos más este año?
+curl -s "$BASE/api/external/groups/1/summary?from=2026-01-01&to=2026-12-31&groupBy=category" \
+  -H "Authorization: Bearer $SPLIT_API_KEY"
+
+# ¿Cuánto en el super en los últimos 3 meses, mes por mes?
+curl -s "$BASE/api/external/groups/1/summary?from=2026-07-01&to=2026-09-21&groupBy=month&category=groceries" \
+  -H "Authorization: Bearer $SPLIT_API_KEY"
+
+# ¿Cuánto pagó Belu en agosto?
+curl -s "$BASE/api/external/groups/1/summary?from=2026-08-01&to=2026-08-31&paidBy=belen@example.com" \
+  -H "Authorization: Bearer $SPLIT_API_KEY"
+
+# ¿Cuánto nos salió el viaje a Bariloche? (by description)
+curl -s "$BASE/api/external/groups/1/summary?from=2022-01-01&to=2026-12-31&q=bariloche&groupBy=category" \
+  -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groupId": 1,
+  "groupName": "Casa",
+  "period": {
+    "from": "2026-01-01",
+    "to": "2026-01-31",
+    "timeZone": "America/Argentina/Buenos_Aires"
+  },
+  "filters": { "category": null, "q": null, "paidBy": null },
+  "groupBy": [],
+  "currencies": [
+    {
+      "currency": "ARS",
+      "total": 4707849.58,
+      "formatted": "$ 4.707.849,58",
+      "count": 43,
+      "paid": [
+        {
+          "id": 1,
+          "name": "Pato",
+          "email": "pato@example.com",
+          "amount": 2136700,
+          "formatted": "$ 2.136.700"
+        },
+        {
+          "id": 2,
+          "name": "Belén",
+          "email": "belen@example.com",
+          "amount": 2571149.58,
+          "formatted": "$ 2.571.149,58"
+        }
+      ],
+      "shares": [
+        {
+          "id": 1,
+          "name": "Pato",
+          "email": "pato@example.com",
+          "amount": 2353924.79,
+          "formatted": "$ 2.353.924,79"
+        },
+        {
+          "id": 2,
+          "name": "Belén",
+          "email": "belen@example.com",
+          "amount": 2353924.79,
+          "formatted": "$ 2.353.924,79"
+        }
+      ]
+    }
+  ],
+  "transfers": [{ "currency": "ARS", "total": 539500, "formatted": "$ 539.500", "count": 2 }],
+  "text": "En enero de 2026 gastaron $ 4.707.849,58 en 43 gastos (Pato puso $ 2.136.700, Belén $ 2.571.149,58)."
+}
+```
+
+- Amounts are numbers in currency units (like the rest of the API); `formatted` is the same amount
+  in es-AR (`$ 1.234,56`, `US$ 80`), as used in `text`. Formatted strings use a non-breaking space
+  after the symbol.
+- `currencies`: one entry per currency with expenses; the group's default currency is always there
+  (with zeros if nothing was spent).
+- `paid`: what each member paid. `shares`: what each member consumed. Both list every member.
+- With `groupBy`, each currency carries `breakdown`: items with `month` (`2026-01`) + `monthName`,
+  `category` + `categoryName` (Spanish name as in the app) and/or `payer`, plus `total`,
+  `formatted`, `count` and `percentage` (of that currency's total, one decimal). Order: by month
+  chronologically (with `groupBy=month` alone, months without expenses appear with `0`); by
+  category or payer from highest to lowest.
+- `transfers`: balance transfers (`SETTLEMENT`) of the period, per currency, never mixed with
+  spending. It honours `q` and `paidBy` (the sender), and is `null` when filtering by `category`
+  (transfers have no category).
+- `text`: one or two sentences in Spanish. With a single `groupBy=category` it adds the top 3
+  ("Lo que más: …"); with `groupBy=month` alone, the amount of each month (up to 12; otherwise the
+  most expensive one).
 
 ### Errors
 
