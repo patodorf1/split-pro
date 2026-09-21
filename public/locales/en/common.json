@@ -508,6 +508,9 @@
       "error": "That didn't work. Try again."
     }
   },
+  "sync": {
+    "refreshing": "Updating…"
+  },
   "themes": {
     "title": "Theme",
     "section_label": "Palettes",

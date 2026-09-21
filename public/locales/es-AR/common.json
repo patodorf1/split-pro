@@ -482,6 +482,9 @@
       "error": "No salió. Probá de nuevo."
     }
   },
+  "sync": {
+    "refreshing": "Actualizando…"
+  },
   "themes": {
     "title": "Tema",
     "section_label": "Paletas",
