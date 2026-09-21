@@ -321,14 +321,18 @@ model ShoppingItem {
 /// Casa: secciones de documentos de la familia (Clari, Pato, Kuga, Lancha…). El dueño es un grupo:
 /// tienen acceso los miembros de ese grupo. `icon` es una clave de la lista corta de íconos de la UI.
 model DocumentFolder {
-  id        Int        @id @default(autoincrement())
-  groupId   Int
-  name      String
-  icon      String     @default("folder")
-  sortOrder Int        @default(0)
-  createdAt DateTime   @default(now())
-  group     Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  documents Document[]
+  id          Int        @id @default(autoincrement())
+  groupId     Int
+  name        String
+  icon        String     @default("folder")
+  sortOrder   Int        @default(0)
+  /// Sección de una persona: muestra los datos rápidos (DNI, pasaporte, obra social, nacimiento).
+  isPerson    Boolean    @default(false)
+  /// { dni?, pasaporte?, obraSocial?, nacimiento? } (strings); sólo las claves con valor.
+  quickFields Json?
+  createdAt   DateTime   @default(now())
+  group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  documents   Document[]
 
   @@unique([groupId, name])
   @@index([groupId])

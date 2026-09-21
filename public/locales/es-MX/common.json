@@ -141,7 +141,7 @@
       "expenses": "Gastos",
       "home": "Inicio",
       "more": "Más",
-      "shopping": "Lista de compras"
+      "shopping": "Compras"
     },
     "recent": {
       "title": "Últimos movimientos",
@@ -235,6 +235,34 @@
       "title": "Mover a…"
     },
     "nav": "Documentos",
+    "quick": {
+      "copied": {
+        "dni": "DNI copiado",
+        "pasaporte": "Pasaporte copiado",
+        "obraSocial": "Obra social copiada",
+        "nacimiento": "Fecha de nacimiento copiada"
+      },
+      "copy": "Copiar {{label}}",
+      "copy_failed": "No se pudo copiar",
+      "edit": "Editar datos",
+      "fields": {
+        "dni": "DNI",
+        "pasaporte": "Pasaporte",
+        "obraSocial": "Obra social",
+        "nacimiento": "Fecha de nacimiento"
+      },
+      "hint": "Toca un dato para copiarlo. Si lo dejas vacío, se borra.",
+      "labels": {
+        "dni": "DNI",
+        "pasaporte": "Pasaporte",
+        "obraSocial": "OS",
+        "nacimiento": "Nacimiento"
+      },
+      "missing": "Agregar {{label}}",
+      "nacimiento_placeholder": "dd/mm/aaaa",
+      "saved": "Datos guardados",
+      "title": "Datos de {{name}}"
+    },
     "rename": {
       "placeholder": "Nombre del documento",
       "title": "Renombrar"

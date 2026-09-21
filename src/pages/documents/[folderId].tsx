@@ -12,6 +12,7 @@ import { FolderEditor } from '~/components/documents/FolderEditor';
 import { ImageViewer } from '~/components/documents/ImageViewer';
 import { openDocumentInBrowser } from '~/components/documents/documentClient';
 import { FolderIconBadge } from '~/components/documents/icons';
+import { QuickFieldsRow } from '~/components/documents/QuickFieldsRow';
 import { useDocumentUpload } from '~/components/documents/useDocumentUpload';
 import MainLayout from '~/components/Layout/MainLayout';
 import { Button } from '~/components/ui/button';
@@ -134,6 +135,14 @@ const DocumentFolderPage: NextPageWithUser = () => {
           </p>
         ) : folder ? (
           <div className="flex flex-col gap-4 pb-8">
+            {folder.isPerson ? (
+              <QuickFieldsRow
+                folderId={folder.id}
+                folderName={folder.name}
+                quickFields={folder.quickFields ?? {}}
+              />
+            ) : null}
+
             {/* Sin `capture`: en el iPhone el selector ofrece Fototeca, Cámara y Archivos. */}
             <input
               ref={inputRef}
@@ -144,15 +153,20 @@ const DocumentFolderPage: NextPageWithUser = () => {
               onChange={onFilesChosen}
               data-testid="document-file-input"
             />
-            <Button
-              size="lg"
-              className="h-12 w-full gap-2 rounded-full text-base"
-              disabled={isUploading}
-              onClick={() => inputRef.current?.click()}
-            >
-              <UploadIcon className="size-5" />
-              {t('documents.upload.button')}
-            </Button>
+            {/* Pista a la izquierda, "Subir" a la derecha. */}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-muted-foreground min-w-0 text-xs">
+                {progress ? null : t('documents.upload.hint', { max: DOCUMENT_MAX_SIZE_MB })}
+              </p>
+              <Button
+                className="h-10 shrink-0 gap-2 rounded-full px-5"
+                disabled={isUploading}
+                onClick={() => inputRef.current?.click()}
+              >
+                <UploadIcon className="size-4" />
+                {t('documents.upload.button')}
+              </Button>
+            </div>
 
             {progress ? (
               <Card className="flex flex-col gap-2" aria-live="polite">
@@ -169,11 +183,7 @@ const DocumentFolderPage: NextPageWithUser = () => {
                 </div>
                 <ProgressBar value={progress.percent} label={progress.fileName} />
               </Card>
-            ) : (
-              <p className="text-muted-foreground -mt-1 text-center text-xs">
-                {t('documents.upload.hint', { max: DOCUMENT_MAX_SIZE_MB })}
-              </p>
-            )}
+            ) : null}
 
             {0 < documents.length ? (
               <ul className="card-surface divide-border divide-y px-3">

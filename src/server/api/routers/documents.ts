@@ -9,8 +9,10 @@ import {
   cleanDocumentName,
   matchesDocumentSearch,
 } from '~/lib/documents';
+import { parseStoredQuickFields, quickFieldsInputSchema } from '~/lib/documentQuickFields';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import { findAccessibleDocument, findAccessibleFolder, memberOf } from '~/server/documents/access';
+import { updateFolderQuickFields } from '~/server/documents/quickFields';
 
 /** Lo que ve la UI de un documento (nunca la ruta en disco). */
 export const DOCUMENT_SELECT = {
@@ -59,7 +61,15 @@ export const documentsRouter = createTRPCRouter({
       ctx.db.documentFolder.findMany({
         where: { group: memberOf(userId) },
         orderBy: [{ groupId: 'asc' }, { sortOrder: 'asc' }, { id: 'asc' }],
-        select: { id: true, groupId: true, name: true, icon: true, sortOrder: true },
+        select: {
+          id: true,
+          groupId: true,
+          name: true,
+          icon: true,
+          sortOrder: true,
+          isPerson: true,
+          quickFields: true,
+        },
       }),
       ctx.db.document.groupBy({
         by: ['folderId'],
@@ -78,6 +88,7 @@ export const documentsRouter = createTRPCRouter({
     return {
       folders: folders.map((folder) => ({
         ...folder,
+        quickFields: parseStoredQuickFields(folder.quickFields),
         documentCount: countByFolder.get(folder.id) ?? 0,
       })),
       groups,
@@ -108,7 +119,14 @@ export const documentsRouter = createTRPCRouter({
       ]);
 
       return {
-        folder: { id: folder.id, groupId: folder.groupId, name: folder.name, icon: folder.icon },
+        folder: {
+          id: folder.id,
+          groupId: folder.groupId,
+          name: folder.name,
+          icon: folder.icon,
+          isPerson: folder.isPerson,
+          quickFields: parseStoredQuickFields(folder.quickFields),
+        },
         documents,
         /** Destinos posibles de "Mover a…": secciones del mismo grupo. */
         siblings,
@@ -198,6 +216,13 @@ export const documentsRouter = createTRPCRouter({
         throw error;
       }
     }),
+
+  /** Datos rápidos de una sección persona (DNI, pasaporte, obra social, nacimiento). */
+  updateQuickFields: protectedProcedure
+    .input(z.object({ folderId: z.number().int().positive(), fields: quickFieldsInputSchema }))
+    .mutation(({ ctx, input }) =>
+      updateFolderQuickFields(ctx.db, ctx.session.user.id, input.folderId, input.fields),
+    ),
 
   /** Sube o baja una sección un lugar (intercambia el orden con la vecina). */
   moveFolder: protectedProcedure

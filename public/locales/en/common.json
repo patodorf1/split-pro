@@ -140,7 +140,7 @@
       "expenses": "Expenses",
       "home": "Home",
       "more": "More",
-      "shopping": "Shopping list"
+      "shopping": "Shopping"
     },
     "recent": {
       "title": "Latest movements",
@@ -234,6 +234,34 @@
       "title": "Move to…"
     },
     "nav": "Documents",
+    "quick": {
+      "copied": {
+        "dni": "ID number copied",
+        "pasaporte": "Passport copied",
+        "obraSocial": "Health insurance copied",
+        "nacimiento": "Date of birth copied"
+      },
+      "copy": "Copy {{label}}",
+      "copy_failed": "Couldn't copy",
+      "edit": "Edit details",
+      "fields": {
+        "dni": "ID number",
+        "pasaporte": "Passport",
+        "obraSocial": "Health insurance",
+        "nacimiento": "Date of birth"
+      },
+      "hint": "Tap a detail to copy it. Leave it empty to remove it.",
+      "labels": {
+        "dni": "ID",
+        "pasaporte": "Passport",
+        "obraSocial": "Insurance",
+        "nacimiento": "Birth"
+      },
+      "missing": "Add {{label}}",
+      "nacimiento_placeholder": "dd/mm/yyyy",
+      "saved": "Details saved",
+      "title": "{{name}}'s details"
+    },
     "rename": {
       "placeholder": "Document name",
       "title": "Rename"
