@@ -11,6 +11,11 @@ import {
 } from '~/lib/documents';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import { findAccessibleDocument, findAccessibleFolder, memberOf } from '~/server/documents/access';
+import {
+  dismissReminder,
+  findUpcomingExpiries,
+  snoozeReminder,
+} from '~/server/documents/reminders';
 
 /** Lo que ve la UI de un documento (nunca la ruta en disco). */
 export const DOCUMENT_SELECT = {
@@ -132,6 +137,37 @@ export const documentsRouter = createTRPCRouter({
       return documents
         .filter((document) => matchesDocumentSearch(document.name, input.query))
         .slice(0, SEARCH_LIMIT);
+    }),
+
+  /** Avisos de vencimiento para Inicio (próximos 7 días y vencidos, sin pospuestos ni descartados). */
+  upcomingExpiries: protectedProcedure.query(({ ctx }) =>
+    findUpcomingExpiries(ctx.db, ctx.session.user.id),
+  ),
+
+  /** Esconde el aviso de vencimiento de un documento por un día (sólo para este usuario). */
+  snoozeReminder: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await snoozeReminder(ctx.db, input.id, ctx.session.user.id);
+
+      if (!result) {
+        throw notFound();
+      }
+
+      return result;
+    }),
+
+  /** Descarta el aviso para este vencimiento (si la fecha cambia, vuelve a aparecer). */
+  dismissReminder: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await dismissReminder(ctx.db, input.id, ctx.session.user.id);
+
+      if (!result) {
+        throw notFound();
+      }
+
+      return result;
     }),
 
   createFolder: protectedProcedure

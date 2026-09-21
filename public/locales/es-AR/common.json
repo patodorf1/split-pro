@@ -129,6 +129,17 @@
     "title": "Conversión de moneda"
   },
   "dashboard": {
+    "expiry": {
+      "ago_one": "venció ayer",
+      "ago_other": "venció hace {{count}} días",
+      "dismiss": "No avisar más de {{name}}",
+      "in_days_one": "vence mañana",
+      "in_days_other": "vence en {{count}} días",
+      "more": "+{{count}} más",
+      "snooze": "Recordar mañana {{name}}",
+      "title": "Documentos por vencer",
+      "today": "vence hoy"
+    },
     "more": {
       "account": "Cuenta",
       "activity": "Actividad",

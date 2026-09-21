@@ -128,6 +128,17 @@
     "title": "Currency conversion"
   },
   "dashboard": {
+    "expiry": {
+      "ago_one": "expired yesterday",
+      "ago_other": "expired {{count}} days ago",
+      "dismiss": "Stop reminding about {{name}}",
+      "in_days_one": "expires tomorrow",
+      "in_days_other": "expires in {{count}} days",
+      "more": "+{{count}} more",
+      "snooze": "Remind me tomorrow about {{name}}",
+      "title": "Expiring documents",
+      "today": "expires today"
+    },
     "more": {
       "account": "Account",
       "activity": "Activity",

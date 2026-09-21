@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import { BalanceCards } from '~/components/dashboard/BalanceCards';
 import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
+import { ExpiryNotices } from '~/components/dashboard/ExpiryNotices';
 import { NextRecurringCard } from '~/components/dashboard/NextRecurringCard';
 import {
   useCurrentYearMonth,
@@ -215,6 +216,7 @@ const DashboardPage: NextPageWithUser = ({ user }) => {
         loading={summaryQuery.isPending && balanceQuery.isPending}
       >
         <div className="flex flex-col gap-4 pb-8">
+          <ExpiryNotices />
           <SpentThisMonthCard
             total={monthTotals?.ours ?? 0n}
             mine={monthTotals?.mine ?? 0n}
