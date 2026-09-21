@@ -2,6 +2,7 @@ import { type GetServerSideProps } from 'next';
 
 import { env } from '~/env';
 import { LAST_ROUTE_COOKIE, readCookieValue, resolveStartDestination } from '~/lib/lastRoute';
+import { withLocalePrefix } from '~/lib/startRoute';
 import { getServerAuthSession } from '~/server/auth';
 
 export default function Index() {
@@ -37,7 +38,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   return {
     redirect: {
-      destination,
+      /* Con el idioma adelante: una ruta sin idioma la vuelve a redirigir el
+       * middleware, y cada salto es una ida y vuelta más al abrir la app. */
+      destination: withLocalePrefix(destination, context.locale),
       /* Nunca `permanent`: un 308 queda cacheado en el navegador y el arranque
        * quedaría clavado en el destino viejo para siempre. */
       permanent: false,
