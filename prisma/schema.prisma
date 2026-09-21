@@ -118,6 +118,7 @@ model Group {
   shoppingItems     ShoppingItem[]
   externalExpenses  ExternalExpense[]
   documentFolders   DocumentFolder[]
+  emergencyContacts EmergencyContact[]
   documents         Document[]
 
   @@schema("public")
@@ -474,5 +475,23 @@ enum SplitType {
   SETTLEMENT
   CURRENCY_CONVERSION
 
+  @@schema("public")
+}
+
+/// Casa: contactos de emergencia compartidos por grupo (Policía, obra social, plomero…).
+/// `phone` puede estar vacío ("" = todavía sin número): la tarjeta invita a cargarlo.
+model EmergencyContact {
+  id        Int      @id @default(autoincrement())
+  groupId   Int
+  name      String
+  phone     String   @default("")
+  whatsapp  String?
+  note      String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, sortOrder])
   @@schema("public")
 }

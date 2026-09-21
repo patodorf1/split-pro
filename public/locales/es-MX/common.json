@@ -304,6 +304,45 @@
       "zoom_out": "Alejar"
     }
   },
+  "emergency": {
+    "nav": "Emergencias",
+    "title": "Emergencias",
+    "empty": "Todavía no hay contactos. Toca + para agregar el primero.",
+    "add_number": "Agregar número",
+    "call": "Llamar a",
+    "whatsapp": "WhatsApp a",
+    "copy": "Copiar",
+    "copied": "Número copiado",
+    "copy_failed": "No se pudo copiar",
+    "edit_list": "Editar contactos",
+    "done": "Listo",
+    "move_up": "Subir",
+    "move_down": "Bajar",
+    "editor": {
+      "create": "Nuevo contacto",
+      "edit": "Editar contacto",
+      "group": "Grupo",
+      "name": "Nombre",
+      "name_placeholder": "Ej.: Policía, plomero, obra social",
+      "phone": "Teléfono",
+      "phone_placeholder": "Ej.: 911 o 0810 888 7788",
+      "whatsapp": "WhatsApp (opcional)",
+      "whatsapp_placeholder": "Ej.: 11 5555 1234",
+      "note": "Nota (opcional)",
+      "note_placeholder": "Ej.: Urgencias 24 h o n.º de afiliado",
+      "invalid_phone": "Solo números, espacios y + - ( )",
+      "delete": "Borrar contacto",
+      "delete_confirm": "¿Borrar \"{{name}}\"? Se borra para toda la familia."
+    },
+    "actions": {
+      "create": "Agregar",
+      "save": "Guardar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    }
+  },
   "errors": {
     "currency_conversion_error": "Error al establecer la conversión de moneda",
     "currency_conversion_failed": "Error al convertir monedas",

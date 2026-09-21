@@ -6,6 +6,7 @@ import {
   PaletteIcon,
   RefreshCcwDotIcon,
   ScaleIcon,
+  SirenIcon,
   UserCircleIcon,
   UsersIcon,
 } from 'lucide-react';
@@ -21,6 +22,8 @@ import { type NextPageWithUser } from '~/types';
 import { withI18nStaticProps } from '~/utils/i18n/server';
 
 const ENTRIES: { href: string; labelKey: string; Icon: LucideIcon }[] = [
+  // Arriba de todo: en una urgencia tiene que estar a un toque.
+  { href: '/emergency', labelKey: 'emergency.nav', Icon: SirenIcon },
   { href: '/balances', labelKey: 'dashboard.more.balances', Icon: ScaleIcon },
   { href: '/activity', labelKey: 'dashboard.more.activity', Icon: ListIcon },
   { href: '/stats', labelKey: 'dashboard.more.stats', Icon: ChartPieIcon },

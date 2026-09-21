@@ -10,6 +10,7 @@ import {
   RefreshCcwDotIcon,
   ScaleIcon,
   ShoppingCartIcon,
+  SirenIcon,
   UserCircleIcon,
   UsersIcon,
 } from 'lucide-react';
@@ -30,6 +31,8 @@ interface MainLayoutProps {
 
 const HOME_LINK = '/dashboard';
 const DOCUMENTS_LINK = '/documents';
+/** Contactos de emergencia: en el celular vive dentro de "Más". */
+const EMERGENCY_LINK = '/emergency';
 /** "Grupos" (lista de grupos y saldos): vive dentro de "Más" en el celular. */
 const GROUPS_LINK = '/groups';
 const ADD_LINK = '/add';
@@ -40,6 +43,7 @@ const MORE_LINK = '/more';
 const MORE_SECTION_LINKS = [
   MORE_LINK,
   GROUPS_LINK,
+  EMERGENCY_LINK,
   '/balances',
   '/activity',
   '/stats',
@@ -92,6 +96,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             title={t?.('documents.nav') ?? 'Documents'}
             Icon={FolderOpenIcon}
             link={DOCUMENTS_LINK}
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
+            title={t?.('emergency.nav') ?? 'Emergencies'}
+            Icon={SirenIcon}
+            link={EMERGENCY_LINK}
             currentPath={currentPath}
           />
           <NavItemDesktop

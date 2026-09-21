@@ -303,6 +303,45 @@
       "zoom_out": "Zoom out"
     }
   },
+  "emergency": {
+    "nav": "Emergencies",
+    "title": "Emergencies",
+    "empty": "No contacts yet. Tap + to add the first one.",
+    "add_number": "Add number",
+    "call": "Call",
+    "whatsapp": "WhatsApp",
+    "copy": "Copy",
+    "copied": "Number copied",
+    "copy_failed": "Couldn't copy",
+    "edit_list": "Edit contacts",
+    "done": "Done",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "editor": {
+      "create": "New contact",
+      "edit": "Edit contact",
+      "group": "Group",
+      "name": "Name",
+      "name_placeholder": "E.g. Police, plumber, health insurance",
+      "phone": "Phone",
+      "phone_placeholder": "E.g. 911 or 0810 888 7788",
+      "whatsapp": "WhatsApp (optional)",
+      "whatsapp_placeholder": "E.g. 11 5555 1234",
+      "note": "Note (optional)",
+      "note_placeholder": "E.g. 24 h emergencies or member number",
+      "invalid_phone": "Only digits, spaces and + - ( )",
+      "delete": "Delete contact",
+      "delete_confirm": "Delete \"{{name}}\"? It's removed for the whole family."
+    },
+    "actions": {
+      "create": "Add",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again."
+    }
+  },
   "errors": {
     "currency_conversion_error": "Error while setting currency conversion",
     "email_invalid": "Email is invalid, please try the signin flow again.",
