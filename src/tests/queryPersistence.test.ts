@@ -1,15 +1,17 @@
-import { type DehydratedState } from '@tanstack/react-query';
-
 import {
+  EAGER_RESTORE_MAX_SIZE,
   PERSISTED_CACHE_MAX_AGE_MS,
-  type PersistedCache,
+  type PersistedMeta,
   buildCacheBuster,
+  entryKey,
   getOptimisticOwner,
   getTrpcPath,
   isOwnedBy,
   isPersistablePath,
-  parsePersistedCache,
+  parsePersistedEntry,
+  parsePersistedMeta,
   shouldPersistQuery,
+  splitEntriesForRestore,
 } from '~/lib/queryPersistence';
 
 const NOW = new Date('2026-09-21T12:00:00Z').getTime();
@@ -25,11 +27,14 @@ const successQuery = (path: string, data: unknown = { ok: true }) => ({
   state: { status: 'success', data },
 });
 
-const makeCache = (overrides: Partial<PersistedCache> = {}): PersistedCache => ({
+const makeCache = (overrides: Partial<PersistedMeta> = {}): PersistedMeta => ({
   buster: BUSTER,
   timestamp: NOW - 60_000,
   owner: { user: { id: 1 }, expires: new Date(NOW + 24 * 60 * 60 * 1000).toISOString() },
-  clientState: { mutations: [], queries: [] } as DehydratedState,
+  entries: {
+    small: { size: 800, savedAt: NOW - 60_000 },
+    big: { size: 2_000_000, savedAt: NOW - 60_000 },
+  },
   ...overrides,
 });
 
@@ -130,29 +135,49 @@ describe('shouldPersistQuery', () => {
   });
 });
 
-describe('parsePersistedCache', () => {
-  it('should accept a fresh cache from this build', () => {
-    expect(parsePersistedCache(makeCache(), { buster: BUSTER, now: NOW })).not.toBeNull();
+describe('parsePersistedMeta', () => {
+  it('should accept a fresh index from this build', () => {
+    const meta = parsePersistedMeta(makeCache(), { buster: BUSTER, now: NOW });
+
+    expect(meta?.owner.user.id).toBe(1);
+    expect(Object.keys(meta?.entries ?? {})).toEqual(['small', 'big']);
   });
 
-  it('should discard a cache from another build (buster)', () => {
+  it('should discard an index from another build (buster)', () => {
     const cache = makeCache({ buster: buildCacheBuster('old-build') });
 
-    expect(parsePersistedCache(cache, { buster: BUSTER, now: NOW })).toBeNull();
+    expect(parsePersistedMeta(cache, { buster: BUSTER, now: NOW })).toBeNull();
   });
 
-  it('should discard a cache older than 7 days', () => {
+  it('should discard an index older than 7 days', () => {
     const fresh = makeCache({ timestamp: NOW - PERSISTED_CACHE_MAX_AGE_MS + 1000 });
     const stale = makeCache({ timestamp: NOW - PERSISTED_CACHE_MAX_AGE_MS - 1000 });
 
-    expect(parsePersistedCache(fresh, { buster: BUSTER, now: NOW })).not.toBeNull();
-    expect(parsePersistedCache(stale, { buster: BUSTER, now: NOW })).toBeNull();
+    expect(parsePersistedMeta(fresh, { buster: BUSTER, now: NOW })).not.toBeNull();
+    expect(parsePersistedMeta(stale, { buster: BUSTER, now: NOW })).toBeNull();
   });
 
-  it('should discard a cache dated in the future', () => {
+  it('should discard an index dated in the future', () => {
     const cache = makeCache({ timestamp: NOW + 24 * 60 * 60 * 1000 });
 
-    expect(parsePersistedCache(cache, { buster: BUSTER, now: NOW })).toBeNull();
+    expect(parsePersistedMeta(cache, { buster: BUSTER, now: NOW })).toBeNull();
+  });
+
+  it('should drop single entries that expired or are broken', () => {
+    const meta = parsePersistedMeta(
+      {
+        ...makeCache(),
+        entries: {
+          ok: { size: 10, savedAt: NOW - 1000 },
+          old: { size: 10, savedAt: NOW - PERSISTED_CACHE_MAX_AGE_MS - 1000 },
+          negative: { size: -1, savedAt: NOW },
+          broken: 'x',
+        },
+      },
+      { buster: BUSTER, now: NOW },
+    );
+
+    expect(Object.keys(meta?.entries ?? {})).toEqual(['ok']);
   });
 
   it.each([
@@ -164,10 +189,64 @@ describe('parsePersistedCache', () => {
     { buster: BUSTER, timestamp: NOW },
     { ...makeCache(), timestamp: 'yesterday' },
     { ...makeCache(), owner: { user: { id: 'x' }, expires: '' } },
+    { ...makeCache(), owner: { user: { id: 1 } } },
     { ...makeCache(), owner: null },
-    { ...makeCache(), clientState: { queries: 'nope' } },
+    { ...makeCache(), entries: 'nope' },
   ])('should reject malformed input %#', (value) => {
-    expect(parsePersistedCache(value, { buster: BUSTER, now: NOW })).toBeNull();
+    expect(parsePersistedMeta(value, { buster: BUSTER, now: NOW })).toBeNull();
+  });
+});
+
+describe('parsePersistedEntry', () => {
+  const query = {
+    queryKey: trpcKey('stats.monthlySummary'),
+    queryHash: 'h',
+    state: { data: { total: 10n }, dataUpdatedAt: NOW, status: 'success' },
+  };
+
+  it('should accept one dehydrated query', () => {
+    const state = parsePersistedEntry({ mutations: [], queries: [query] });
+
+    expect(state?.queries).toHaveLength(1);
+    expect(state?.mutations).toEqual([]);
+  });
+
+  it('should never bring mutations back', () => {
+    const state = parsePersistedEntry({ mutations: [{ state: {} }], queries: [query] });
+
+    expect(state?.mutations).toEqual([]);
+  });
+
+  it.each([
+    null,
+    'x',
+    { queries: [] },
+    { queries: [query, query] },
+    { queries: [{ ...query, queryHash: 3 }] },
+    { queries: [{ ...query, state: null }] },
+  ])('should reject a broken entry %#', (value) => {
+    expect(parsePersistedEntry(value)).toBeNull();
+  });
+});
+
+describe('splitEntriesForRestore', () => {
+  it('should restore small queries at boot and big ones on demand', () => {
+    expect(splitEntriesForRestore(makeCache().entries)).toEqual({
+      eager: ['small'],
+      lazy: ['big'],
+    });
+  });
+
+  it('should treat the limit itself as small', () => {
+    const entries = { edge: { size: EAGER_RESTORE_MAX_SIZE, savedAt: NOW } };
+
+    expect(splitEntriesForRestore(entries).eager).toEqual(['edge']);
+  });
+});
+
+describe('entryKey', () => {
+  it('should namespace entries under the index key', () => {
+    expect(entryKey('abc')).toBe('casa.queryCache:abc');
   });
 });
 

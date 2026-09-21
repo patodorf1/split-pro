@@ -74,3 +74,66 @@ export const deviceStoreSet = async (key: string, value: unknown) => {
 export const deviceStoreDelete = async (key: string) => {
   await run('readwrite', (store) => store.delete(key));
 };
+
+/** Varias lecturas en una sola transacción (mismo orden que `keys`). */
+export const deviceStoreGetMany = async (keys: string[]): Promise<unknown[]> => {
+  if (0 === keys.length) {
+    return [];
+  }
+
+  const db = await openDb();
+
+  if (!db) {
+    return keys.map(() => undefined);
+  }
+
+  return new Promise<unknown[]>((resolve) => {
+    try {
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const requests = keys.map((key) => store.get(key));
+
+      transaction.oncomplete = () => resolve(requests.map((request) => request.result));
+      transaction.onerror = () => resolve(keys.map(() => undefined));
+      transaction.onabort = () => resolve(keys.map(() => undefined));
+    } catch {
+      resolve(keys.map(() => undefined));
+    }
+  });
+};
+
+/** Varias escrituras y borrados en una sola transacción. */
+export const deviceStoreWriteMany = async (
+  puts: [key: string, value: unknown][],
+  deletes: string[] = [],
+) => {
+  const db = await openDb();
+
+  if (!db || (0 === puts.length && 0 === deletes.length)) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    try {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+
+      for (const [key, value] of puts) {
+        store.put(value, key);
+      }
+      for (const key of deletes) {
+        store.delete(key);
+      }
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => resolve();
+      transaction.onabort = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+};
+
+/** Vacía el almacén entero (todo lo que la app guardó en el dispositivo). */
+export const deviceStoreClear = async () => {
+  await run('readwrite', (store) => store.clear());
+};

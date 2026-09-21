@@ -9,7 +9,7 @@
  */
 import { type DehydratedState } from '@tanstack/react-query';
 
-/** Clave dentro del almacén de IndexedDB. */
+/** Clave del índice en IndexedDB; cada consulta guardada usa este prefijo. */
 export const PERSISTED_CACHE_KEY = 'casa.queryCache';
 
 /** Más viejo que esto, no se muestra: mejor esperar a la red que mostrar algo de hace semanas. */
@@ -120,50 +120,125 @@ export interface PersistedOwner<TUser extends { id: number } = { id: number }> {
   expires: string;
 }
 
-export interface PersistedCache<TUser extends { id: number } = { id: number }> {
+/** Lo que se sabe de cada consulta guardada, sin tener que leerla. */
+export interface PersistedEntryInfo {
+  /** Tamaño serializado, en caracteres. */
+  size: number;
+  /** Cuándo se guardó. */
+  savedAt: number;
+}
+
+/**
+ * Índice del caché guardado. Cada consulta va en su propia entrada (clave
+ * `entryKey(hash)`), así al guardar sólo se escribe lo que cambió y al abrir
+ * se leen primero las chicas: los historiales completos (miles de gastos)
+ * se reponen recién cuando una pantalla los pide.
+ */
+export interface PersistedMeta<TUser extends { id: number } = { id: number }> {
   buster: string;
   timestamp: number;
   owner: PersistedOwner<TUser>;
-  clientState: DehydratedState;
+  entries: Record<string, PersistedEntryInfo>;
 }
+
+/** Clave de la entrada de una consulta (por su `queryHash`). */
+export const entryKey = (queryHash: string) => `${PERSISTED_CACHE_KEY}:${queryHash}`;
+
+/**
+ * Hasta este tamaño una consulta se repone al abrir, antes de pintar. Las más
+ * grandes (listas completas de gastos) se reponen cuando se montan, para no
+ * frenar el arranque de todas las pantallas por una sola.
+ */
+export const EAGER_RESTORE_MAX_SIZE = 64 * 1024;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   'object' === typeof value && null !== value;
 
+const isFreshTimestamp = (timestamp: unknown, now: number): timestamp is number =>
+  'number' === typeof timestamp &&
+  Number.isFinite(timestamp) &&
+  // Vencido, o con fecha del futuro (reloj manipulado o valor corrupto).
+  now - timestamp <= PERSISTED_CACHE_MAX_AGE_MS &&
+  timestamp <= now + 60_000;
+
 /**
- * Valida lo guardado (ya deserializado con superjson, que conserva BigInt y
- * Date) y devuelve el caché sólo si sigue sirviendo: bien formado, del mismo
- * build y de menos de 7 días. Cualquier otra cosa (manipulado, de otra
- * versión, vencido) devuelve `null` y se ignora.
+ * Valida el índice guardado (ya deserializado con superjson) y lo devuelve
+ * sólo si sigue sirviendo: bien formado, del mismo build y de menos de 7 días.
+ * Las entradas vencidas o rotas se descartan. Cualquier otra cosa (manipulado,
+ * de otra versión, vencido) devuelve `null` y se ignora.
  */
-export const parsePersistedCache = (
+export const parsePersistedMeta = (
   parsed: unknown,
   { buster, now = Date.now() }: { buster: string; now?: number },
-): PersistedCache | null => {
-  if (!isObject(parsed)) {
+): PersistedMeta | null => {
+  if (!isObject(parsed) || parsed.buster !== buster) {
     return null;
   }
 
-  const { owner, clientState, timestamp } = parsed;
+  const { owner, entries, timestamp } = parsed;
 
-  if (parsed.buster !== buster) {
-    return null;
-  }
-  if ('number' !== typeof timestamp || !Number.isFinite(timestamp)) {
-    return null;
-  }
-  // Vencido, o con fecha del futuro (reloj manipulado o valor corrupto).
-  if (now - timestamp > PERSISTED_CACHE_MAX_AGE_MS || timestamp > now + 60_000) {
+  if (!isFreshTimestamp(timestamp, now)) {
     return null;
   }
   if (!isObject(owner) || !isObject(owner.user) || 'number' !== typeof owner.user.id) {
     return null;
   }
-  if (!isObject(clientState) || !Array.isArray(clientState.queries)) {
+  if ('string' !== typeof owner.expires || !isObject(entries)) {
     return null;
   }
 
-  return parsed as unknown as PersistedCache;
+  const validEntries: Record<string, PersistedEntryInfo> = {};
+
+  for (const [hash, info] of Object.entries(entries)) {
+    if (
+      isObject(info) &&
+      'number' === typeof info.size &&
+      0 <= info.size &&
+      isFreshTimestamp(info.savedAt, now)
+    ) {
+      validEntries[hash] = { size: info.size, savedAt: info.savedAt };
+    }
+  }
+
+  return {
+    buster,
+    timestamp,
+    owner: { user: owner.user as { id: number }, expires: owner.expires },
+    entries: validEntries,
+  };
+};
+
+/**
+ * Valida una entrada (una consulta deshidratada, ya deserializada). Devuelve
+ * el estado listo para `hydrate`, o `null` si está rota.
+ */
+export const parsePersistedEntry = (parsed: unknown): DehydratedState | null => {
+  if (!isObject(parsed) || !Array.isArray(parsed.queries) || 1 !== parsed.queries.length) {
+    return null;
+  }
+
+  const [query] = parsed.queries as unknown[];
+
+  if (!isObject(query) || 'string' !== typeof query.queryHash || !isObject(query.state)) {
+    return null;
+  }
+
+  return { mutations: [], queries: parsed.queries as DehydratedState['queries'] };
+};
+
+/** Qué entradas se reponen al abrir (chicas) y cuáles cuando se piden (grandes). */
+export const splitEntriesForRestore = (
+  entries: Record<string, PersistedEntryInfo>,
+  eagerMaxSize: number = EAGER_RESTORE_MAX_SIZE,
+) => {
+  const eager: string[] = [];
+  const lazy: string[] = [];
+
+  for (const [hash, { size }] of Object.entries(entries)) {
+    (size <= eagerMaxSize ? eager : lazy).push(hash);
+  }
+
+  return { eager, lazy };
 };
 
 /**
@@ -172,7 +247,7 @@ export const parsePersistedCache = (
  * el servidor va a mandar al login, así que no se muestra nada.
  */
 export const getOptimisticOwner = <TUser extends { id: number }>(
-  cache: PersistedCache<TUser> | null,
+  cache: PersistedMeta<TUser> | null,
   now: number = Date.now(),
 ): PersistedOwner<TUser> | null => {
   if (null === cache) {
@@ -189,5 +264,5 @@ export const getOptimisticOwner = <TUser extends { id: number }>(
 };
 
 /** ¿El caché guardado es de este usuario? */
-export const isOwnedBy = (cache: PersistedCache | null, userId: number | null | undefined) =>
+export const isOwnedBy = (cache: PersistedMeta | null, userId: number | null | undefined) =>
   null !== cache && 'number' === typeof userId && cache.owner.user.id === userId;

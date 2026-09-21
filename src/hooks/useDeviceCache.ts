@@ -81,8 +81,8 @@ export const useDeviceCache = (status: SessionStatus, session: Session | null) =
   const foreignCache =
     'authenticated' === status &&
     undefined !== user &&
-    null !== restored.cache &&
-    !isOwnedBy(restored.cache, user.id);
+    null !== restored.meta &&
+    !isOwnedBy(restored.meta, user.id);
 
   useEffect(() => {
     if ('authenticated' !== status || !user || !expires || !restored.done) {
@@ -98,7 +98,7 @@ export const useDeviceCache = (status: SessionStatus, session: Session | null) =
   }, [status, user, expires, restored.done, foreignCache, queryClient]);
 
   const optimisticOwner =
-    'loading' === status && restored.done ? getOptimisticOwner(restored.cache) : null;
+    'loading' === status && restored.done ? getOptimisticOwner(restored.meta) : null;
 
   return {
     /** Ya se sabe si hay algo guardado (la lectura de IndexedDB terminó). */
@@ -122,7 +122,7 @@ export const useUnauthenticatedHandler = () => {
     void confirmSignedOut().then((signedOut) => {
       if (signedOut) {
         void clearPersistedCache(queryClient).then(redirectToSignIn);
-      } else if (!getOptimisticOwner(getRestoredCache().cache)) {
+      } else if (!getOptimisticOwner(getRestoredCache().meta)) {
         // Sin red y sin nada guardado: como siempre, al login.
         redirectToSignIn();
       }
