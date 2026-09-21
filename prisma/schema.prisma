@@ -66,6 +66,7 @@ model User {
   sessions             Session[]
   hiddenFriendIds      Int[]                @default([])
   addedShoppingItems   ShoppingItem[]       @relation("ShoppingItemAddedBy")
+  uploadedDocuments    Document[]           @relation("DocumentUploadedBy")
   checkedShoppingItems ShoppingItem[]       @relation("ShoppingItemCheckedBy")
 
   @@schema("public")
@@ -115,6 +116,8 @@ model Group {
   groupDefaultSplit GroupDefaultSplit?
   shoppingItems     ShoppingItem[]
   externalExpenses  ExternalExpense[]
+  documentFolders   DocumentFolder[]
+  documents         Document[]
 
   @@schema("public")
 }
@@ -312,6 +315,51 @@ model ShoppingItem {
   @@unique([groupId, externalId])
   @@index([groupId])
   @@index([groupId, checked])
+  @@schema("public")
+}
+
+/// Casa: secciones de documentos de la familia (Clari, Pato, Kuga, Lancha…). El dueño es un grupo:
+/// tienen acceso los miembros de ese grupo. `icon` es una clave de la lista corta de íconos de la UI.
+model DocumentFolder {
+  id        Int        @id @default(autoincrement())
+  groupId   Int
+  name      String
+  icon      String     @default("folder")
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  group     Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@unique([groupId, name])
+  @@index([groupId])
+  @@schema("public")
+}
+
+/// Casa: documento subido (DNI, póliza, cédula…). El archivo vive en disco bajo
+/// `uploads/documents/<groupId>/<uuid>.<ext>` (`storageKey`, relativo a `uploads/documents`) y
+/// sólo se sirve por `/api/documents/[id]` con sesión y membresía. `groupId` repite el del folder
+/// para chequear el acceso sin join. Borrado lógico con `deletedAt` (el archivo queda en disco).
+model Document {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  folderId     Int
+  groupId      Int
+  name         String
+  originalName String
+  mimeType     String
+  size         Int
+  storageKey   String         @unique
+  uploadedById Int?
+  notes        String?
+  expiresAt    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
+  folder       DocumentFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  group        Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  uploadedBy   User?          @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([groupId, deletedAt])
+  @@index([folderId, deletedAt])
   @@schema("public")
 }
 
