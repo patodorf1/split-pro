@@ -78,6 +78,7 @@ export const DocumentActions: React.FC<{
       void utils.documents.getFolder.invalidate();
       void utils.documents.overview.invalidate();
       void utils.documents.search.invalidate();
+      void utils.documents.upcomingExpiries.invalidate();
     });
   }, [utils]);
 

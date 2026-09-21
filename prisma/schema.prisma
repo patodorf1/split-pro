@@ -39,35 +39,36 @@ model Session {
 }
 
 model User {
-  id                   Int                  @id @default(autoincrement())
+  id                   Int                     @id @default(autoincrement())
   name                 String?
-  email                String?              @unique
+  email                String?                 @unique
   emailVerified        DateTime?
   image                String?
-  currency             String               @default("USD")
+  currency             String                  @default("USD")
   defaultCurrency      String?
-  preferredLanguage    String               @default("")
+  preferredLanguage    String                  @default("")
   bankingId            String?
   obapiProviderId      String?
   accounts             Account[]
-  friendBalances       BalanceView[]        @relation("FriendBalanceView")
-  userBalances         BalanceView[]        @relation("UserBalanceView")
-  cachedBankData       CachedBankData[]     @relation("UserCachedBankData")
-  addedExpenses        Expense[]            @relation("AddedByUser")
-  deletedExpenses      Expense[]            @relation("DeletedByUser")
-  paidExpenses         Expense[]            @relation("PaidByUser")
-  updatedExpenses      Expense[]            @relation("UpdatedByUser")
+  friendBalances       BalanceView[]           @relation("FriendBalanceView")
+  userBalances         BalanceView[]           @relation("UserBalanceView")
+  cachedBankData       CachedBankData[]        @relation("UserCachedBankData")
+  addedExpenses        Expense[]               @relation("AddedByUser")
+  deletedExpenses      Expense[]               @relation("DeletedByUser")
+  paidExpenses         Expense[]               @relation("PaidByUser")
+  updatedExpenses      Expense[]               @relation("UpdatedByUser")
   expenseNotes         ExpenseNote[]
   expenseParticipants  ExpenseParticipant[]
   groups               Group[]
   associatedGroups     GroupUser[]
-  friendDefaultSplitsA FriendDefaultSplit[] @relation("FriendDefaultSplitUserA")
-  friendDefaultSplitsB FriendDefaultSplit[] @relation("FriendDefaultSplitUserB")
+  friendDefaultSplitsA FriendDefaultSplit[]    @relation("FriendDefaultSplitUserA")
+  friendDefaultSplitsB FriendDefaultSplit[]    @relation("FriendDefaultSplitUserB")
   sessions             Session[]
-  hiddenFriendIds      Int[]                @default([])
-  addedShoppingItems   ShoppingItem[]       @relation("ShoppingItemAddedBy")
-  uploadedDocuments    Document[]           @relation("DocumentUploadedBy")
-  checkedShoppingItems ShoppingItem[]       @relation("ShoppingItemCheckedBy")
+  hiddenFriendIds      Int[]                   @default([])
+  addedShoppingItems   ShoppingItem[]          @relation("ShoppingItemAddedBy")
+  uploadedDocuments    Document[]              @relation("DocumentUploadedBy")
+  documentReminders    DocumentReminderState[]
+  checkedShoppingItems ShoppingItem[]          @relation("ShoppingItemCheckedBy")
 
   @@schema("public")
 }
@@ -344,26 +345,44 @@ model DocumentFolder {
 /// sólo se sirve por `/api/documents/[id]` con sesión y membresía. `groupId` repite el del folder
 /// para chequear el acceso sin join. Borrado lógico con `deletedAt` (el archivo queda en disco).
 model Document {
-  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   folderId     Int
   groupId      Int
   name         String
   originalName String
   mimeType     String
   size         Int
-  storageKey   String         @unique
+  storageKey   String                  @unique
   uploadedById Int?
   notes        String?
   expiresAt    DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
   deletedAt    DateTime?
-  folder       DocumentFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  group        Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  uploadedBy   User?          @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  folder       DocumentFolder          @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  group        Group                   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  uploadedBy   User?                   @relation("DocumentUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  reminders    DocumentReminderState[]
 
   @@index([groupId, deletedAt])
   @@index([folderId, deletedAt])
+  @@schema("public")
+}
+
+/// Casa: aviso de vencimiento en Inicio, por usuario y documento. "Posponer" lo esconde hasta
+/// `snoozedUntil`; "Descartar" lo esconde para siempre, pero sólo para ESE vencimiento
+/// (`dismissedForExpiresAt`): si después cambia la fecha de vencimiento, el aviso vuelve.
+model DocumentReminderState {
+  documentId            String    @db.Uuid
+  userId                Int
+  snoozedUntil          DateTime?
+  dismissedForExpiresAt DateTime?
+  updatedAt             DateTime  @updatedAt
+  document              Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, userId])
+  @@index([userId])
   @@schema("public")
 }
 
