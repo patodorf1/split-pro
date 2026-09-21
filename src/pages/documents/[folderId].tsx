@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, PencilIcon, UploadIcon } from 'lucide-react';
+import { ChevronLeftIcon, UploadIcon } from 'lucide-react';
 import { type GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -8,9 +8,8 @@ import { toast } from 'sonner';
 
 import { DocumentActions } from '~/components/documents/DocumentActions';
 import { type DocumentItem, DocumentRow } from '~/components/documents/DocumentRow';
-import { FolderEditor } from '~/components/documents/FolderEditor';
-import { ImageViewer } from '~/components/documents/ImageViewer';
-import { openDocumentInBrowser } from '~/components/documents/documentClient';
+import { DocumentViewer } from '~/components/documents/DocumentViewer';
+import { downloadDocument, getViewerKind } from '~/components/documents/documentClient';
 import { FolderIconBadge } from '~/components/documents/icons';
 import { QuickFieldsRow } from '~/components/documents/QuickFieldsRow';
 import { useDocumentUpload } from '~/components/documents/useDocumentUpload';
@@ -19,7 +18,7 @@ import { Button } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import { ProgressBar } from '~/components/ui/progress-bar';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
-import { DOCUMENT_ACCEPT_ATTRIBUTE, DOCUMENT_MAX_SIZE_MB, isImageMime } from '~/lib/documents';
+import { DOCUMENT_ACCEPT_ATTRIBUTE, DOCUMENT_MAX_SIZE_MB } from '~/lib/documents';
 import { type NextPageWithUser } from '~/types';
 import { api } from '~/utils/api';
 import { customServerSideTranslations } from '~/utils/i18n/server';
@@ -35,7 +34,6 @@ const DocumentFolderPage: NextPageWithUser = () => {
     { folderId },
     { enabled: validId, retry: (count, error) => 'NOT_FOUND' !== error.data?.code && count < 2 },
   );
-  const overview = api.documents.overview.useQuery();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [viewing, setViewing] = useState<DocumentItem | null>(null);
@@ -44,9 +42,6 @@ const DocumentFolderPage: NextPageWithUser = () => {
   const folder = folderQuery.data?.folder;
   const documents = folderQuery.data?.documents ?? [];
   const siblings = folderQuery.data?.siblings ?? [];
-  const documentCount =
-    overview.data?.folders.find((entry) => entry.id === folderId)?.documentCount ??
-    documents.length;
 
   const onFilesChosen = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,11 +74,12 @@ const DocumentFolderPage: NextPageWithUser = () => {
     [folderId, t, upload, utils],
   );
 
+  // Fotos, PDF y texto se ven en el visor de la app (con X para volver); Office se descarga.
   const onOpen = useCallback((document: DocumentItem) => {
-    if (isImageMime(document.mimeType)) {
+    if (getViewerKind(document.mimeType)) {
       setViewing(document);
     } else {
-      openDocumentInBrowser(document);
+      downloadDocument(document);
     }
   }, []);
 
@@ -105,22 +101,16 @@ const DocumentFolderPage: NextPageWithUser = () => {
     </div>
   );
 
+  // "Subir" va arriba a la derecha. La sección se edita desde la lista de Documentos.
   const actions = folder ? (
-    <FolderEditor
-      mode="edit"
-      folder={{ ...folder, documentCount }}
-      onDeleted={() => void router.replace('/documents')}
-      trigger={
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-9"
-          aria-label={t('documents.folder.edit')}
-        >
-          <PencilIcon className="text-primary size-5" />
-        </Button>
-      }
-    />
+    <Button
+      className="h-10 shrink-0 gap-2 rounded-full px-5"
+      disabled={isUploading}
+      onClick={() => inputRef.current?.click()}
+    >
+      <UploadIcon className="size-4" />
+      {t('documents.upload.button')}
+    </Button>
   ) : null;
 
   return (
@@ -153,21 +143,6 @@ const DocumentFolderPage: NextPageWithUser = () => {
               onChange={onFilesChosen}
               data-testid="document-file-input"
             />
-            {/* Pista a la izquierda, "Subir" a la derecha. */}
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-muted-foreground min-w-0 text-xs">
-                {progress ? null : t('documents.upload.hint', { max: DOCUMENT_MAX_SIZE_MB })}
-              </p>
-              <Button
-                className="h-10 shrink-0 gap-2 rounded-full px-5"
-                disabled={isUploading}
-                onClick={() => inputRef.current?.click()}
-              >
-                <UploadIcon className="size-4" />
-                {t('documents.upload.button')}
-              </Button>
-            </div>
-
             {progress ? (
               <Card className="flex flex-col gap-2" aria-live="polite">
                 <div className="flex items-center justify-between gap-3 text-xs">
@@ -210,7 +185,7 @@ const DocumentFolderPage: NextPageWithUser = () => {
           </div>
         ) : null}
       </MainLayout>
-      <ImageViewer document={viewing} onClose={() => setViewing(null)} />
+      <DocumentViewer document={viewing} onClose={() => setViewing(null)} />
     </>
   );
 };

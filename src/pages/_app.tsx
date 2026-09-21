@@ -57,6 +57,16 @@ const MyApp: AppType<{ session: Session | null }> = ({
       <Head>
         <title>{t('meta.title')}</title>
         <link rel="icon" href="/favicon.ico" />
+        {/*
+          Casa: sin zoom de página en la app instalada. El iPhone agrandaba toda la pantalla al
+          tocar un campo (y quedaba corrida, con "Subir" cortado). El visor de PDF tiene su propio
+          zoom. Sin viewport-fit=cover: la app no reserva espacio para el notch.
+        */}
+        <meta
+          key="viewport"
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
         <meta name="application-name" content={t('meta.application_name')} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content={t('meta.application_name')} />

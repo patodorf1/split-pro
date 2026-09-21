@@ -223,7 +223,8 @@
       "type_mismatch": "“{{name}}” no es lo que dice ser: el contenido no coincide con la extensión.",
       "type_not_allowed": "“{{name}}” no es un tipo permitido. Subí PDF, fotos, Word, Excel o texto."
     },
-    "expires": "Vence el {{date}}",
+    "expired": "Venció {{date}}",
+    "expires": "Vence {{date}}",
     "folder": {
       "create": "Nueva sección",
       "delete": "Borrar sección",
@@ -291,13 +292,16 @@
     },
     "upload": {
       "button": "Subir",
-      "hint": "PDF, fotos, Word, Excel o texto. Hasta {{max}} MB por archivo.",
       "progress": "Subiendo {{current}} de {{total}}"
     },
     "uploaded_by": "Subió {{name}}",
     "viewer": {
       "close": "Cerrar",
-      "open": "Abrir"
+      "error": "No se pudo mostrar. Descargalo para verlo.",
+      "open": "Abrir",
+      "page": "Página {{page}} de {{total}}",
+      "zoom_in": "Acercar",
+      "zoom_out": "Alejar"
     }
   },
   "errors": {

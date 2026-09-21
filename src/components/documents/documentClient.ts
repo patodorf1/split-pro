@@ -33,28 +33,26 @@ export const downloadDocument = (document: DocumentFileRef) => {
   link.remove();
 };
 
+export type ViewerKind = 'image' | 'pdf' | 'text';
+
 /**
- * PDF y texto: se abren en el visor del navegador (en el iPhone, la vista de Safari con su botón
- * de compartir). Office: se descarga. Las imágenes las muestra la app (ver `ImageViewer`).
+ * Cómo se muestra dentro de la app (siempre con una X para volver): fotos, PDF (con pdf.js) y
+ * texto. Office no se puede mostrar: devuelve null y se descarga.
+ *
+ * Nunca se navega al archivo: en la app instalada del iPhone no hay barra del navegador y el PDF
+ * quedaba a pantalla completa sin forma de volver.
  */
-export const openDocumentInBrowser = (document: DocumentFileRef) => {
-  const type = getDocumentTypeByMime(document.mimeType);
+export const getViewerKind = (mimeType: string): ViewerKind | null => {
+  const type = getDocumentTypeByMime(mimeType);
 
   if (!type?.inline) {
-    downloadDocument(document);
-    return;
+    return null;
+  }
+  if (type.isImage) {
+    return 'image';
   }
 
-  // Sin 'noopener' en los features: con él `window.open` devuelve null siempre y no se podría
-  // Detectar el bloqueo. Se corta el vínculo a mano.
-  const opened = window.open(documentUrl(document.id), '_blank');
-
-  if (opened) {
-    opened.opener = null;
-  } else {
-    // Bloqueador de ventanas (o PWA sin pestañas): se abre en la misma.
-    window.location.assign(documentUrl(document.id));
-  }
+  return 'pdf' === type.kind ? 'pdf' : 'text';
 };
 
 /** Baja el archivo como `File` (con su nombre y tipo) para pasárselo a la hoja de compartir. */

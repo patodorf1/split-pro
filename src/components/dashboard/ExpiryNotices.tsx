@@ -3,11 +3,14 @@ import Link from 'next/link';
 import React, { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ImageViewer } from '~/components/documents/ImageViewer';
-import { type DocumentFileRef, openDocumentInBrowser } from '~/components/documents/documentClient';
+import { DocumentViewer } from '~/components/documents/DocumentViewer';
+import {
+  type DocumentFileRef,
+  downloadDocument,
+  getViewerKind,
+} from '~/components/documents/documentClient';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { REMINDER_VISIBLE_ITEMS } from '~/lib/documentReminders';
-import { isImageMime } from '~/lib/documents';
 import { cn } from '~/lib/utils';
 import { type RouterOutputs, api } from '~/utils/api';
 
@@ -122,10 +125,10 @@ export const ExpiryNotices: React.FC = () => {
   const onOpen = useCallback((item: Expiry) => {
     const ref = { id: item.id, name: item.name, mimeType: item.mimeType };
 
-    if (isImageMime(item.mimeType)) {
+    if (getViewerKind(item.mimeType)) {
       setViewing(ref);
     } else {
-      openDocumentInBrowser(ref);
+      downloadDocument(ref);
     }
   }, []);
   const closeViewer = useCallback(() => setViewing(null), []);
@@ -133,10 +136,10 @@ export const ExpiryNotices: React.FC = () => {
   const onDismiss = useCallback((id: string) => dismiss.mutate({ id }), [dismiss]);
 
   const items = expiriesQuery.data ?? [];
-  const viewer = <ImageViewer document={viewing} onClose={closeViewer} />;
+  const viewer = <DocumentViewer document={viewing} onClose={closeViewer} />;
 
   if (0 === items.length) {
-    // Sin avisos no ocupa lugar (salvo el visor, si justo se descartó el último con una foto abierta).
+    // Sin avisos no ocupa lugar (salvo el visor, si justo se descartó el último con un documento abierto).
     return viewing ? viewer : null;
   }
 

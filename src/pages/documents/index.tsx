@@ -14,8 +14,8 @@ import { toast } from 'sonner';
 import { DocumentActions } from '~/components/documents/DocumentActions';
 import { type DocumentItem, DocumentRow } from '~/components/documents/DocumentRow';
 import { FolderEditor } from '~/components/documents/FolderEditor';
-import { ImageViewer } from '~/components/documents/ImageViewer';
-import { openDocumentInBrowser } from '~/components/documents/documentClient';
+import { DocumentViewer } from '~/components/documents/DocumentViewer';
+import { downloadDocument, getViewerKind } from '~/components/documents/documentClient';
 import { FolderIconBadge } from '~/components/documents/icons';
 import MainLayout from '~/components/Layout/MainLayout';
 import { Button } from '~/components/ui/button';
@@ -66,11 +66,12 @@ const DocumentsPage: NextPageWithUser = () => {
     onError: () => toast.error(t('documents.errors.generic')),
   });
 
+  // Fotos, PDF y texto se ven en el visor de la app (con X para volver); Office se descarga.
   const onOpen = useCallback((document: DocumentItem) => {
-    if (isImageMime(document.mimeType)) {
+    if (getViewerKind(document.mimeType)) {
       setViewing(document);
     } else {
-      openDocumentInBrowser(document);
+      downloadDocument(document);
     }
   }, []);
 
@@ -258,7 +259,7 @@ const DocumentsPage: NextPageWithUser = () => {
           )}
         </div>
       </MainLayout>
-      <ImageViewer document={viewing} onClose={() => setViewing(null)} />
+      <DocumentViewer document={viewing} onClose={() => setViewing(null)} />
     </>
   );
 };

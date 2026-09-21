@@ -222,6 +222,7 @@
       "type_mismatch": "“{{name}}” isn't what it claims to be: its content doesn't match the extension.",
       "type_not_allowed": "“{{name}}” isn't an allowed type. Upload PDF, photos, Word, Excel or text."
     },
+    "expired": "Expired {{date}}",
     "expires": "Expires {{date}}",
     "folder": {
       "create": "New section",
@@ -290,13 +291,16 @@
     },
     "upload": {
       "button": "Upload",
-      "hint": "PDF, photos, Word, Excel or text. Up to {{max}} MB per file.",
       "progress": "Uploading {{current}} of {{total}}"
     },
     "uploaded_by": "Uploaded by {{name}}",
     "viewer": {
       "close": "Close",
-      "open": "Open"
+      "error": "Couldn't show this document. Download it to view it.",
+      "open": "Open",
+      "page": "Page {{page}} of {{total}}",
+      "zoom_in": "Zoom in",
+      "zoom_out": "Zoom out"
     }
   },
   "errors": {

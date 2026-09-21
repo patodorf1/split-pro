@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
-import { formatFileSize, isImageMime } from '~/lib/documents';
+import { formatExpiryDate, isExpired } from '~/lib/documentReminders';
+import { isImageMime } from '~/lib/documents';
+import { cn } from '~/lib/utils';
 import { type RouterOutputs } from '~/utils/api';
 
 import { documentUrl } from './documentClient';
@@ -46,15 +48,14 @@ export const DocumentRow: React.FC<{
   /** En el buscador: de qué sección es. */
   folderName?: string;
 }> = ({ document, onOpen, actions, folderName }) => {
-  const { t, i18n, toUIDate } = useTranslationWithUtils();
-
-  const meta = [
-    folderName,
-    toUIDate(document.createdAt, { year: true }),
-    formatFileSize(document.size, i18n.language),
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const { t } = useTranslationWithUtils();
+  // Sólo el vencimiento (por día de calendario en Argentina, como los avisos de Inicio).
+  const expired = document.expiresAt ? isExpired(document.expiresAt, new Date()) : false;
+  const expiry = document.expiresAt
+    ? t(expired ? 'documents.expired' : 'documents.expires', {
+        date: formatExpiryDate(document.expiresAt),
+      })
+    : null;
 
   return (
     <li className="flex items-center gap-3 py-3">
@@ -66,10 +67,13 @@ export const DocumentRow: React.FC<{
         <DocumentThumb document={document} />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-foreground truncate text-sm font-medium">{document.name}</span>
-          <span className="text-muted-foreground truncate text-xs">{meta}</span>
-          {document.expiresAt ? (
-            <span className="text-primary text-xs">
-              {t('documents.expires', { date: toUIDate(document.expiresAt, { year: true }) })}
+          {folderName || expiry ? (
+            <span className="text-muted-foreground truncate text-xs">
+              {folderName}
+              {folderName && expiry ? <span aria-hidden> · </span> : null}
+              {expiry ? (
+                <span className={cn(expired && 'text-destructive/80')}>{expiry}</span>
+              ) : null}
             </span>
           ) : null}
         </span>

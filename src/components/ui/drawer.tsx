@@ -18,9 +18,66 @@ import {
   DialogTrigger,
 } from './dialog';
 
+/**
+ * Casa: `repositionInputs` de vaul queda apagado; lo reemplaza `useKeyboardInset` en
+ * `DrawerContent` (el de vaul, en la app instalada del iPhone, dejaba la hoja debajo del teclado y
+ * no se llegaba a "Guardar").
+ */
 function Drawer({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
+  return <DrawerPrimitive.Root data-slot="drawer" repositionInputs={false} {...props} />;
 }
+
+/**
+ * Cuánto tapa el teclado (u otra barra) el fondo de la pantalla: la parte de la ventana que queda
+ * debajo de lo visible (`visualViewport`). 0 si no hay teclado.
+ */
+const readKeyboardInset = () => {
+  const viewport = window.visualViewport;
+
+  if (!viewport) {
+    return { inset: 0, visibleHeight: window.innerHeight };
+  }
+
+  return {
+    inset: Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop)),
+    visibleHeight: Math.round(viewport.height),
+  };
+};
+
+/**
+ * Mientras la hoja está abierta, la sube por encima del teclado y la achica para que entre en lo
+ * que queda visible: así el título y sus botones (Guardar) siempre se ven.
+ */
+const useKeyboardInset = () => {
+  const [state, setState] = React.useState({ inset: 0, visibleHeight: 0 });
+
+  React.useEffect(() => {
+    const viewport = window.visualViewport;
+
+    if (!viewport) {
+      return;
+    }
+
+    const update = () =>
+      setState((previous) => {
+        const next = readKeyboardInset();
+        return previous.inset === next.inset && previous.visibleHeight === next.visibleHeight
+          ? previous
+          : next;
+      });
+
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+    };
+  }, []);
+
+  return state;
+};
 
 function DrawerTrigger({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
   return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />;
@@ -53,12 +110,24 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  style,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+  const keyboard = useKeyboardInset();
+  const keyboardStyle: React.CSSProperties =
+    0 < keyboard.inset
+      ? {
+          bottom: keyboard.inset,
+          // Deja un margen arriba para que se note que es una hoja.
+          maxHeight: Math.max(160, keyboard.visibleHeight - 24),
+        }
+      : {};
+
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
       <DrawerPrimitive.Content
+        style={{ ...style, ...keyboardStyle }}
         data-slot="drawer-content"
         className={cn(
           'group/drawer-content bg-popover text-popover-foreground fixed z-50 flex h-auto flex-col',

@@ -30,6 +30,17 @@ const nextConfig = {
      */
     middlewareClientMaxBodySize: '30mb',
   },
+  /**
+   * Casa: pdf.js (visor de PDF de Documentos) sólo corre en el navegador. En el build del servidor
+   * se reemplaza por un módulo vacío: si no, Next intenta tratar su worker como dependencia externa
+   * de Node y falla.
+   */
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.resolve.alias = { ...config.resolve.alias, 'pdfjs-dist': false };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {

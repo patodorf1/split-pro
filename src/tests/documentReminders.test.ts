@@ -1,6 +1,8 @@
 import {
   REMINDER_SNOOZE_MS,
   calendarDaysUntil,
+  formatExpiryDate,
+  isExpired,
   isReminderVisible,
   reminderWindowEnd,
 } from '~/lib/documentReminders';
@@ -33,6 +35,25 @@ describe('calendarDaysUntil (Argentina calendar days)', () => {
   it('counts by calendar date, not by 24h blocks', () => {
     // 23:59 de hoy → 00:01 de mañana: dos minutos, pero un día de calendario.
     expect(calendarDaysUntil(at('2026-09-22T03:01:00Z'), at('2026-09-22T02:59:00Z'))).toBe(1);
+  });
+});
+
+describe('formatExpiryDate / isExpired (Argentina calendar days)', () => {
+  it.each([
+    ['2027-08-12T15:00:00Z', '12/08/2027'],
+    // Medianoche UTC = 21:00 del día anterior en Argentina.
+    ['2027-08-12T00:00:00Z', '11/08/2027'],
+    ['2024-04-19T03:00:00Z', '19/04/2024'],
+  ])('%s is shown as %s', (expiresAt, expected) => {
+    expect(formatExpiryDate(at(expiresAt))).toBe(expected);
+  });
+
+  it('counts as expired only from the next calendar day', () => {
+    expect(isExpired(at('2026-09-21T23:00:00Z'), NOW)).toBe(false);
+    expect(isExpired(at('2026-09-21T03:00:00Z'), NOW)).toBe(false);
+    expect(isExpired(at('2026-09-21T02:59:00Z'), NOW)).toBe(true);
+    expect(isExpired(at('2024-04-19T15:00:00Z'), NOW)).toBe(true);
+    expect(isExpired(at('2027-08-12T15:00:00Z'), NOW)).toBe(false);
   });
 });
 

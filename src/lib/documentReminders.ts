@@ -31,6 +31,27 @@ export const calendarDaysUntil = (
 ): number => calendarDayNumber(expiresAt, timeZone) - calendarDayNumber(now, timeZone);
 
 /**
+ * Fecha de vencimiento como día de calendario en Argentina, "dd/mm/aaaa" (la misma cuenta que usan
+ * los avisos de Inicio, así un documento que "vence hoy" muestra la fecha de hoy).
+ */
+export const formatExpiryDate = (
+  expiresAt: Date,
+  timeZone: string = REMINDER_TIME_ZONE,
+): string => {
+  const { year, month, day } = getZonedCalendarDay(timeZone, expiresAt);
+  const pad = (value: number) => String(value).padStart(2, '0');
+
+  return `${pad(day)}/${pad(month)}/${year}`;
+};
+
+/** Ya venció: su día de calendario (en Argentina) es anterior a hoy. Vencer hoy no cuenta. */
+export const isExpired = (
+  expiresAt: Date,
+  now: Date,
+  timeZone: string = REMINDER_TIME_ZONE,
+): boolean => 0 > calendarDaysUntil(expiresAt, now, timeZone);
+
+/**
  * Primer instante que ya queda FUERA de la ventana de aviso: el comienzo del día
  * `hoy + REMINDER_WINDOW_DAYS + 1`. Todo vencimiento anterior (incluidos los pasados) entra.
  */
