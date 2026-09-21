@@ -216,6 +216,24 @@ export const listGroupExpenses = async (groupId: number, limit: number) => {
   return expenses.map(serializeExpense);
 };
 
+/** Gastos por id, en el orden de `ids` (el que ya decidió la consulta filtrada). */
+export const listExpensesByIds = async (ids: string[]) => {
+  if (0 === ids.length) {
+    return [];
+  }
+
+  const expenses = await db.expense.findMany({
+    where: { id: { in: ids } },
+    include: EXPENSE_INCLUDE,
+  });
+  const byId = new Map(expenses.map((expense) => [expense.id, expense]));
+
+  return ids.flatMap((id) => {
+    const expense = byId.get(id);
+    return expense ? [serializeExpense(expense)] : [];
+  });
+};
+
 const findExpense = (id: string) =>
   db.expense.findUnique({ where: { id }, include: EXPENSE_INCLUDE });
 
