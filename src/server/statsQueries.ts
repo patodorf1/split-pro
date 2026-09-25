@@ -55,17 +55,18 @@ export const expenseLocalDateSql = (offsetMinutesSql: Prisma.Sql) =>
   Prisma.sql`(e."expenseDate" + make_interval(mins => ${offsetMinutesSql}))::date`;
 
 /**
- * Venta del blue vigente en la fecha `dateSql` (una expresión `date`): la del mismo día o la del
- * último día anterior con cotización. Antes de todo el histórico, la primera que haya.
+ * Cotización del blue vigente en la fecha `dateSql` (una expresión `date`): el punto medio entre
+ * compra y venta del mismo día o del último día anterior con cotización. Antes de todo el
+ * histórico, la primera que haya.
  */
-export const blueSellSql = (dateSql: Prisma.Sql) => Prisma.sql`COALESCE(
-    (SELECT r.sell FROM "DolarBlueRate" r WHERE r.date <= ${dateSql} ORDER BY r.date DESC LIMIT 1),
-    (SELECT r.sell FROM "DolarBlueRate" r ORDER BY r.date ASC LIMIT 1)
+export const blueRateSql = (dateSql: Prisma.Sql) => Prisma.sql`COALESCE(
+    (SELECT (r.buy + r.sell) / 2 FROM "DolarBlueRate" r WHERE r.date <= ${dateSql} ORDER BY r.date DESC LIMIT 1),
+    (SELECT (r.buy + r.sell) / 2 FROM "DolarBlueRate" r ORDER BY r.date ASC LIMIT 1)
   )`;
 
 /**
  * Piezas de SQL según la valuación elegida. En "native" no cambia nada. En "blue" solo entran
- * pesos y dólares, los pesos se dividen por la venta del blue del día del gasto y todo sale como
+ * pesos y dólares, los pesos se dividen por el blue (punto medio entre compra y venta) del día del gasto y todo sale como
  * dólares. `localDateSql` es la fecha local del gasto (ver `expenseLocalDateSql`). Los montos son enteros en centavos en las dos monedas, así que la división da centavos
  * de dólar directamente.
  */
@@ -78,12 +79,12 @@ export const valuationSql = (valuation: Valuation, localDateSql: Prisma.Sql) => 
     };
   }
 
-  const sell = blueSellSql(localDateSql);
+  const rate = blueRateSql(localDateSql);
 
   return {
     currency: Prisma.sql`${BLUE_TARGET_CURRENCY}`,
     amount: (amountSql: Prisma.Sql) => Prisma.sql`CASE
-        WHEN e.currency = ${BLUE_SOURCE_CURRENCY} THEN ROUND((${amountSql}) / ${sell})::bigint
+        WHEN e.currency = ${BLUE_SOURCE_CURRENCY} THEN ROUND((${amountSql}) / ${rate})::bigint
         ELSE (${amountSql})::bigint
       END`,
     filter: Prisma.sql`AND e.currency IN (${BLUE_SOURCE_CURRENCY}, ${BLUE_TARGET_CURRENCY})`,

@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 
 import { db } from '~/server/db';
-import { blueSellSql } from '~/server/statsQueries';
+import { blueRateSql } from '~/server/statsQueries';
 
 /**
  * Cotización del dólar blue para las estadísticas "todo en dólares".
@@ -135,22 +135,22 @@ export const ensureDolarBlueRates = async (): Promise<void> => {
 };
 
 /**
- * Venta del blue vigente en cada fecha (YYYY-MM-DD): la del mismo día o la del último día anterior
- * con cotización (fines de semana, feriados). Si la fecha es anterior a todo el histórico usa la
- * primera. Es el mismo criterio que `blueSellSql`.
+ * Blue vigente en cada fecha (YYYY-MM-DD), punto medio entre compra y venta: el del mismo día o el
+ * del último día anterior con cotización (fines de semana, feriados). Si la fecha es anterior a
+ * todo el histórico usa la primera. Es el mismo criterio que `blueRateSql`.
  */
-export const blueSellForDates = async (dates: string[]): Promise<Map<string, number>> => {
+export const blueRateForDates = async (dates: string[]): Promise<Map<string, number>> => {
   const unique = [...new Set(dates)];
   if (0 === unique.length) {
     return new Map();
   }
 
-  const rows = await db.$queryRaw<{ day: string; sell: number | null }[]>`
-    SELECT to_char(d.day, 'YYYY-MM-DD') AS day, ${blueSellSql(Prisma.sql`d.day`)} AS sell
+  const rows = await db.$queryRaw<{ day: string; rate: number | null }[]>`
+    SELECT to_char(d.day, 'YYYY-MM-DD') AS day, ${blueRateSql(Prisma.sql`d.day`)} AS rate
     FROM unnest(${unique}::date[]) AS d(day)
   `;
 
   return new Map(
-    rows.flatMap(({ day, sell }) => (null === sell ? [] : [[day, Number(sell)] as const])),
+    rows.flatMap(({ day, rate }) => (null === rate ? [] : [[day, Number(rate)] as const])),
   );
 };

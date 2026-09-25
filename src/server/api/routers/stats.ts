@@ -21,7 +21,7 @@ import {
 } from '~/lib/topCategories';
 import {
   DolarBlueUnavailableError,
-  blueSellForDates,
+  blueRateForDates,
   ensureDolarBlueRates,
 } from '~/server/api/services/dolarBlueService';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
@@ -413,7 +413,7 @@ export const statsRouter = createTRPCRouter({
         const { year, month, day } = getZonedCalendarDay(input.timeZone, date);
         return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       };
-      const rates = await blueSellForDates(
+      const rates = await blueRateForDates(
         withShares
           .filter(({ currency }) => BLUE_SOURCE_CURRENCY === currency)
           .map(({ expenseDate }) => localDay(expenseDate)),
