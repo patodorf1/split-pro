@@ -647,6 +647,29 @@
       "error": "No salió. Probá de nuevo."
     }
   },
+  "spending_charts": {
+    "blue": {
+      "note": "Pesos pasados a dólar blue del día de cada gasto",
+      "option": "Blue",
+      "option_title": "Todo en dólares blue",
+      "unavailable": "No pudimos traer la cotización del dólar. Probá más tarde."
+    },
+    "error": "No se pudieron cargar los gráficos. Probá de nuevo.",
+    "monthly": {
+      "average": "Promedio mensual: {{amount}}",
+      "hint": "Tocá una barra para ver ese mes",
+      "title": "Mes a mes"
+    },
+    "trends": {
+      "before": "antes {{amount}}",
+      "in_progress": "El mes todavía no terminó.",
+      "new": "Nuevo",
+      "show_all": "Ver todas",
+      "show_less": "Ver menos",
+      "subtitle": "{{month}} contra el promedio de los {{count}} meses anteriores.",
+      "title": "Qué sube y qué baja"
+    }
+  },
   "sync": {
     "refreshing": "Actualizando…"
   },

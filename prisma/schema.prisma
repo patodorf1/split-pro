@@ -495,3 +495,15 @@ model EmergencyContact {
   @@index([groupId, sortOrder])
   @@schema("public")
 }
+
+/// Casa: cotización diaria del dólar blue en Argentina (fuente: bluelytics). Sirve para ver las
+/// estadísticas "todo en dólares": cada gasto en pesos se divide por la venta del blue del día
+/// del gasto (o del último día hábil anterior). La tabla se llena sola desde la app.
+model DolarBlueRate {
+  date      DateTime @id @db.Date
+  buy       Float
+  sell      Float
+  updatedAt DateTime @updatedAt
+
+  @@schema("public")
+}

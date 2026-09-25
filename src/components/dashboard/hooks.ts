@@ -1,6 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { DEFAULT_TIME_ZONE, type YearMonth, addMonths, getCurrentYearMonth } from '~/lib/stats';
+import {
+  DEFAULT_TIME_ZONE,
+  type YearMonth,
+  addMonths,
+  compareYearMonth,
+  getCurrentYearMonth,
+} from '~/lib/stats';
 
 /**
  * Time zone of the device, used to decide where each month starts and ends.
@@ -33,7 +39,13 @@ export const useMonthNavigation = (timeZone: string) => {
     [canGoForward],
   );
 
-  return { selected, currentMonth, canGoForward, goBackward, goForward };
+  const goTo = useCallback(
+    (month: YearMonth) =>
+      setSelected(0 < compareYearMonth(month, currentMonth) ? currentMonth : month),
+    [currentMonth],
+  );
+
+  return { selected, currentMonth, canGoForward, goBackward, goForward, goTo };
 };
 
 /**

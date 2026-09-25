@@ -673,6 +673,29 @@
       "error": "That didn't work. Try again."
     }
   },
+  "spending_charts": {
+    "blue": {
+      "note": "Pesos converted at the blue dollar rate of each expense's day",
+      "option": "Blue",
+      "option_title": "Everything in blue dollars",
+      "unavailable": "Couldn't fetch the dollar rate. Try again later."
+    },
+    "error": "Couldn't load the charts. Try again.",
+    "monthly": {
+      "average": "Monthly average: {{amount}}",
+      "hint": "Tap a bar to see that month",
+      "title": "Month by month"
+    },
+    "trends": {
+      "before": "before {{amount}}",
+      "in_progress": "The month isn't over yet.",
+      "new": "New",
+      "show_all": "Show all",
+      "show_less": "Show less",
+      "subtitle": "{{month}} compared to the average of the previous {{count}} months.",
+      "title": "What goes up and down"
+    }
+  },
   "sync": {
     "refreshing": "Updating…"
   },

@@ -37,7 +37,7 @@ const EMPTY_CATEGORIES: CategoryTotals = [];
 
 /**
  * Lo gastado en el mes por todo el hogar (grupos y gastos con amigos, sin
- * transferencias), en la moneda elegida. Abajo, chiquito, la parte del usuario.
+ * transferencias), en la moneda elegida. Abajo, chiquito, la parte del usuario. Lleva a /stats.
  */
 const SpentThisMonthCard: React.FC<{ total: bigint; mine: bigint; currency: string }> = ({
   total,
@@ -49,13 +49,19 @@ const SpentThisMonthCard: React.FC<{ total: bigint; mine: bigint; currency: stri
 
   return (
     <Card>
-      <SectionLabel>{t('dashboard.spent.title')}</SectionLabel>
-      <p className="text-foreground mt-2 text-3xl font-semibold tabular-nums">
-        {helpers.toUIString(total)}
-      </p>
-      <p className="text-muted-foreground mt-1 text-sm">
-        {t('home_summary.your_share', { amount: helpers.toUIString(mine) })}
-      </p>
+      {/* Tocar la tarjeta lleva a Estadísticas, con los gráficos del mes. */}
+      <Link href="/stats" className="block">
+        <CardHeader>
+          <SectionLabel>{t('dashboard.spent.title')}</SectionLabel>
+          <ChevronRightIcon className="text-primary size-4" />
+        </CardHeader>
+        <p className="text-foreground text-3xl font-semibold tabular-nums">
+          {helpers.toUIString(total)}
+        </p>
+        <p className="text-muted-foreground mt-1 text-sm">
+          {t('home_summary.your_share', { amount: helpers.toUIString(mine) })}
+        </p>
+      </Link>
     </Card>
   );
 };

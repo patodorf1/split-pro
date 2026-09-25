@@ -1,9 +1,17 @@
 import { Prisma, SplitType } from '@prisma/client';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { type BalanceCard, type BalancePerson, buildBalanceCards } from '~/lib/balanceCards';
 import { DEFAULT_CATEGORY } from '~/lib/category';
-import { addMonths, computeShare, getMonthRange, toUtcTimestampLiteral } from '~/lib/stats';
+import {
+  addMonths,
+  computeShare,
+  getMonthRange,
+  getTimeZoneOffsetMs,
+  getZonedCalendarDay,
+  toUtcTimestampLiteral,
+} from '~/lib/stats';
 import {
   type CategoryUsage,
   TOP_CATEGORIES_LIMIT,
@@ -11,9 +19,23 @@ import {
   monthsAgo,
   rankTopCategories,
 } from '~/lib/topCategories';
+import {
+  DolarBlueUnavailableError,
+  blueSellForDates,
+  ensureDolarBlueRates,
+} from '~/server/api/services/dolarBlueService';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import { db } from '~/server/db';
-import { COUNTS_AS_SPENDING_SQL, expenseDateRangeSql, memberShareSql } from '~/server/statsQueries';
+import {
+  BLUE_SOURCE_CURRENCY,
+  BLUE_TARGET_CURRENCY,
+  COUNTS_AS_SPENDING_SQL,
+  type Valuation,
+  expenseDateRangeSql,
+  expenseLocalDateSql,
+  memberShareSql,
+  valuationSql,
+} from '~/server/statsQueries';
 
 /** Movements that are not spending and must never show up in the stats. */
 const NON_EXPENSE_SPLIT_TYPES = [SplitType.SETTLEMENT, SplitType.CURRENCY_CONVERSION];
@@ -23,10 +45,13 @@ const monthInput = z.object({
   month: z.number().int().min(1).max(12),
   timeZone: z.string().min(1).max(64),
   groupId: z.number().int().positive().nullish(),
+  /** "blue": todo pasado a dólares con el blue del día de cada gasto. */
+  valuation: z.enum(['native', 'blue']).default('native'),
 });
 
 interface MonthlyAggregateRow {
   period: 'current' | 'previous';
+  nativeCurrency: string;
   currency: string;
   category: string;
   ours: bigint;
@@ -46,6 +71,52 @@ export interface CurrencyTotal {
   ours: bigint;
   mine: bigint;
   categories: CategoryTotal[];
+}
+
+/**
+ * Sin filtro de grupo entra "todo gasto que me toca": los de mis grupos más los gastos sueltos en
+ * los que participo. Con filtro de grupo, la membresía deja afuera a los grupos ajenos.
+ */
+const scopeFilterSql = (userId: number, groupId: number | null | undefined) =>
+  groupId
+    ? Prisma.sql`
+          AND e."groupId" = ${groupId}
+          AND e."groupId" IN (SELECT "groupId" FROM "GroupUser" WHERE "userId" = ${userId})`
+    : Prisma.sql`
+          AND (
+            p."userId" IS NOT NULL
+            OR e."groupId" IN (SELECT "groupId" FROM "GroupUser" WHERE "userId" = ${userId})
+          )`;
+
+/** Antes de una consulta en dólares, deja las cotizaciones al día (o avisa que no hay). */
+const prepareValuation = async (valuation: Valuation) => {
+  if ('blue' !== valuation) {
+    return;
+  }
+
+  try {
+    await ensureDolarBlueRates();
+  } catch (error) {
+    if (error instanceof DolarBlueUnavailableError) {
+      throw new TRPCError({ code: 'SERVICE_UNAVAILABLE', message: 'dolar_blue_unavailable' });
+    }
+    throw error;
+  }
+};
+
+interface TrendAggregateRow {
+  ym: string;
+  currency: string;
+  category: string;
+  ours: bigint;
+  mine: bigint;
+}
+
+export interface TrendSeries {
+  currency: string;
+  ours: bigint[];
+  mine: bigint[];
+  categories: { category: string; ours: bigint[]; mine: bigint[] }[];
 }
 
 const getMyGroupIds = async (userId: number): Promise<number[]> => {
@@ -97,20 +168,12 @@ export const statsRouter = createTRPCRouter({
 
     const fromLiteral = toUtcTimestampLiteral(from);
 
-    /*
-     * Without a group filter the scope is "every expense that concerns me":
-     * anything in one of my groups plus one-to-one expenses I take part in.
-     * With a group filter, the membership check keeps other groups out.
-     */
-    const groupFilter = groupId
-      ? Prisma.sql`
-          AND e."groupId" = ${groupId}
-          AND e."groupId" IN (SELECT "groupId" FROM "GroupUser" WHERE "userId" = ${userId})`
-      : Prisma.sql`
-          AND (
-            p."userId" IS NOT NULL
-            OR e."groupId" IN (SELECT "groupId" FROM "GroupUser" WHERE "userId" = ${userId})
-          )`;
+    await prepareValuation(input.valuation);
+    const offsetMinutes = Math.round(getTimeZoneOffsetMs(from, timeZone) / 60_000);
+    const valued = valuationSql(
+      input.valuation,
+      expenseLocalDateSql(Prisma.sql`${offsetMinutes}::int`),
+    );
 
     const rows = await db.$queryRaw<MonthlyAggregateRow[]>`
       WITH scoped AS (
@@ -119,32 +182,45 @@ export const statsRouter = createTRPCRouter({
             WHEN e."expenseDate" >= ${fromLiteral}::timestamp THEN 'current'
             ELSE 'previous'
           END AS period,
-          e.currency AS currency,
+          e.currency AS "nativeCurrency",
+          ${valued.currency} AS currency,
           e.category AS category,
-          e.amount AS ours,
-          ${memberShareSql(Prisma.sql`${userId}`)} AS mine
+          ${valued.amount(Prisma.sql`e.amount`)} AS ours,
+          ${valued.amount(memberShareSql(Prisma.sql`${userId}`))} AS mine
         FROM "Expense" e
         LEFT JOIN "ExpenseParticipant" p
           ON p."expenseId" = e.id AND p."userId" = ${userId}
         WHERE ${COUNTS_AS_SPENDING_SQL}
           AND ${expenseDateRangeSql(previousFrom, to)}
-          ${groupFilter}
+          ${scopeFilterSql(userId, groupId)}
+          ${valued.filter}
       )
       SELECT
         period,
+        "nativeCurrency",
         currency,
         category,
         SUM(ours)::bigint AS ours,
         SUM(mine)::bigint AS mine,
         COUNT(*)::int AS count
       FROM scoped
-      GROUP BY period, currency, category
+      GROUP BY period, "nativeCurrency", currency, category
     `;
 
     const current = new Map<string, CurrencyTotal>();
     const previousTotals = new Map<string, { currency: string; ours: bigint; mine: bigint }>();
+    // Monedas en las que se cargaron los gastos del mes, más gastadora primero: son las opciones
+    // Del selector de moneda aunque se esté viendo todo en dólares.
+    const nativeTotals = new Map<string, bigint>();
 
     for (const row of rows) {
+      if ('current' === row.period) {
+        nativeTotals.set(
+          row.nativeCurrency,
+          (nativeTotals.get(row.nativeCurrency) ?? 0n) + row.ours,
+        );
+      }
+
       if ('previous' === row.period) {
         const entry = previousTotals.get(row.currency) ?? {
           currency: row.currency,
@@ -158,12 +234,20 @@ export const statsRouter = createTRPCRouter({
         const entry = current.get(row.currency) ?? emptyCurrencyTotal(row.currency);
         entry.ours += row.ours;
         entry.mine += row.mine;
-        entry.categories.push({
-          category: row.category,
-          ours: row.ours,
-          mine: row.mine,
-          count: row.count,
-        });
+        // En dólares, pesos y dólares de una misma categoría llegan en filas separadas.
+        const category = entry.categories.find((item) => item.category === row.category);
+        if (category) {
+          category.ours += row.ours;
+          category.mine += row.mine;
+          category.count += row.count;
+        } else {
+          entry.categories.push({
+            category: row.category,
+            ours: row.ours,
+            mine: row.mine,
+            count: row.count,
+          });
+        }
         current.set(row.currency, entry);
       }
     }
@@ -176,8 +260,104 @@ export const statsRouter = createTRPCRouter({
     return {
       current: sortedCurrent,
       previous: [...previousTotals.values()],
+      currencies: [...nativeTotals.entries()]
+        .sort((a, b) => (a[1] > b[1] ? -1 : 1))
+        .map(([currency]) => currency),
     };
   }),
+
+  /**
+   * Serie mes a mes (total y por categoría) de los `months` meses que terminan en el mes pedido,
+   * para los gráficos de /stats. Una serie por moneda; en "blue", una sola en dólares.
+   */
+  monthlyTrend: protectedProcedure
+    .input(monthInput.extend({ months: z.number().int().min(2).max(24).default(15) }))
+    .query(async ({ ctx, input }): Promise<TrendSeries[]> => {
+      const userId = ctx.session.user.id;
+      const { year, month, timeZone, groupId, months } = input;
+
+      /*
+       * Los límites de cada mes (y el corrimiento horario para saber el día de cada gasto) salen
+       * de la zona horaria del teléfono, igual que en `monthlySummary`; la base solo compara.
+       */
+      const first = addMonths({ year, month }, -(months - 1));
+      const buckets = Array.from({ length: months }, (_, index) => {
+        const current = addMonths(first, index);
+        const range = getMonthRange(current.year, current.month, timeZone);
+        return {
+          key: `${current.year}-${String(current.month).padStart(2, '0')}`,
+          from: toUtcTimestampLiteral(range.from),
+          to: toUtcTimestampLiteral(range.to),
+          offset: Math.round(getTimeZoneOffsetMs(range.from, timeZone) / 60_000),
+        };
+      });
+      const monthKeys = buckets.map(({ key }) => key);
+
+      await prepareValuation(input.valuation);
+      const valued = valuationSql(input.valuation, expenseLocalDateSql(Prisma.sql`m.offset_min`));
+
+      const rows = await db.$queryRaw<TrendAggregateRow[]>`
+        WITH months AS (
+          SELECT *
+          FROM unnest(
+            ${monthKeys}::text[],
+            ${buckets.map(({ from }) => from)}::timestamp[],
+            ${buckets.map(({ to }) => to)}::timestamp[],
+            ${buckets.map(({ offset }) => offset)}::int[]
+          ) AS m(ym, from_ts, to_ts, offset_min)
+        ),
+        scoped AS (
+          SELECT
+            m.ym AS ym,
+            ${valued.currency} AS currency,
+            e.category AS category,
+            ${valued.amount(Prisma.sql`e.amount`)} AS ours,
+            ${valued.amount(memberShareSql(Prisma.sql`${userId}`))} AS mine
+          FROM "Expense" e
+          JOIN months m ON e."expenseDate" >= m.from_ts AND e."expenseDate" < m.to_ts
+          LEFT JOIN "ExpenseParticipant" p
+            ON p."expenseId" = e.id AND p."userId" = ${userId}
+          WHERE ${COUNTS_AS_SPENDING_SQL}
+            AND e."expenseDate" >= ${buckets[0]!.from}::timestamp
+            AND e."expenseDate" < ${buckets.at(-1)!.to}::timestamp
+            ${scopeFilterSql(userId, groupId)}
+            ${valued.filter}
+        )
+        SELECT ym, currency, category, SUM(ours)::bigint AS ours, SUM(mine)::bigint AS mine
+        FROM scoped
+        GROUP BY ym, currency, category
+      `;
+
+      const zeros = () => monthKeys.map(() => 0n);
+      const series = new Map<string, TrendSeries>();
+
+      for (const row of rows) {
+        const index = monthKeys.indexOf(row.ym);
+        if (-1 === index) {
+          continue;
+        }
+
+        const entry = series.get(row.currency) ?? {
+          currency: row.currency,
+          ours: zeros(),
+          mine: zeros(),
+          categories: [],
+        };
+        let category = entry.categories.find((item) => item.category === row.category);
+        if (!category) {
+          category = { category: row.category, ours: zeros(), mine: zeros() };
+          entry.categories.push(category);
+        }
+
+        entry.ours[index]! += row.ours;
+        entry.mine[index]! += row.mine;
+        category.ours[index]! += row.ours;
+        category.mine[index]! += row.mine;
+        series.set(row.currency, entry);
+      }
+
+      return [...series.values()];
+    }),
 
   /** Expenses behind one category of one month, for the drill-down. */
   categoryExpenses: protectedProcedure
@@ -186,12 +366,16 @@ export const statsRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
       const { from, to } = getMonthRange(input.year, input.month, input.timeZone);
       const myGroupIds = await getMyGroupIds(userId);
+      const inDollars = 'blue' === input.valuation;
+      await prepareValuation(input.valuation);
 
       const expenses = await db.expense.findMany({
         where: {
           deletedAt: null,
           splitType: { notIn: NON_EXPENSE_SPLIT_TYPES },
-          currency: input.currency,
+          currency: inDollars
+            ? { in: [BLUE_SOURCE_CURRENCY, BLUE_TARGET_CURRENCY] }
+            : input.currency,
           category: input.category,
           expenseDate: { gte: from, lt: to },
           ...(input.groupId
@@ -219,7 +403,36 @@ export const statsRouter = createTRPCRouter({
         take: 100,
       });
 
-      return expenses.map((expense) => withMyShare(expense, userId));
+      const withShares = expenses.map((expense) => withMyShare(expense, userId));
+      if (!inDollars) {
+        return withShares;
+      }
+
+      // Los pesos se pasan a dólares con el blue del día del gasto, igual que en los totales.
+      const localDay = (date: Date) => {
+        const { year, month, day } = getZonedCalendarDay(input.timeZone, date);
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      };
+      const rates = await blueSellForDates(
+        withShares
+          .filter(({ currency }) => BLUE_SOURCE_CURRENCY === currency)
+          .map(({ expenseDate }) => localDay(expenseDate)),
+      );
+      const toDollars = (amount: bigint, rate: number | undefined) =>
+        rate ? BigInt(Math.round(Number(amount) / rate)) : 0n;
+
+      return withShares.map((expense) => {
+        if (BLUE_SOURCE_CURRENCY !== expense.currency) {
+          return expense;
+        }
+        const rate = rates.get(localDay(expense.expenseDate));
+        return {
+          ...expense,
+          currency: BLUE_TARGET_CURRENCY,
+          amount: toDollars(expense.amount, rate),
+          mine: toDollars(expense.mine, rate),
+        };
+      });
     }),
 
   /**

@@ -1,12 +1,14 @@
+import { keepPreviousData } from '@tanstack/react-query';
 import { ChevronDownIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
 import { MonthSwitcher } from '~/components/dashboard/MonthSwitcher';
 import { SegmentedControl } from '~/components/dashboard/SegmentedControl';
+import { SpendingCharts } from '~/components/dashboard/SpendingCharts';
 import { useMonthNavigation, useSelectedCurrency, useTimeZone } from '~/components/dashboard/hooks';
 import MainLayout from '~/components/Layout/MainLayout';
 import { Card } from '~/components/ui/card';
@@ -20,9 +22,40 @@ import { type RouterOutputs, api } from '~/utils/api';
 import { withI18nStaticProps } from '~/utils/i18n/server';
 
 type Scope = 'mine' | 'ours';
+type Valuation = 'native' | 'blue';
 type CategoryTotals = RouterOutputs['stats']['monthlySummary']['current'][number]['categories'];
 
 const ALL_GROUPS = 'all';
+/** Opción del selector de moneda que pasa todo a dólares al blue del día de cada gasto. */
+const BLUE_OPTION = 'blue';
+const BLUE_CURRENCY = 'USD';
+const VALUATION_STORAGE_KEY = 'casa-stats-valuation';
+
+/** Recuerda en el teléfono si se estaba mirando todo en dólares. */
+const useRememberedValuation = () => {
+  const [valuation, setValuation] = useState<Valuation>('native');
+
+  useEffect(() => {
+    try {
+      if (BLUE_OPTION === globalThis.window?.localStorage?.getItem(VALUATION_STORAGE_KEY)) {
+        setValuation('blue');
+      }
+    } catch {
+      // Sin almacenamiento (modo privado): arranca en moneda original.
+    }
+  }, []);
+
+  const remember = useCallback((next: Valuation) => {
+    setValuation(next);
+    try {
+      globalThis.window?.localStorage?.setItem(VALUATION_STORAGE_KEY, next);
+    } catch {
+      // Sin almacenamiento: vale solo mientras la pantalla esté abierta.
+    }
+  }, []);
+
+  return [valuation, remember] as const;
+};
 const EMPTY_CATEGORIES: CategoryTotals = [];
 
 const CategoryExpenses: React.FC<{
@@ -32,7 +65,8 @@ const CategoryExpenses: React.FC<{
   currency: string;
   category: string;
   scope: Scope;
-}> = ({ month, timeZone, groupId, currency, category, scope }) => {
+  valuation: Valuation;
+}> = ({ month, timeZone, groupId, currency, category, scope, valuation }) => {
   const { t, toUIDate, getCurrencyHelpersCached } = useTranslationWithUtils();
   const expensesQuery = api.stats.categoryExpenses.useQuery({
     year: month.year,
@@ -41,6 +75,7 @@ const CategoryExpenses: React.FC<{
     groupId,
     currency,
     category,
+    valuation,
   });
 
   const { toUIString } = getCurrencyHelpersCached(currency);
@@ -119,7 +154,8 @@ const CategoryBreakdown: React.FC<{
   timeZone: string;
   groupId: number | null;
   currency: string;
-}> = ({ categories, scope, month, timeZone, groupId, currency }) => {
+  valuation: Valuation;
+}> = ({ categories, scope, month, timeZone, groupId, currency, valuation }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
   const categoryLabel = useCategoryLabel();
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -167,6 +203,7 @@ const CategoryBreakdown: React.FC<{
                 currency={currency}
                 category={category}
                 scope={scope}
+                valuation={valuation}
               />
             ) : null}
           </div>
@@ -210,25 +247,33 @@ const MonthComparison: React.FC<{ current: bigint; previous: bigint; currency: s
 const StatsPage: NextPageWithUser = ({ user }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
   const timeZone = useTimeZone();
-  const { selected, canGoForward, goBackward, goForward } = useMonthNavigation(timeZone);
+  const { selected, currentMonth, canGoForward, goBackward, goForward, goTo } =
+    useMonthNavigation(timeZone);
 
   const [scope, setScope] = useState<Scope>('mine');
+  const [valuation, setValuation] = useRememberedValuation();
   const [group, setGroup] = useState<string>(ALL_GROUPS);
   const groupId = ALL_GROUPS === group ? null : Number(group);
 
   const groupsQuery = api.group.getAllGroups.useQuery();
-  const summaryQuery = api.stats.monthlySummary.useQuery({
-    year: selected.year,
-    month: selected.month,
-    timeZone,
-    groupId,
-  });
-
-  const currencies = useMemo(
-    () => (summaryQuery.data?.current ?? []).map(({ currency }) => currency),
-    [summaryQuery.data],
+  // Al cambiar de mes se sigue viendo el anterior mientras carga: la pantalla no salta arriba.
+  const summaryQuery = api.stats.monthlySummary.useQuery(
+    {
+      year: selected.year,
+      month: selected.month,
+      timeZone,
+      groupId,
+      valuation,
+    },
+    { placeholderData: keepPreviousData },
   );
-  const [currency, setCurrency] = useSelectedCurrency(currencies, user.currency);
+
+  // Monedas en que se cargaron los gastos del mes: siguen siendo las opciones aunque se vea en
+  // Dólares, para poder volver.
+  const currencies = useMemo(() => summaryQuery.data?.currencies ?? [], [summaryQuery.data]);
+  const [nativeCurrency, setCurrency] = useSelectedCurrency(currencies, user.currency);
+  const inDollars = 'blue' === valuation;
+  const currency = inDollars ? BLUE_CURRENCY : nativeCurrency;
 
   const totals = summaryQuery.data?.current.find((entry) => entry.currency === currency);
   const previousTotals = summaryQuery.data?.previous.find((entry) => entry.currency === currency);
@@ -246,9 +291,42 @@ const StatsPage: NextPageWithUser = ({ user }) => {
     [],
   );
 
+  const blueOptions = useMemo(
+    () =>
+      currencies.includes('ARS') || inDollars
+        ? [
+            {
+              value: BLUE_OPTION,
+              label: t('spending_charts.blue.option'),
+              title: t('spending_charts.blue.option_title'),
+            },
+          ]
+        : [],
+    [currencies, inDollars, t],
+  );
+
+  const handleCurrencyChange = useCallback(
+    (value: string) => {
+      if (BLUE_OPTION === value) {
+        setValuation('blue');
+        return;
+      }
+      setValuation('native');
+      setCurrency(value);
+    },
+    [setValuation, setCurrency],
+  );
+
   const actions = useMemo(
-    () => <CurrencyToggle currencies={currencies} value={currency} onChange={setCurrency} />,
-    [currencies, currency, setCurrency],
+    () => (
+      <CurrencyToggle
+        currencies={currencies}
+        value={inDollars ? BLUE_OPTION : currency}
+        onChange={handleCurrencyChange}
+        extraOptions={blueOptions}
+      />
+    ),
+    [currencies, inDollars, currency, handleCurrencyChange, blueOptions],
   );
 
   const total = totals?.[scope] ?? 0n;
@@ -283,6 +361,13 @@ const StatsPage: NextPageWithUser = ({ user }) => {
             <p className="text-foreground mt-4 text-center text-3xl font-semibold">
               {getCurrencyHelpersCached(currency || user.currency).toUIString(total)}
             </p>
+            {inDollars ? (
+              <p className="text-muted-foreground mt-1 text-center text-xs">
+                {summaryQuery.isError && 'dolar_blue_unavailable' === summaryQuery.error.message
+                  ? t('spending_charts.blue.unavailable')
+                  : t('spending_charts.blue.note')}
+              </p>
+            ) : null}
 
             {1 < (groupsQuery.data?.length ?? 0) ? (
               <NativeSelect
@@ -310,6 +395,7 @@ const StatsPage: NextPageWithUser = ({ user }) => {
               timeZone={timeZone}
               groupId={groupId}
               currency={currency || user.currency}
+              valuation={valuation}
             />
           </Card>
 
@@ -317,6 +403,17 @@ const StatsPage: NextPageWithUser = ({ user }) => {
             current={total}
             previous={previousTotals?.[scope] ?? 0n}
             currency={currency || user.currency}
+          />
+
+          <SpendingCharts
+            selected={selected}
+            currentMonth={currentMonth}
+            onSelectMonth={goTo}
+            timeZone={timeZone}
+            groupId={groupId}
+            currency={currency || user.currency}
+            scope={scope}
+            valuation={valuation}
           />
         </div>
       </MainLayout>
