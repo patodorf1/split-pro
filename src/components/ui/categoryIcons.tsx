@@ -51,7 +51,14 @@ import {
   Zap,
 } from 'lucide-react';
 
-import { type CategoryItem, DEFAULT_CATEGORY } from '~/lib/category';
+import {
+  CURRENCY_CONVERSION_EMOJI,
+  type CategoryItem,
+  DEFAULT_CATEGORY,
+  SETTLEMENT_EMOJI,
+  getCategoryEmoji,
+} from '~/lib/category';
+import { cn } from '~/lib/utils';
 
 export const CategoryIcons: Record<CategoryItem, LucideIcon> = {
   games: Gamepad2,
@@ -107,11 +114,53 @@ export const SettleupIcon = HandCoins;
 
 export const DefaultCategoryIcon = CategoryIcons[DEFAULT_CATEGORY];
 
+/** `size-N` de Tailwind (N × 0,25rem) para dar al emoji el mismo tamaño que tenía el ícono. */
+const SIZE_CLASS = /(?:^|\s)size-(\d+(?:\.\d+)?)(?=\s|$)/;
+
+const emojiFontSize = (size: LucideProps['size'], className?: string) => {
+  if (size !== undefined) {
+    return 'number' === typeof size ? `${size}px` : size;
+  }
+
+  const match = className ? SIZE_CLASS.exec(className) : null;
+
+  return match?.[1] ? `${Number(match[1]) * 0.25}rem` : undefined;
+};
+
+/**
+ * Casa: cada categoría se dibuja con su emoji de color (antes, un ícono lineal monocromo). Mantiene
+ * la misma firma de siempre para que todos los usos hereden el cambio: `size` o una clase
+ * `size-N` fijan el tamaño; sin ninguno de los dos, el emoji toma el tamaño de letra del lugar.
+ */
 export const CategoryIcon: React.FC<{ category?: string; splitType?: SplitType } & LucideProps> = ({
   category = DEFAULT_CATEGORY,
-  ...props
+  splitType,
+  size,
+  className,
+  style,
 }) => {
-  const Icon = CategoryIcons[category as CategoryItem] ?? DefaultCategoryIcon;
+  let emoji = getCategoryEmoji(category);
+  if (SplitType.SETTLEMENT === splitType) {
+    emoji = SETTLEMENT_EMOJI;
+  } else if (SplitType.CURRENCY_CONVERSION === splitType) {
+    emoji = CURRENCY_CONVERSION_EMOJI;
+  }
 
-  return <Icon {...props} />;
+  const fontSize = emojiFontSize(size, className);
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center leading-none select-none',
+        className,
+      )}
+      style={{
+        ...(fontSize ? { fontSize, width: fontSize, height: fontSize } : null),
+        ...(style as React.CSSProperties | undefined),
+      }}
+    >
+      {emoji}
+    </span>
+  );
 };
