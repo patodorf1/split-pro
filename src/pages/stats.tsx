@@ -9,7 +9,7 @@ import { MonthSwitcher } from '~/components/dashboard/MonthSwitcher';
 import { SegmentedControl } from '~/components/dashboard/SegmentedControl';
 import { SpendingCharts } from '~/components/dashboard/SpendingCharts';
 import { useMonthNavigation, useSelectedCurrency, useTimeZone } from '~/components/dashboard/hooks';
-import { ExpenseRow, usePayerLabel } from '~/components/Expense/ExpenseRow';
+import { ExpenseRow } from '~/components/Expense/ExpenseRow';
 import MainLayout from '~/components/Layout/MainLayout';
 import { Card } from '~/components/ui/card';
 import { CategoryIcon } from '~/components/ui/categoryIcons';
@@ -68,10 +68,8 @@ const CategoryExpenses: React.FC<{
   category: string;
   scope: Scope;
   valuation: Valuation;
-  userId: number;
-}> = ({ month, timeZone, groupId, currency, category, scope, valuation, userId }) => {
+}> = ({ month, timeZone, groupId, currency, category, scope, valuation }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
-  const payerLabel = usePayerLabel();
   const expensesQuery = api.stats.categoryExpenses.useQuery({
     year: month.year,
     month: month.month,
@@ -101,7 +99,6 @@ const CategoryExpenses: React.FC<{
             title={expense.name}
             category={expense.category}
             payer={expense.paidByUser}
-            subtitle={payerLabel(expense.paidByUser, userId, 0n > expense.amount)}
             date={expense.expenseDate}
             amount={toUIString('mine' === scope ? expense.mine : expense.amount)}
           />
@@ -179,8 +176,7 @@ const CategoryBreakdown: React.FC<{
   currency: string;
   valuation: Valuation;
   total: bigint;
-  userId: number;
-}> = ({ categories, scope, month, timeZone, groupId, currency, valuation, total, userId }) => {
+}> = ({ categories, scope, month, timeZone, groupId, currency, valuation, total }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
   const categoryLabel = useCategoryLabel();
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -229,7 +225,6 @@ const CategoryBreakdown: React.FC<{
                     category={category}
                     scope={scope}
                     valuation={valuation}
-                    userId={userId}
                   />
                 ) : null}
               </li>
@@ -426,7 +421,6 @@ const StatsPage: NextPageWithUser = ({ user }) => {
             currency={currency || user.currency}
             valuation={valuation}
             total={total}
-            userId={user.id}
           />
 
           <MonthComparison

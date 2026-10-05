@@ -190,22 +190,6 @@ export const ExpenseRow: React.FC<{
   );
 };
 
-/** "Pagó Belén" / "Pagaste" (o "Recibió" / "Recibiste" si el monto es negativo). */
-export const usePayerLabel = () => {
-  const { t } = useTranslationWithUtils();
-
-  return (payer: RowPerson | null | undefined, userId: number, received = false) => {
-    if (payer?.id === userId) {
-      return t(received ? 'expense_row.you_received' : 'expense_row.you_paid');
-    }
-
-    return t(received ? 'expense_row.received_by' : 'expense_row.paid_by', {
-      name: payer?.name ?? payer?.email ?? '',
-      interpolation: NO_ESCAPE,
-    });
-  };
-};
-
 /**
  * Título de una transferencia: "Belén le pagó a Pato", "Le pagaste a Belén" o "Belén te pagó". El
  * nombre de quien recibe se busca aparte (las listas solo traen a quien pagó).

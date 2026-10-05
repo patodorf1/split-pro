@@ -1,6 +1,6 @@
-import { ClockIcon, XIcon } from 'lucide-react';
+import { CalendarDaysIcon, ChevronRightIcon, ClockIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { DocumentViewer } from '~/components/documents/DocumentViewer';
@@ -9,12 +9,16 @@ import {
   downloadDocument,
   getViewerKind,
 } from '~/components/documents/documentClient';
+import { useTimeZone } from '~/components/dashboard/hooks';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
+import { formatDay } from '~/lib/agenda';
 import { REMINDER_VISIBLE_ITEMS } from '~/lib/documentReminders';
+import { getZonedCalendarDay } from '~/lib/stats';
 import { cn } from '~/lib/utils';
 import { type RouterOutputs, api } from '~/utils/api';
 
 type Expiry = RouterOutputs['documents']['upcomingExpiries'][number];
+type TodayEvent = Extract<RouterOutputs['calendar']['range'][number], { kind: 'event' }>;
 
 const useExpiryLabel = () => {
   const { t } = useTranslationWithUtils();
@@ -110,12 +114,46 @@ const ExpiryRow: React.FC<{
   );
 };
 
+/** Eventos propios de la Agenda para hoy (turnos, cumpleaños…), en el día del teléfono. */
+const useTodayEvents = (): TodayEvent[] => {
+  const timeZone = useTimeZone();
+  const today = useMemo(() => formatDay(getZonedCalendarDay(timeZone)), [timeZone]);
+  const todayQuery = api.calendar.range.useQuery({ from: today, to: today, timeZone });
+
+  return useMemo(
+    () => (todayQuery.data ?? []).filter((item): item is TodayEvent => 'event' === item.kind),
+    [todayQuery.data],
+  );
+};
+
+const TodayEventRow: React.FC<{ item: TodayEvent }> = ({ item }) => {
+  const { t } = useTranslationWithUtils();
+
+  return (
+    <li className="py-0.5">
+      <Link href="/agenda" className="flex min-w-0 items-center gap-2 py-1 text-sm">
+        <CalendarDaysIcon className="text-primary size-4 shrink-0" />
+        <span className="text-primary shrink-0 text-xs font-semibold tracking-wide uppercase">
+          {t('agenda.today')}
+        </span>
+        <span className="text-foreground min-w-0 flex-1 truncate">
+          {item.time ? `${item.time} · ` : ''}
+          {item.title}
+        </span>
+        <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
+      </Link>
+    </li>
+  );
+};
+
 /**
- * Avisos discretos de documentos por vencer (próximos 7 días) o vencidos, arriba de "Gastado este
- * mes". Una línea por documento; tocarla lo abre. Si no hay nada, no ocupa lugar.
+ * Avisos de arriba de Inicio: primero lo que hay hoy en la Agenda (tocarlo lleva a la Agenda) y
+ * después los documentos por vencer (próximos 7 días) o vencidos, que se abren, posponen o
+ * descartan. Si no hay nada, no ocupa lugar.
  */
 export const ExpiryNotices: React.FC = () => {
   const { t } = useTranslationWithUtils();
+  const todayEvents = useTodayEvents();
   const expiriesQuery = api.documents.upcomingExpiries.useQuery();
   const hideHandlers = useHideExpiry();
   const snooze = api.documents.snoozeReminder.useMutation(hideHandlers);
@@ -138,7 +176,7 @@ export const ExpiryNotices: React.FC = () => {
   const items = expiriesQuery.data ?? [];
   const viewer = <DocumentViewer document={viewing} onClose={closeViewer} />;
 
-  if (0 === items.length) {
+  if (0 === items.length && 0 === todayEvents.length) {
     // Sin avisos no ocupa lugar (salvo el visor, si justo se descartó el último con un documento abierto).
     return viewing ? viewer : null;
   }
@@ -149,9 +187,17 @@ export const ExpiryNotices: React.FC = () => {
   return (
     <section
       aria-label={t('dashboard.expiry.title')}
-      className="border-border/60 bg-muted/30 rounded-xl border px-3 py-1"
+      className={cn(
+        'rounded-xl border px-3 py-1',
+        0 < todayEvents.length
+          ? 'border-primary/30 bg-primary-soft'
+          : 'border-border/60 bg-muted/30',
+      )}
     >
       <ul className="divide-border/50 divide-y">
+        {todayEvents.map((item) => (
+          <TodayEventRow key={item.key} item={item} />
+        ))}
         {visible.map((item) => (
           <ExpiryRow
             key={item.id}

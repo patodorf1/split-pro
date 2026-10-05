@@ -531,16 +531,12 @@
     "deleted_by_you": "You deleted it",
     "expenses_count_one": "{{count}} expense",
     "expenses_count_other": "{{count}} expenses",
-    "paid_by": "{{name}} paid",
-    "received_by": "{{name}} received",
     "settlement": {
       "paid": "{{payer}} paid {{receiver}}",
       "paid_you": "{{payer}} paid you",
       "you_paid": "You paid {{receiver}}"
     },
-    "transfer": "Transfer",
-    "you_paid": "You paid",
-    "you_received": "You received"
+    "transfer": "Transfer"
   },
   "group_details": {
     "add_members": "Add members",

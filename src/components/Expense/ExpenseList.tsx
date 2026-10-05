@@ -9,7 +9,7 @@ import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import type { ExpenseRouter } from '~/server/api/routers/expense';
 import { api } from '~/utils/api';
 import { Separator } from '../ui/separator';
-import { ExpenseRow, SettlementTitle, usePayerLabel } from './ExpenseRow';
+import { ExpenseRow, SettlementTitle } from './ExpenseRow';
 
 type ExpensesOutput =
   | inferRouterOutputs<ExpenseRouter>['getGroupExpenses']
@@ -96,7 +96,6 @@ export const ExpenseList: React.FC<{
 
 const Expense: ExpenseComponent = ({ e, userId, href }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
-  const payerLabel = usePayerLabel();
   const router = useRouter();
   const { friendId } = router.query;
 
@@ -128,7 +127,6 @@ const Expense: ExpenseComponent = ({ e, userId, href }) => {
       category={e.category}
       splitType={e.splitType}
       payer={e.paidByUser}
-      subtitle={payerLabel(e.paidByUser, userId, e.amount < 0n)}
       date={e.expenseDate}
       amount={toUIString(e.amount)}
       detail={detail}

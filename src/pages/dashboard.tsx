@@ -5,7 +5,7 @@ import Link from 'next/link';
 import React, { useMemo } from 'react';
 
 import { BalanceCards } from '~/components/dashboard/BalanceCards';
-import { ExpenseRow, SettlementTitle, usePayerLabel } from '~/components/Expense/ExpenseRow';
+import { ExpenseRow, SettlementTitle } from '~/components/Expense/ExpenseRow';
 import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
 import { ExpiryNotices } from '~/components/dashboard/ExpiryNotices';
@@ -34,37 +34,6 @@ type CategoryTotals = RouterOutputs['stats']['monthlySummary']['current'][number
 const EMPTY_BALANCE_CARDS: BalanceCardList = [];
 const EMPTY_MOVEMENTS: RecentMovement[] = [];
 const EMPTY_CATEGORIES: CategoryTotals = [];
-
-/**
- * Lo gastado en el mes por todo el hogar (grupos y gastos con amigos, sin
- * transferencias), en la moneda elegida. Abajo, chiquito, la parte del usuario. Lleva a /stats.
- */
-const SpentThisMonthCard: React.FC<{ total: bigint; mine: bigint; currency: string }> = ({
-  total,
-  mine,
-  currency,
-}) => {
-  const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
-  const helpers = getCurrencyHelpersCached(currency);
-
-  return (
-    <Card>
-      {/* Tocar la tarjeta lleva a Estadísticas, con los gráficos del mes. */}
-      <Link href="/stats" className="block">
-        <CardHeader>
-          <SectionLabel>{t('dashboard.spent.title')}</SectionLabel>
-          <ChevronRightIcon className="text-primary size-4" />
-        </CardHeader>
-        <p className="text-foreground text-3xl font-semibold tabular-nums">
-          {helpers.toUIString(total)}
-        </p>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {t('home_summary.your_share', { amount: helpers.toUIString(mine) })}
-        </p>
-      </Link>
-    </Card>
-  );
-};
 
 const TopCategoriesCard: React.FC<{ categories: CategoryTotals; total: bigint }> = ({
   categories,
@@ -118,7 +87,6 @@ const MovementRow: React.FC<{ movement: RecentMovement; userId: number }> = ({
   userId,
 }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
-  const payerLabel = usePayerLabel();
   const isSettlement = SplitType.SETTLEMENT === movement.splitType;
 
   return (
@@ -140,11 +108,7 @@ const MovementRow: React.FC<{ movement: RecentMovement; userId: number }> = ({
         category={movement.category}
         splitType={movement.splitType}
         payer={movement.paidByUser}
-        subtitle={
-          isSettlement
-            ? t('expense_row.transfer')
-            : payerLabel(movement.paidByUser, userId, 0n > movement.amount)
-        }
+        subtitle={isSettlement ? t('expense_row.transfer') : null}
         date={movement.expenseDate}
         amount={getCurrencyHelpersCached(movement.currency).toUIString(movement.amount)}
       />
@@ -220,12 +184,14 @@ const DashboardPage: NextPageWithUser = ({ user }) => {
       >
         <div className="flex flex-col gap-4 pb-8">
           <ExpiryNotices />
-          <SpentThisMonthCard
-            total={monthTotals?.ours ?? 0n}
-            mine={monthTotals?.mine ?? 0n}
-            currency={currency || user.currency}
+          <BalanceCards
+            cards={balanceCards}
+            spent={{
+              total: monthTotals?.ours ?? 0n,
+              mine: monthTotals?.mine ?? 0n,
+              currency: currency || user.currency,
+            }}
           />
-          <BalanceCards cards={balanceCards} />
           <TopCategoriesCard categories={categories} total={monthTotals?.ours ?? 0n} />
           <NextRecurringCard />
           <RecentMovementsCard movements={movements} userId={user.id} />

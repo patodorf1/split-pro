@@ -521,16 +521,12 @@
     "deleted_by_you": "Lo borraste",
     "expenses_count_one": "{{count}} gasto",
     "expenses_count_other": "{{count}} gastos",
-    "paid_by": "Pagó {{name}}",
-    "received_by": "Recibió {{name}}",
     "settlement": {
       "paid": "{{payer}} le pagó a {{receiver}}",
       "paid_you": "{{payer}} te pagó",
       "you_paid": "Le pagaste a {{receiver}}"
     },
-    "transfer": "Transferencia",
-    "you_paid": "Pagaste",
-    "you_received": "Recibiste"
+    "transfer": "Transferencia"
   },
   "group_details": {
     "add_members": "Agregar miembros",

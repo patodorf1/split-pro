@@ -3,12 +3,7 @@ import { type User } from 'next-auth';
 import Head from 'next/head';
 import Link from 'next/link';
 import MainLayout from '~/components/Layout/MainLayout';
-import {
-  ExpenseRow,
-  type RowTone,
-  SettlementTitle,
-  usePayerLabel,
-} from '~/components/Expense/ExpenseRow';
+import { ExpenseRow, type RowTone, SettlementTitle } from '~/components/Expense/ExpenseRow';
 import { Card } from '~/components/ui/card';
 import { type NextPageWithUser } from '~/types';
 import { api } from '~/utils/api';
@@ -55,7 +50,6 @@ function getPaymentDetail(
 
 const ActivityPage: NextPageWithUser = ({ user }) => {
   const { displayName, t, i18n } = useTranslationWithUtils();
-  const payerLabel = usePayerLabel();
   const expensesQuery = api.expense.getAllExpenses.useQuery();
 
   const actions = React.useMemo(
@@ -97,9 +91,7 @@ const ActivityPage: NextPageWithUser = ({ user }) => {
                   e.expense.expenseParticipants.find((p) => p.userId !== e.expense.paidBy)
                     ?.userId ?? null;
 
-                let subtitle: React.ReactNode = isSettlement
-                  ? t('expense_row.transfer')
-                  : payerLabel(e.expense.paidByUser, user.id, e.expense.amount < 0n);
+                let subtitle: React.ReactNode = isSettlement ? t('expense_row.transfer') : null;
                 if (deletedBy) {
                   subtitle =
                     deletedBy.id === user.id
