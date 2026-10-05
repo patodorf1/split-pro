@@ -1,4 +1,3 @@
-import BoringAvatar from 'boring-avatars';
 import { Avatar as AvatarPrimitive } from 'radix-ui';
 import * as React from 'react';
 
@@ -44,35 +43,76 @@ const AvatarFallback = React.forwardRef<
 ));
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
-const DEFAULT_AVATAR_COLORS = ['#80C7B7', '#D9C27E', '#F4B088', '#FFA5AA', '#9D9DD3'];
+/**
+ * Casa: colores de la inicial cuando la persona (o el grupo) no tiene foto. Tonos medios con letra
+ * blanca, que se leen bien en los temas claros y en los oscuros.
+ */
+const INITIAL_COLORS = ['#7C6BC4', '#2F9E8F', '#D9785A', '#C2577A', '#4C86C6', '#B58A2E'];
+
+/** Siempre el mismo color para la misma persona: sale de su id (o de su mail o nombre). */
+export const avatarColor = (key: string | number) => {
+  if ('number' === typeof key) {
+    return INITIAL_COLORS[Math.abs(key) % INITIAL_COLORS.length]!;
+  }
+
+  let hash = 0;
+  for (const char of key) {
+    hash = (hash * 31 + (char.codePointAt(0) ?? 0)) | 0;
+  }
+
+  return INITIAL_COLORS[Math.abs(hash) % INITIAL_COLORS.length]!;
+};
+
+/** Primera letra visible del nombre (o del mail), en mayúscula. */
+export const avatarInitial = (label: string) => {
+  const first = Array.from(label.trim())[0];
+
+  return first ? first.toLocaleUpperCase() : '?';
+};
 
 const EntityAvatar: React.FC<{
-  entity?: { name?: string | null; image?: string | null; email?: string | null } | null;
+  entity?: {
+    id?: number | string | null;
+    name?: string | null;
+    image?: string | null;
+    email?: string | null;
+  } | null;
   size?: number;
-}> = ({ entity, size }) => {
+  className?: string;
+}> = ({ entity, size, className }) => {
+  const pixels = size ?? 40;
   const avatarSize = React.useMemo(
     () => ({
-      width: size ?? 40,
-      height: size ?? 40,
+      width: pixels,
+      height: pixels,
     }),
-    [size],
+    [pixels],
+  );
+
+  const label = entity?.name ?? entity?.email ?? '';
+  // Personas (tienen mail): por id, así nunca cambia. Grupos: por nombre, en otra "familia" de
+  // claves para no repetir siempre el color de la persona con el mismo número.
+  const colorKey = entity?.email ? (entity.id ?? entity.email) : `group:${entity?.name ?? ''}`;
+  const fallbackStyle = React.useMemo(
+    () => ({
+      backgroundColor: avatarColor(colorKey),
+      fontSize: Math.max(9, Math.round(pixels * 0.44)),
+    }),
+    [colorKey, pixels],
   );
 
   return (
-    <Avatar style={avatarSize}>
+    <Avatar style={avatarSize} className={className}>
       <AvatarImage
         src={entity?.image ? toImageSrc(entity.image) : undefined}
-        alt={entity?.name ?? entity?.email ?? ''}
+        alt={label}
+        className="object-cover"
       />
-      <AvatarFallback>
-        <BoringAvatar
-          size={size}
-          name={entity?.name ?? entity?.email ?? ''}
-          variant="beam"
-          // colors={['#ADDFD3', '#EAE3D0', '#DBC4B6', '#FFA5AA', '#EFD5C4']}
-          // colors={['#565175', '#538A95', '#67B79E', '#FFB727', '#E4491C']}
-          colors={DEFAULT_AVATAR_COLORS}
-        />
+      <AvatarFallback
+        className="leading-none font-semibold text-white select-none"
+        style={fallbackStyle}
+      >
+        {avatarInitial(label)}
       </AvatarFallback>
     </Avatar>
   );
