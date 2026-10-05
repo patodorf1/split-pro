@@ -20,11 +20,11 @@ import { toast } from 'sonner';
 import { AccountButton } from '~/components/Account/AccountButton';
 import { DownloadAppDrawer } from '~/components/Account/DownloadAppDrawer';
 import { LanguagePicker } from '~/components/Account/LanguagePicker';
+import { ProfilePhoto } from '~/components/Account/ProfilePhoto';
 import { SubmitFeedback } from '~/components/Account/SubmitFeedback';
 import { SubscribeNotification } from '~/components/Account/SubscribeNotification';
 import { UpdateName } from '~/components/Account/UpdateDetails';
 import MainLayout from '~/components/Layout/MainLayout';
-import { EntityAvatar } from '~/components/ui/avatar';
 import { Button } from '~/components/ui/button';
 import { env } from '~/env';
 import { clearRememberedRoute } from '~/hooks/useRememberLastRoute';
@@ -111,13 +111,10 @@ const AccountPage: NextPageWithUser<{
       </Head>
       <MainLayout title={t('account.title')} header={header}>
         <Card className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <EntityAvatar entity={userQuery.data} size={50} />
-            <div className="min-w-0">
-              <div className="truncate text-xl font-semibold">{userQuery.data?.name}</div>
-              <div className="text-muted-foreground truncate text-sm">{userQuery.data?.email}</div>
-            </div>
-          </div>
+          <ProfilePhoto user={userQuery.data}>
+            <div className="truncate text-xl font-semibold">{userQuery.data?.name}</div>
+            <div className="text-muted-foreground truncate text-sm">{userQuery.data?.email}</div>
+          </ProfilePhoto>
           {!userQuery.isPending && (
             <UpdateName
               className="size-5"

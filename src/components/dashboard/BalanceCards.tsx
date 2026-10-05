@@ -42,12 +42,18 @@ const BalanceCardItem: React.FC<{ card: BalanceCard; wide: boolean }> = ({ card,
               {getCurrencyHelpersCached(card.currency!).toUIString(BigMath.abs(card.amount))}
             </p>
           )}
-          <p className="text-muted-foreground text-xs leading-snug">
-            {'settled' === sentence
-              ? t('home_summary.balance.settled_subtitle')
-              : t(`home_summary.balance.${sentence}`, {
-                  name: card.counterpart ? displayName(card.counterpart) : '',
-                })}
+          <p className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs leading-snug">
+            {/* Casa: la carita de la otra persona del saldo (su foto, o su inicial). */}
+            {card.counterpart ? (
+              <EntityAvatar entity={card.counterpart} size={16} className="shrink-0" />
+            ) : null}
+            <span className="min-w-0">
+              {'settled' === sentence
+                ? t('home_summary.balance.settled_subtitle')
+                : t(`home_summary.balance.${sentence}`, {
+                    name: card.counterpart ? displayName(card.counterpart) : '',
+                  })}
+            </span>
           </p>
         </Card>
       </Link>

@@ -1,20 +1,22 @@
 import { keepPreviousData } from '@tanstack/react-query';
-import { ChevronDownIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
+import { ChevronRightIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 import Head from 'next/head';
-import Link from 'next/link';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
+import { useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
 import { MonthSwitcher } from '~/components/dashboard/MonthSwitcher';
 import { SegmentedControl } from '~/components/dashboard/SegmentedControl';
 import { SpendingCharts } from '~/components/dashboard/SpendingCharts';
 import { useMonthNavigation, useSelectedCurrency, useTimeZone } from '~/components/dashboard/hooks';
+import { ExpenseRow, usePayerLabel } from '~/components/Expense/ExpenseRow';
 import MainLayout from '~/components/Layout/MainLayout';
 import { Card } from '~/components/ui/card';
+import { CategoryIcon } from '~/components/ui/categoryIcons';
 import { NativeSelect, NativeSelectOption } from '~/components/ui/native-select';
 import { SectionLabel } from '~/components/ui/section-label';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
+import { getCategoryColor } from '~/lib/categoryColors';
 import { type YearMonth, monthOverMonthChange, percentageOf } from '~/lib/stats';
 import { cn } from '~/lib/utils';
 import { type NextPageWithUser } from '~/types';
@@ -66,8 +68,10 @@ const CategoryExpenses: React.FC<{
   category: string;
   scope: Scope;
   valuation: Valuation;
-}> = ({ month, timeZone, groupId, currency, category, scope, valuation }) => {
-  const { t, toUIDate, getCurrencyHelpersCached } = useTranslationWithUtils();
+  userId: number;
+}> = ({ month, timeZone, groupId, currency, category, scope, valuation, userId }) => {
+  const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
+  const payerLabel = usePayerLabel();
   const expensesQuery = api.stats.categoryExpenses.useQuery({
     year: month.year,
     month: month.month,
@@ -89,59 +93,78 @@ const CategoryExpenses: React.FC<{
   }
 
   return (
-    <ul className="border-border mt-1 flex flex-col gap-2 border-l pl-3">
+    <ul className="pb-1">
       {expensesQuery.data.map((expense) => (
         <li key={expense.id}>
-          <Link
+          <ExpenseRow
             href={`/expenses/${expense.id}`}
-            className="flex items-center justify-between gap-3"
-          >
-            <span className="text-muted-foreground w-12 shrink-0 text-xs whitespace-nowrap">
-              {toUIDate(expense.expenseDate)}
-            </span>
-            <span className="text-foreground min-w-0 flex-1 truncate text-sm">{expense.name}</span>
-            <span className="text-muted-foreground shrink-0 text-sm">
-              {toUIString('mine' === scope ? expense.mine : expense.amount)}
-            </span>
-          </Link>
+            title={expense.name}
+            category={expense.category}
+            payer={expense.paidByUser}
+            subtitle={payerLabel(expense.paidByUser, userId, 0n > expense.amount)}
+            date={expense.expenseDate}
+            amount={toUIString('mine' === scope ? expense.mine : expense.amount)}
+          />
         </li>
       ))}
     </ul>
   );
 };
 
+/** Porcentaje del total, redondeado; lo que no llega al 1% se muestra como "<1%". */
+const formatShare = (amount: bigint, total: bigint) => {
+  const share = percentageOf(amount, total);
+  const rounded = Math.round(share);
+
+  if (0 === rounded && 0 < share) {
+    return '<1%';
+  }
+
+  return `${rounded}%`;
+};
+
 const CategoryHeaderButton: React.FC<{
   category: string;
   label: string;
   amount: string;
-  barValue: number;
+  share: string;
+  count: number;
   expanded: boolean;
   onToggle: (category: string) => void;
-}> = ({ category, label, amount, barValue, expanded, onToggle }) => {
+}> = ({ category, label, amount, share, count, expanded, onToggle }) => {
+  const { t } = useTranslationWithUtils();
   const handleClick = useCallback(() => onToggle(category), [onToggle, category]);
+  const dotStyle = useMemo(() => ({ backgroundColor: getCategoryColor(category) }), [category]);
 
   return (
     <button
       type="button"
       onClick={handleClick}
       aria-expanded={expanded}
-      className="focus-visible:ring-ring w-full rounded-md text-left focus-visible:ring-2 focus-visible:outline-none"
+      className="focus-visible:ring-ring flex w-full items-center gap-3 rounded-md py-3 text-left focus-visible:ring-2 focus-visible:outline-none"
     >
-      <CategoryRow
-        category={category}
-        label={label}
-        barValue={barValue}
-        value={
-          <span className="flex items-center gap-1">
-            {amount}
-            <ChevronDownIcon
-              className={cn(
-                'text-muted-foreground size-3.5 transition-transform',
-                expanded && 'rotate-180',
-              )}
-            />
-          </span>
-        }
+      <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full" style={dotStyle} />
+      <CategoryIcon category={category} size={22} />
+      <span className="min-w-0 flex-1">
+        <span className="text-foreground block truncate text-[15px] leading-tight font-medium">
+          {label}
+        </span>
+        <span className="text-muted-foreground mt-0.5 block truncate text-xs">
+          {t('expense_row.expenses_count', { count })}
+        </span>
+      </span>
+      <span className="shrink-0 text-right">
+        <span className="text-foreground block text-[15px] leading-tight font-bold tabular-nums">
+          {amount}
+        </span>
+        <span className="text-muted-foreground mt-0.5 block text-xs tabular-nums">{share}</span>
+      </span>
+      <ChevronRightIcon
+        aria-hidden="true"
+        className={cn(
+          'text-muted-foreground size-4 shrink-0 transition-transform',
+          expanded && 'rotate-90',
+        )}
       />
     </button>
   );
@@ -155,7 +178,9 @@ const CategoryBreakdown: React.FC<{
   groupId: number | null;
   currency: string;
   valuation: Valuation;
-}> = ({ categories, scope, month, timeZone, groupId, currency, valuation }) => {
+  total: bigint;
+  userId: number;
+}> = ({ categories, scope, month, timeZone, groupId, currency, valuation, total, userId }) => {
   const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
   const categoryLabel = useCategoryLabel();
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -174,42 +199,45 @@ const CategoryBreakdown: React.FC<{
     [categories, scope],
   );
 
-  const largest = sorted[0]?.amount ?? 0n;
   const { toUIString } = getCurrencyHelpersCached(currency);
 
-  if (0 === sorted.length) {
-    return <p className="text-muted-foreground mt-4 text-sm">{t('dashboard.stats.empty')}</p>;
-  }
-
   return (
-    <div className="mt-4">
-      <SectionLabel>{t('dashboard.stats.by_category')}</SectionLabel>
-      <div className="mt-3 flex flex-col gap-4">
-        {sorted.map(({ category, amount }) => (
-          <div key={category}>
-            <CategoryHeaderButton
-              category={category}
-              label={categoryLabel(category)}
-              amount={toUIString(amount)}
-              barValue={percentageOf(amount, largest)}
-              expanded={expanded === category}
-              onToggle={toggle}
-            />
-            {expanded === category ? (
-              <CategoryExpenses
-                month={month}
-                timeZone={timeZone}
-                groupId={groupId}
-                currency={currency}
-                category={category}
-                scope={scope}
-                valuation={valuation}
-              />
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </div>
+    <section>
+      <SectionLabel className="mb-2 px-1">{t('dashboard.stats.by_category')}</SectionLabel>
+      <Card className="py-1">
+        {0 === sorted.length ? (
+          <p className="text-muted-foreground py-3 text-sm">{t('dashboard.stats.empty')}</p>
+        ) : (
+          <ul className="divide-border divide-y">
+            {sorted.map(({ category, amount, count }) => (
+              <li key={category}>
+                <CategoryHeaderButton
+                  category={category}
+                  label={categoryLabel(category)}
+                  amount={toUIString(amount)}
+                  share={formatShare(amount, total)}
+                  count={count}
+                  expanded={expanded === category}
+                  onToggle={toggle}
+                />
+                {expanded === category ? (
+                  <CategoryExpenses
+                    month={month}
+                    timeZone={timeZone}
+                    groupId={groupId}
+                    currency={currency}
+                    category={category}
+                    scope={scope}
+                    valuation={valuation}
+                    userId={userId}
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </section>
   );
 };
 
@@ -387,17 +415,19 @@ const StatsPage: NextPageWithUser = ({ user }) => {
                 ))}
               </NativeSelect>
             ) : null}
-
-            <CategoryBreakdown
-              categories={totals?.categories ?? EMPTY_CATEGORIES}
-              scope={scope}
-              month={selected}
-              timeZone={timeZone}
-              groupId={groupId}
-              currency={currency || user.currency}
-              valuation={valuation}
-            />
           </Card>
+
+          <CategoryBreakdown
+            categories={totals?.categories ?? EMPTY_CATEGORIES}
+            scope={scope}
+            month={selected}
+            timeZone={timeZone}
+            groupId={groupId}
+            currency={currency || user.currency}
+            valuation={valuation}
+            total={total}
+            userId={user.id}
+          />
 
           <MonthComparison
             current={total}

@@ -568,13 +568,28 @@ export const statsRouter = createTRPCRouter({
           paidBy: true,
           groupId: true,
           paidByUser: { select: { id: true, name: true, email: true, image: true } },
-          expenseParticipants: { where: { userId }, select: { amount: true } },
+          expenseParticipants: { select: { userId: true, amount: true } },
         },
         orderBy: [{ expenseDate: 'desc' }, { createdAt: 'desc' }],
         take: input?.limit ?? 5,
       });
 
-      return expenses.map((expense) => withMyShare(expense, userId));
+      // Casa: además de la parte propia, a quién le pagaron (para "Belén le pagó a Pato").
+      return expenses.map((expense) =>
+        Object.assign(
+          withMyShare(
+            {
+              ...expense,
+              expenseParticipants: expense.expenseParticipants.filter((p) => p.userId === userId),
+            },
+            userId,
+          ),
+          {
+            receiverId:
+              expense.expenseParticipants.find((p) => p.userId !== expense.paidBy)?.userId ?? null,
+          },
+        ),
+      );
     }),
 });
 

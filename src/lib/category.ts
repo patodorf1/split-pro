@@ -34,3 +34,68 @@ type CategoryValues = (typeof CATEGORIES)[CategorySection][number];
 type CategoryWithoutOther = Exclude<CategoryValues, 'other'>;
 
 export type CategoryItem = CategoryWithoutOther | CategorySection;
+
+/**
+ * Emoji de cada categoría (secciones e ítems). Es lo que se ve en las filas de gastos, el
+ * selector de categoría, los botones rápidos y las estadísticas.
+ */
+export const CATEGORY_EMOJIS: Record<CategoryItem, string> = {
+  entertainment: '🎭',
+  games: '🎮',
+  movies: '🍿',
+  music: '🎵',
+  sports: '⚽',
+  food: '🍔',
+  diningOut: '🍽️',
+  groceries: '🛒',
+  liquor: '🍷',
+  home: '🏠',
+  electronics: '🔌',
+  furniture: '🛋️',
+  supplies: '🧴',
+  maintenance: '🛠️',
+  mortgage: '🏦',
+  pets: '🐾',
+  rent: '🔑',
+  services: '🧰',
+  life: '🌱',
+  childcare: '👶',
+  clothing: '👕',
+  education: '🎓',
+  gifts: '🎁',
+  insurance: '🛡️',
+  medical: '🩺',
+  taxes: '🧾',
+  travel: '🧳',
+  bicycle: '🚲',
+  bus: '🚌',
+  train: '🚆',
+  car: '🚗',
+  fuel: '⛽',
+  hotel: '🏨',
+  parking: '🅿️',
+  plane: '✈️',
+  taxi: '🚕',
+  utilities: '🔧',
+  cleaning: '🧹',
+  electricity: '💡',
+  gas: '🔥',
+  internet: '🌐',
+  trash: '🗑️',
+  phone: '📱',
+  water: '💧',
+  general: '💵',
+};
+
+/** Emoji de una categoría guardada; las desconocidas usan el de la categoría general. */
+export const getCategoryEmoji = (category?: string | null): string => {
+  const emojis: Record<string, string> = CATEGORY_EMOJIS;
+
+  return emojis[category ?? DEFAULT_CATEGORY] ?? CATEGORY_EMOJIS[DEFAULT_CATEGORY];
+};
+
+/** Emoji de las transferencias entre personas (liquidaciones). */
+export const SETTLEMENT_EMOJI = '💸';
+
+/** Emoji de los cambios de moneda. */
+export const CURRENCY_CONVERSION_EMOJI = '💱';

@@ -3,7 +3,13 @@ import { type User } from 'next-auth';
 import Head from 'next/head';
 import Link from 'next/link';
 import MainLayout from '~/components/Layout/MainLayout';
-import { EntityAvatar } from '~/components/ui/avatar';
+import {
+  ExpenseRow,
+  type RowTone,
+  SettlementTitle,
+  usePayerLabel,
+} from '~/components/Expense/ExpenseRow';
+import { Card } from '~/components/ui/card';
 import { type NextPageWithUser } from '~/types';
 import { api } from '~/utils/api';
 import { getCurrencyHelpers } from '~/utils/numbers';
@@ -14,7 +20,11 @@ import { RefreshCcwDot } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import React from 'react';
 
-function getPaymentString(
+/**
+ * Lo que le toca al usuario en el movimiento, chiquito bajo el monto: "Vos prestaste $X",
+ * "Vos debés $X" o "No participás". Los borrados no llevan detalle.
+ */
+function getPaymentDetail(
   user: User,
   amount: bigint,
   paidBy: number,
@@ -23,34 +33,29 @@ function getPaymentString(
   t: TFunction,
   toUIString: (value: bigint) => string,
   isDeleted?: boolean,
-) {
+): { text: string; tone: RowTone } | null {
   if (isDeleted) {
     return null;
   } else if (0n === expenseUserAmt) {
-    return <div className="text-muted-foreground text-sm">{t('ui.not_involved')}</div>;
+    return { text: t('ui.not_involved'), tone: 'muted' };
   } else if (isSettlement) {
-    return (
-      <div className={`${user.id === paidBy ? 'text-positive' : 'text-negative'} text-sm`}>
-        {t('actors.you')}{' '}
-        {user.id === paidBy ? t('ui.expense.you.paid') : t('ui.expense.you.received')}{' '}
-        {toUIString(amount)}
-      </div>
-    );
-  } else {
-    return (
-      <div
-        className={`${(user.id === paidBy) !== amount < 0n ? 'text-positive' : 'text-negative'} text-sm`}
-      >
-        {t(`actors.you`)}{' '}
-        {t(`ui.expense.you.${(user.id === paidBy) !== amount < 0n ? 'lent' : 'owe'}`)}{' '}
-        {toUIString(expenseUserAmt)}
-      </div>
-    );
+    return {
+      text: `${t('actors.you')} ${user.id === paidBy ? t('ui.expense.you.paid') : t('ui.expense.you.received')} ${toUIString(amount)}`,
+      tone: user.id === paidBy ? 'positive' : 'negative',
+    };
   }
+
+  const lent = (user.id === paidBy) !== amount < 0n;
+
+  return {
+    text: `${t('actors.you')} ${t(`ui.expense.you.${lent ? 'lent' : 'owe'}`)} ${toUIString(expenseUserAmt)}`,
+    tone: lent ? 'positive' : 'negative',
+  };
 }
 
 const ActivityPage: NextPageWithUser = ({ user }) => {
-  const { displayName, t, toUIDate, i18n } = useTranslationWithUtils();
+  const { displayName, t, i18n } = useTranslationWithUtils();
+  const payerLabel = usePayerLabel();
   const expensesQuery = api.expense.getAllExpenses.useQuery();
 
   const actions = React.useMemo(
@@ -79,56 +84,70 @@ const ActivityPage: NextPageWithUser = ({ user }) => {
           {!expensesQuery.data?.length ? (
             <div className="text-muted-foreground mt-[30vh] text-center">{t('ui.no_activity')}</div>
           ) : null}
-          {expensesQuery.data?.map((e) => {
-            const { toUIString } = getCurrencyHelpers({
-              locale: i18n.language,
-              currency: e.expense.currency,
-            });
+          {expensesQuery.data?.length ? (
+            <Card className="px-4 py-1.5">
+              {expensesQuery.data.map((e) => {
+                const { toUIString } = getCurrencyHelpers({
+                  locale: i18n.language,
+                  currency: e.expense.currency,
+                });
+                const isSettlement = e.expense.splitType === SplitType.SETTLEMENT;
+                const deletedBy = e.expense.deletedByUser;
+                const receiverId =
+                  e.expense.expenseParticipants.find((p) => p.userId !== e.expense.paidBy)
+                    ?.userId ?? null;
 
-            return (
-              <Link href={`/expenses/${e.expenseId}`} key={e.expenseId} className="flex gap-2">
-                <div className="mt-1">
-                  <EntityAvatar entity={e.expense.paidByUser} size={30} />
-                </div>
-                <div>
-                  {e.expense.deletedByUser ? (
-                    <p className="text-destructive opacity-70">
-                      <span className="font-semibold">
-                        {displayName(e.expense.deletedByUser, user.id)}
-                      </span>{' '}
-                      {t(
-                        `ui.expense.${e.expense.deletedByUser.id === user.id ? 'you' : 'user'}.deleted`,
-                      )}{' '}
-                      <span className="font-semibold">{e.expense.name}</span>
-                    </p>
-                  ) : (
-                    <p className="text-foreground">
-                      <span className="text-foreground font-semibold">
-                        {displayName(e.expense.paidByUser, user.id)}
-                      </span>{' '}
-                      {t(
-                        `ui.expense.${e.expense.paidByUser.id === user.id ? 'you' : 'user'}.${e.expense.amount > 0n ? 'paid' : 'received'}`,
-                      )}{' '}
-                      {toUIString(e.expense.amount)} {t('ui.expense.for')}{' '}
-                      <span className="text-foreground font-semibold">{e.expense.name}</span>
-                    </p>
-                  )}
+                let subtitle: React.ReactNode = isSettlement
+                  ? t('expense_row.transfer')
+                  : payerLabel(e.expense.paidByUser, user.id, e.expense.amount < 0n);
+                if (deletedBy) {
+                  subtitle =
+                    deletedBy.id === user.id
+                      ? t('expense_row.deleted_by_you')
+                      : t('expense_row.deleted_by', {
+                          name: displayName(deletedBy, user.id),
+                          interpolation: { escapeValue: false },
+                        });
+                }
 
-                  {getPaymentString(
-                    user,
-                    e.expense.amount,
-                    e.expense.paidBy,
-                    e.amount,
-                    e.expense.splitType === SplitType.SETTLEMENT,
-                    t,
-                    toUIString,
-                    !!e.expense.deletedBy,
-                  )}
-                  <p className="text-muted-foreground text-xs">{toUIDate(e.expense.expenseDate)}</p>
-                </div>
-              </Link>
-            );
-          })}
+                return (
+                  <ExpenseRow
+                    key={e.expenseId}
+                    href={`/expenses/${e.expenseId}`}
+                    title={
+                      isSettlement ? (
+                        <SettlementTitle
+                          payer={e.expense.paidByUser}
+                          receiverId={receiverId}
+                          userId={user.id}
+                        />
+                      ) : (
+                        e.expense.name
+                      )
+                    }
+                    name={isSettlement ? '' : e.expense.name}
+                    category={e.expense.category}
+                    splitType={e.expense.splitType}
+                    payer={e.expense.paidByUser}
+                    subtitle={subtitle}
+                    date={e.expense.expenseDate}
+                    amount={toUIString(e.expense.amount)}
+                    detail={getPaymentDetail(
+                      user,
+                      e.expense.amount,
+                      e.expense.paidBy,
+                      e.amount,
+                      isSettlement,
+                      t,
+                      toUIString,
+                      !!e.expense.deletedBy,
+                    )}
+                    deleted={!!deletedBy}
+                  />
+                );
+              })}
+            </Card>
+          ) : null}
         </div>
       </MainLayout>
     </>

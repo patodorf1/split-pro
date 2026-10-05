@@ -1,16 +1,15 @@
 import { SplitType } from '@prisma/client';
 import { type inferRouterOutputs } from '@trpc/server';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { toast } from 'sonner';
-import { CategoryIcon, CurrencyConversionIcon, SettleupIcon } from '~/components/ui/categoryIcons';
+import { Card } from '~/components/ui/card';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
-import { cn } from '~/lib/utils';
 import type { ExpenseRouter } from '~/server/api/routers/expense';
 import { api } from '~/utils/api';
 import { Separator } from '../ui/separator';
+import { ExpenseRow, SettlementTitle, usePayerLabel } from './ExpenseRow';
 
 type ExpensesOutput =
   | inferRouterOutputs<ExpenseRouter>['getGroupExpenses']
@@ -21,7 +20,33 @@ type SingleExpenseOutput = ExpensesOutput[number];
 type ExpenseComponent = React.FC<{
   e: SingleExpenseOutput;
   userId: number;
+  href: string;
 }>;
+
+interface MonthBlock {
+  key: string;
+  date: Date;
+  expenses: SingleExpenseOutput[];
+}
+
+/** Agrupa los gastos (ya ordenados del más nuevo al más viejo) por mes, para los encabezados. */
+const groupByMonth = (expenses: ExpensesOutput): MonthBlock[] => {
+  const blocks: MonthBlock[] = [];
+
+  for (const expense of expenses) {
+    const date = expense.expenseDate;
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    const last = blocks[blocks.length - 1];
+
+    if (last?.key === key) {
+      last.expenses.push(expense);
+    } else {
+      blocks.push({ key, date, expenses: [expense] });
+    }
+  }
+
+  return blocks;
+};
 
 export const ExpenseList: React.FC<{
   userId: number;
@@ -30,63 +55,48 @@ export const ExpenseList: React.FC<{
   isGroup?: boolean;
   isLoading?: boolean;
 }> = ({ userId, isGroup = false, expenses = [], contactId, isLoading }) => {
+  const { i18n } = useTranslationWithUtils();
+  const blocks = useMemo(() => groupByMonth(expenses), [expenses]);
+
   if (!isLoading && expenses.length === 0) {
     return <NoExpenses />;
   }
 
-  const { i18n } = useTranslationWithUtils();
-
-  let lastDate: Date | null = null;
-
   return (
     <div className="flex flex-col gap-3">
-      {expenses.map((e) => {
-        const currentDate = e.expenseDate;
-        let isFirstOfMonth = false;
+      {blocks.map((block) => (
+        <React.Fragment key={block.key}>
+          <div className="flex flex-row items-center gap-4 pt-2">
+            <div className="section-label">
+              {new Intl.DateTimeFormat(i18n.language, {
+                month: 'long',
+                year: 'numeric',
+              }).format(block.date)}
+            </div>
+            <Separator className="bg-border flex-1" />
+          </div>
+          <Card className="px-4 py-1.5">
+            {block.expenses.map((e) => {
+              const href = `/${isGroup ? 'groups' : 'balances'}/${contactId}/expenses/${e.id}`;
 
-        if (
-          lastDate === null ||
-          currentDate.getMonth() !== lastDate.getMonth() ||
-          currentDate.getFullYear() !== lastDate.getFullYear()
-        ) {
-          isFirstOfMonth = true;
-        }
-
-        lastDate = currentDate;
-
-        const isSettlement = e.splitType === SplitType.SETTLEMENT;
-        const isCurrencyConversion = e.splitType === SplitType.CURRENCY_CONVERSION;
-
-        return (
-          <React.Fragment key={e.id}>
-            {isFirstOfMonth && (
-              <div className="flex flex-row items-center gap-4 pt-2">
-                <div className="section-label">
-                  {new Intl.DateTimeFormat(i18n.language, {
-                    month: 'long',
-                    year: 'numeric',
-                  }).format(currentDate)}
-                </div>
-                <Separator className="bg-border flex-1" />
-              </div>
-            )}
-            <Link
-              href={`/${isGroup ? 'groups' : 'balances'}/${contactId}/expenses/${e.id}`}
-              className={cn('flex items-center justify-between', isFirstOfMonth ? 'pb-2' : 'py-2')}
-            >
-              {isSettlement && <Settlement e={e} userId={userId} />}
-              {isCurrencyConversion && <CurrencyConversion e={e} userId={userId} />}
-              {!isSettlement && !isCurrencyConversion && <Expense e={e} userId={userId} />}
-            </Link>
-          </React.Fragment>
-        );
-      })}
+              if (e.splitType === SplitType.SETTLEMENT) {
+                return <Settlement key={e.id} e={e} userId={userId} href={href} />;
+              }
+              if (e.splitType === SplitType.CURRENCY_CONVERSION) {
+                return <CurrencyConversion key={e.id} e={e} userId={userId} href={href} />;
+              }
+              return <Expense key={e.id} e={e} userId={userId} href={href} />;
+            })}
+          </Card>
+        </React.Fragment>
+      ))}
     </div>
   );
 };
 
-const Expense: ExpenseComponent = ({ e, userId }) => {
-  const { displayName, toUIDate, t, getCurrencyHelpersCached } = useTranslationWithUtils();
+const Expense: ExpenseComponent = ({ e, userId, href }) => {
+  const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
+  const payerLabel = usePayerLabel();
   const router = useRouter();
   const { friendId } = router.query;
 
@@ -101,73 +111,59 @@ const Expense: ExpenseComponent = ({ e, userId }) => {
 
   const { toUIString } = getCurrencyHelpersCached(e.currency);
 
+  // Lo que antes ocupaba la columna derecha (cuánto prestaste o debés) queda chiquito bajo el total.
+  const detailText =
+    youPaid || 0n !== yourExpenseAmount
+      ? `${t('actors.you')} ${t(`ui.expense.you.${youPaid ? 'lent' : 'owe'}`)} ${toUIString(yourExpenseAmount)}`
+      : t('ui.not_involved');
+  const detailTone = youPaid ? 'positive' : 0n !== yourExpenseAmount ? 'negative' : 'muted';
+  const detail = useMemo(
+    () => ({ text: detailText, tone: detailTone }) as const,
+    [detailText, detailTone],
+  );
   return (
-    <>
-      <div className="flex min-w-0 items-center gap-4">
-        <div className="text-muted-foreground inline-block w-6 shrink-0 text-center text-xs">
-          {toUIDate(e.expenseDate)}
-        </div>
-        <CategoryIcon category={e.category} className="text-muted-foreground size-5 shrink-0" />
-        <div className="min-w-0 pe-1">
-          <p className="truncate text-sm lg:text-base">{e.name}</p>
-          <p className="text-muted-foreground truncate text-xs">
-            {displayName(e.paidByUser, userId)}{' '}
-            {t(`ui.expense.user.${e.amount < 0n ? 'received' : 'paid'}`)} {toUIString(e.amount)}
-          </p>
-        </div>
-      </div>
-      <div className="min-w-10 shrink-0">
-        {youPaid || 0n !== yourExpenseAmount ? (
-          <>
-            <div className={`text-right text-xs ${youPaid ? 'text-positive' : 'text-negative'}`}>
-              {t('actors.you')} {t(`ui.expense.you.${youPaid ? 'lent' : 'owe'}`)}
-            </div>
-            <div
-              className={`xs:max-w-full max-w-32 truncate text-right ${youPaid ? 'text-positive' : 'text-negative'}`}
-            >
-              {toUIString(yourExpenseAmount)}
-            </div>
-          </>
-        ) : (
-          <div>
-            <p className="text-muted-foreground text-xs">{t('ui.not_involved')}</p>
-          </div>
-        )}
-      </div>
-    </>
+    <ExpenseRow
+      href={href}
+      title={e.name}
+      category={e.category}
+      splitType={e.splitType}
+      payer={e.paidByUser}
+      subtitle={payerLabel(e.paidByUser, userId, e.amount < 0n)}
+      date={e.expenseDate}
+      amount={toUIString(e.amount)}
+      detail={detail}
+    />
   );
 };
 
-const Settlement: ExpenseComponent = ({ e, userId }) => {
-  const { displayName, toUIDate, t, getCurrencyHelpersCached } = useTranslationWithUtils();
-
+const Settlement: ExpenseComponent = ({ e, userId, href }) => {
+  const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
   const { toUIString } = getCurrencyHelpersCached(e.currency);
 
   const receiverId = e.expenseParticipants.find((p) => p.userId !== e.paidBy)?.userId;
-  const userDetails = api.user.getUserDetails.useQuery({ userId: receiverId! });
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="text-muted-foreground inline-block w-6 text-center text-xs">
-        {toUIDate(e.expenseDate)}
-      </div>
-      <SettleupIcon className="text-muted-foreground size-5 shrink-0" />
-      <div className="min-w-0">
-        <p className="text-muted-foreground line-clamp-2 text-sm">
-          {displayName(e.paidByUser, userId)}{' '}
-          {/* El verbo tiene que concordar con quién pagó: "Vos pagaste", "Belén pagó". */}
-          {t(
-            `ui.expense.${e.paidBy === userId ? 'you' : 'user'}.${e.amount < 0n ? 'received' : 'paid'}`,
-          )}{' '}
-          {toUIString(e.amount)} {t('ui.expense.to')} {displayName(userDetails.data, userId)}
-        </p>
-      </div>
-    </div>
+    <ExpenseRow
+      href={href}
+      title={<SettlementTitle payer={e.paidByUser} receiverId={receiverId} userId={userId} />}
+      name=""
+      splitType={e.splitType}
+      payer={e.paidByUser}
+      subtitle={t('expense_row.transfer')}
+      date={e.expenseDate}
+      amount={toUIString(e.amount)}
+    />
   );
 };
 
-const CurrencyConversion: ExpenseComponent = ({ e, userId }) => {
-  const { displayName, toUIDate, t, getCurrencyHelpersCached } = useTranslationWithUtils();
+const CurrencyConversion: ExpenseComponent = ({ e, userId, href }) => {
+  const { displayName, t, getCurrencyHelpersCached } = useTranslationWithUtils();
+
+  const receiverId = e.expenseParticipants.find((p) => p.userId !== e.paidBy)?.userId;
+  const userDetails = api.user.getUserDetails.useQuery(
+    { userId: receiverId ?? 0 },
+    { enabled: Boolean(receiverId) },
+  );
 
   if (!e.conversionTo) {
     toast.error(t('errors.currency_conversion_malformed'));
@@ -177,29 +173,26 @@ const CurrencyConversion: ExpenseComponent = ({ e, userId }) => {
     return null;
   }
 
-  const receiverId = e.expenseParticipants.find((p) => p.userId !== e.paidBy)?.userId;
-  const userDetails = api.user.getUserDetails.useQuery({ userId: receiverId! });
-
   return (
-    <div className="flex min-w-0 items-center gap-4">
-      <div className="text-muted-foreground inline-block w-6 shrink-0 text-center text-xs">
-        {toUIDate(e.expenseDate)}
-      </div>
-      <CurrencyConversionIcon className="text-muted-foreground size-5 shrink-0" />
-      <div className="min-w-0">
-        <p className="truncate text-sm lg:text-base">
+    <ExpenseRow
+      href={href}
+      title={
+        <>
           {getCurrencyHelpersCached(e.currency).toUIString(e.amount)} ➡️{' '}
-          {
-            /* @ts-ignore */
-            getCurrencyHelpersCached(e.conversionTo.currency).toUIString(e.conversionTo.amount)
-          }
-        </p>
-        <p className="text-muted-foreground truncate text-xs">
+          {getCurrencyHelpersCached(e.conversionTo.currency).toUIString(e.conversionTo.amount)}
+        </>
+      }
+      name=""
+      splitType={e.splitType}
+      payer={e.paidByUser}
+      subtitle={
+        <>
           {t('ui.expense.for')} {displayName(e.paidByUser, userId)} {t('ui.and')}{' '}
           {displayName(userDetails.data, userId)}
-        </p>
-      </div>
-    </div>
+        </>
+      }
+      date={e.expenseDate}
+    />
   );
 };
 
