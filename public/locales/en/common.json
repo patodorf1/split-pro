@@ -469,6 +469,22 @@
     "no_transactions_yet": "No transactions yet",
     "already_added": "Already added"
   },
+  "expense_row": {
+    "deleted_by": "Deleted by {{name}}",
+    "deleted_by_you": "You deleted it",
+    "expenses_count_one": "{{count}} expense",
+    "expenses_count_other": "{{count}} expenses",
+    "paid_by": "{{name}} paid",
+    "received_by": "{{name}} received",
+    "settlement": {
+      "paid": "{{payer}} paid {{receiver}}",
+      "paid_you": "{{payer}} paid you",
+      "you_paid": "You paid {{receiver}}"
+    },
+    "transfer": "Transfer",
+    "you_paid": "You paid",
+    "you_received": "You received"
+  },
   "group_details": {
     "add_members": "Add members",
     "copied": "Copied",
@@ -596,6 +612,15 @@
     "paid": "Paid by",
     "received": "Received by",
     "change": "Change who paid"
+  },
+  "profile_photo": {
+    "add": "Add photo",
+    "change": "Change photo",
+    "error": "Couldn't save the photo",
+    "remove": "Remove photo",
+    "removed": "Photo removed",
+    "saved": "Photo updated",
+    "uploading": "Uploading photo…"
   },
   "quick_categories": {
     "label": "Most used categories"

@@ -458,6 +458,22 @@
     "title": "Añadir gasto",
     "title_mobile": "Añadir"
   },
+  "expense_row": {
+    "deleted_by": "Lo borró {{name}}",
+    "deleted_by_you": "Lo borraste",
+    "expenses_count_one": "{{count}} gasto",
+    "expenses_count_other": "{{count}} gastos",
+    "paid_by": "Pagó {{name}}",
+    "received_by": "Recibió {{name}}",
+    "settlement": {
+      "paid": "{{payer}} le pagó a {{receiver}}",
+      "paid_you": "{{payer}} te pagó",
+      "you_paid": "Le pagaste a {{receiver}}"
+    },
+    "transfer": "Transferencia",
+    "you_paid": "Pagaste",
+    "you_received": "Recibiste"
+  },
   "group_details": {
     "add_members": "Añadir miembros",
     "copied": "Copiado",
@@ -569,6 +585,15 @@
     "paid": "Pagó",
     "received": "Recibió",
     "change": "Cambiar quién pagó"
+  },
+  "profile_photo": {
+    "add": "Agregar foto",
+    "change": "Cambiar foto",
+    "error": "No se pudo guardar la foto",
+    "remove": "Quitar foto",
+    "removed": "Foto quitada",
+    "saved": "Foto actualizada",
+    "uploading": "Subiendo foto…"
   },
   "quick_categories": {
     "label": "Categorías más usadas"

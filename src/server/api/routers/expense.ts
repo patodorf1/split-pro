@@ -453,6 +453,8 @@ export const expenseRouter = createTRPCRouter({
                 id: true,
               },
             },
+            // Casa: para saber a quién le pagaron en las transferencias ("Belén le pagó a Pato").
+            expenseParticipants: { select: { userId: true } },
           },
         },
       },

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import React, { useMemo } from 'react';
 
 import { BalanceCards } from '~/components/dashboard/BalanceCards';
+import { ExpenseRow, SettlementTitle, usePayerLabel } from '~/components/Expense/ExpenseRow';
 import { CategoryRow, useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { CurrencyToggle } from '~/components/dashboard/CurrencyToggle';
 import { ExpiryNotices } from '~/components/dashboard/ExpiryNotices';
@@ -16,7 +17,6 @@ import {
 } from '~/components/dashboard/hooks';
 import MainLayout from '~/components/Layout/MainLayout';
 import { Card, CardHeader } from '~/components/ui/card';
-import { CategoryIcon, SettleupIcon } from '~/components/ui/categoryIcons';
 import { SectionLabel } from '~/components/ui/section-label';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { percentageOf } from '~/lib/stats';
@@ -117,40 +117,37 @@ const MovementRow: React.FC<{ movement: RecentMovement; userId: number }> = ({
   movement,
   userId,
 }) => {
-  const { t, toUIDate, displayName, getCurrencyHelpersCached } = useTranslationWithUtils();
+  const { t, getCurrencyHelpersCached } = useTranslationWithUtils();
+  const payerLabel = usePayerLabel();
   const isSettlement = SplitType.SETTLEMENT === movement.splitType;
 
   return (
     <li>
-      <Link href={`/expenses/${movement.id}`} className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="text-muted-foreground w-12 shrink-0 text-xs whitespace-nowrap">
-            {toUIDate(movement.expenseDate)}
-          </span>
-          {isSettlement ? (
-            <SettleupIcon className="text-muted-foreground size-4 shrink-0" />
-          ) : (
-            <CategoryIcon
-              category={movement.category}
-              className="text-muted-foreground size-4 shrink-0"
+      <ExpenseRow
+        href={`/expenses/${movement.id}`}
+        title={
+          isSettlement ? (
+            <SettlementTitle
+              payer={movement.paidByUser}
+              receiverId={movement.receiverId}
+              userId={userId}
             />
-          )}
-          <div className="min-w-0">
-            <p className="text-foreground truncate text-sm">
-              {isSettlement ? t('ui.settlement') : movement.name}
-            </p>
-            <p className="text-muted-foreground truncate text-xs">
-              {displayName(movement.paidByUser, userId)}{' '}
-              {t(
-                `ui.expense.${movement.paidByUser.id === userId ? 'you' : 'user'}.${0n > movement.amount ? 'received' : 'paid'}`,
-              )}
-            </p>
-          </div>
-        </div>
-        <span className="text-foreground shrink-0 text-sm">
-          {getCurrencyHelpersCached(movement.currency).toUIString(movement.amount)}
-        </span>
-      </Link>
+          ) : (
+            movement.name
+          )
+        }
+        name={isSettlement ? '' : movement.name}
+        category={movement.category}
+        splitType={movement.splitType}
+        payer={movement.paidByUser}
+        subtitle={
+          isSettlement
+            ? t('expense_row.transfer')
+            : payerLabel(movement.paidByUser, userId, 0n > movement.amount)
+        }
+        date={movement.expenseDate}
+        amount={getCurrencyHelpersCached(movement.currency).toUIString(movement.amount)}
+      />
     </li>
   );
 };
@@ -173,7 +170,7 @@ const RecentMovementsCard: React.FC<{ movements: RecentMovement[]; userId: numbe
           {t('dashboard.recent.view_all')}
         </Link>
       </CardHeader>
-      <ul className="flex flex-col gap-3">
+      <ul className="-my-2.5 flex flex-col">
         {movements.map((movement) => (
           <MovementRow key={movement.id} movement={movement} userId={userId} />
         ))}
