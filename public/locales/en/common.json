@@ -670,15 +670,6 @@
     "received": "Received by",
     "change": "Change who paid"
   },
-  "profile_photo": {
-    "add": "Add photo",
-    "change": "Change photo",
-    "error": "Couldn't save the photo",
-    "remove": "Remove photo",
-    "removed": "Photo removed",
-    "saved": "Photo updated",
-    "uploading": "Uploading photo…"
-  },
   "quick_categories": {
     "label": "Most used categories"
   },
