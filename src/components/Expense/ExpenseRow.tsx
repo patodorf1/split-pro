@@ -146,7 +146,7 @@ export const ExpenseRow: React.FC<{
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            'text-foreground truncate text-[15px] leading-tight font-semibold',
+            'text-foreground truncate text-[15px] leading-tight',
             deleted && 'line-through',
           )}
         >
@@ -172,7 +172,7 @@ export const ExpenseRow: React.FC<{
           {amount ? (
             <p
               className={cn(
-                'text-foreground truncate text-[15px] leading-tight font-bold tabular-nums',
+                'text-foreground truncate text-[15px] leading-tight tabular-nums',
                 deleted && 'line-through',
               )}
             >
