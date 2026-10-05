@@ -30,6 +30,7 @@ describe('isRememberableRoute', () => {
     '/recurring',
     '/documents',
     '/documents/3',
+    '/agenda',
   ])('should remember the navigation screen %s', (path) => {
     expect(isRememberableRoute(path)).toBe(true);
   });
@@ -50,6 +51,7 @@ describe('isRememberableRoute', () => {
     '/404',
     '/dashboards-fake',
     '/documents-fake',
+    '/agenda-fake',
     '/api/documents/3f1c2a4e-1111-4222-8333-444455556666',
     '/groups/7/edit',
     '/groups/7/edit/split',

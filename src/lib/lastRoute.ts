@@ -30,6 +30,7 @@ export const LAST_ROUTE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const REMEMBERABLE_PREFIXES = [
   '/account',
   '/activity',
+  '/agenda',
   '/balances',
   '/dashboard',
   '/documents',

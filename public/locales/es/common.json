@@ -96,6 +96,63 @@
     "you_accusativus": "A ti",
     "you_dativus": "A ti"
   },
+  "agenda": {
+    "nav": "Agenda",
+    "title": "Agenda",
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "go_today": "Ir a hoy",
+    "upcoming": "Próximos",
+    "upcoming_empty": "Nada en las próximas dos semanas.",
+    "day_empty": "No hay nada para este día.",
+    "add_event": "Agregar evento",
+    "all_day": "Todo el día",
+    "kinds": {
+      "event": "Eventos",
+      "expiry": "Vencimientos",
+      "recurring": "Gastos recurrentes"
+    },
+    "expiry_label": "Vence · {{folder}}",
+    "recurring_label": "Gasto recurrente",
+    "repeat": {
+      "NONE": "No se repite",
+      "WEEKLY": "Cada semana",
+      "MONTHLY": "Cada mes",
+      "YEARLY": "Cada año"
+    },
+    "repeat_short": {
+      "NONE": "No",
+      "WEEKLY": "Semanal",
+      "MONTHLY": "Mensual",
+      "YEARLY": "Anual"
+    },
+    "editor": {
+      "create": "Nuevo evento",
+      "edit": "Editar evento",
+      "group": "Grupo",
+      "title": "Qué",
+      "title_placeholder": "Ej.: Turno médico, cumple de mamá, visita",
+      "date": "Fecha",
+      "all_day": "Todo el día",
+      "time": "Hora",
+      "repeat": "Se repite",
+      "repeat_hint": "Si el mes no tiene ese día, cae el último día del mes.",
+      "note": "Nota (opcional)",
+      "note_placeholder": "Ej.: llevar los estudios",
+      "delete": "Borrar evento",
+      "delete_confirm": "¿Borrar \"{{title}}\"? Se borra para toda la familia.",
+      "delete_confirm_repeat": "¿Borrar \"{{title}}\" y todas sus repeticiones? Se borra para toda la familia."
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "create": "Agregar",
+      "save": "Guardar"
+    },
+    "errors": {
+      "generic": "Algo salió mal. Intenta de nuevo.",
+      "load": "No se pudo cargar la agenda."
+    }
+  },
   "auth": {
     "continue_with": "Continuar con {{provider}}",
     "email_placeholder": "Introduce tu correo electrónico",

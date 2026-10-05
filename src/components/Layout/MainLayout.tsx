@@ -1,5 +1,6 @@
 import { clsx } from 'clsx';
 import {
+  CalendarDaysIcon,
   ChartPieIcon,
   EllipsisIcon,
   FolderOpenIcon,
@@ -30,6 +31,9 @@ interface MainLayoutProps {
 }
 
 const HOME_LINK = '/dashboard';
+/** Agenda (calendario de la casa): ocupa en la barra el lugar que antes tenía Documentos. */
+const AGENDA_LINK = '/agenda';
+/** Documentos: en el celular vive dentro de "Más". */
 const DOCUMENTS_LINK = '/documents';
 /** Contactos de emergencia: en el celular vive dentro de "Más". */
 const EMERGENCY_LINK = '/emergency';
@@ -44,6 +48,7 @@ const MORE_SECTION_LINKS = [
   MORE_LINK,
   GROUPS_LINK,
   EMERGENCY_LINK,
+  DOCUMENTS_LINK,
   '/balances',
   '/activity',
   '/stats',
@@ -90,6 +95,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             title={t?.('dashboard.nav.home') ?? 'Home'}
             Icon={HouseIcon}
             link={HOME_LINK}
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
+            title={t?.('agenda.nav') ?? 'Calendar'}
+            Icon={CalendarDaysIcon}
+            link={AGENDA_LINK}
             currentPath={currentPath}
           />
           <NavItemDesktop
@@ -181,9 +192,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           currentPath={currentPath}
         />
         <NavItem
-          title={t?.('documents.nav') ?? 'Documents'}
-          Icon={FolderOpenIcon}
-          link={DOCUMENTS_LINK}
+          title={t?.('agenda.nav') ?? 'Calendar'}
+          Icon={CalendarDaysIcon}
+          link={AGENDA_LINK}
           currentPath={currentPath}
         />
         <AddExpenseNavItem title={t?.('navigation.add') ?? 'Add'} link={ADD_LINK} />

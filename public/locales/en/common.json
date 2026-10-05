@@ -107,6 +107,63 @@
     "you_accusativus": "You",
     "you_dativus": "You"
   },
+  "agenda": {
+    "nav": "Calendar",
+    "title": "Calendar",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "go_today": "Go to today",
+    "upcoming": "Coming up",
+    "upcoming_empty": "Nothing in the next two weeks.",
+    "day_empty": "Nothing planned for this day.",
+    "add_event": "Add event",
+    "all_day": "All day",
+    "kinds": {
+      "event": "Events",
+      "expiry": "Expiry dates",
+      "recurring": "Recurring expenses"
+    },
+    "expiry_label": "Expires · {{folder}}",
+    "recurring_label": "Recurring expense",
+    "repeat": {
+      "NONE": "Doesn't repeat",
+      "WEEKLY": "Every week",
+      "MONTHLY": "Every month",
+      "YEARLY": "Every year"
+    },
+    "repeat_short": {
+      "NONE": "No",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly",
+      "YEARLY": "Yearly"
+    },
+    "editor": {
+      "create": "New event",
+      "edit": "Edit event",
+      "group": "Group",
+      "title": "What",
+      "title_placeholder": "E.g. Doctor, Mom's birthday, visit",
+      "date": "Date",
+      "all_day": "All day",
+      "time": "Time",
+      "repeat": "Repeats",
+      "repeat_hint": "If the month doesn't have that day, it falls on the last day of the month.",
+      "note": "Note (optional)",
+      "note_placeholder": "E.g. bring the medical records",
+      "delete": "Delete event",
+      "delete_confirm": "Delete \"{{title}}\"? It's removed for the whole family.",
+      "delete_confirm_repeat": "Delete \"{{title}}\" and all its repeats? It's removed for the whole family."
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "create": "Add",
+      "save": "Save"
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "load": "Couldn't load the calendar."
+    }
+  },
   "auth": {
     "continue_with": "Continue with {{provider}}",
     "email_placeholder": "Enter your email",
