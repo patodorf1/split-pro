@@ -165,7 +165,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           />
         </nav>
         <div className="lg:border-border w-full overflow-auto lg:border-x lg:px-6" id="mainlayout">
-          {title ? (
+          {'string' === typeof title ? (
+            /*
+             * Pantallas principales: sin el título grande (la barra de abajo ya dice dónde se
+             * está). Queda solo para lectores de pantalla, y arriba a la derecha los botones.
+             */
+            <div className="flex min-h-4 items-center justify-end px-4 pt-4 pb-2">
+              <h1 className="sr-only">{title}</h1>
+              {actions}
+            </div>
+          ) : title ? (
+            // Pantallas de detalle: el título trae la flecha para volver, así que se mantiene.
             <div className="mb-2 flex items-center justify-between px-4 py-4">
               <div className="text-foreground text-3xl font-bold">{title}</div>
               {actions}
