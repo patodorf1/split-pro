@@ -148,3 +148,36 @@ export const extractTemplateExpenseId = (command: string): string | null => {
   const match = command.match(/duplicate_expense_with_participants\('([0-9a-f-]{36})'::UUID\)/i);
   return match?.[1] ?? null;
 };
+
+/**
+ * Instantes en que corre un cron guardado en la base (en UTC y con '$' en vez de 'L', como lo
+ * deja `cronToBackend`) dentro de `[from, to)`. Es la misma cuenta que hacen "Próximo recurrente"
+ * y la pantalla de recurrentes (`cron-parser` + `next()`), pero en el servidor y para un rango.
+ */
+export const cronOccurrencesBetween = (
+  backendExpression: string,
+  from: Date,
+  to: Date,
+  limit = 400,
+): Date[] => {
+  const interval = cronParser.parseExpression(backendExpression.replaceAll('$', 'L'), {
+    // `next()` devuelve lo estrictamente posterior: arrancamos un segundo antes de `from`.
+    currentDate: new Date(from.getTime() - 1000),
+    endDate: to,
+    tz: 'UTC',
+  });
+  const result: Date[] = [];
+
+  while (result.length < limit && interval.hasNext()) {
+    const at = interval.next().toDate();
+
+    if (at.getTime() >= to.getTime()) {
+      break;
+    }
+    if (at.getTime() >= from.getTime()) {
+      result.push(at);
+    }
+  }
+
+  return result;
+};

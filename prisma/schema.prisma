@@ -69,6 +69,7 @@ model User {
   uploadedDocuments    Document[]              @relation("DocumentUploadedBy")
   documentReminders    DocumentReminderState[]
   checkedShoppingItems ShoppingItem[]          @relation("ShoppingItemCheckedBy")
+  calendarEvents       CalendarEvent[]         @relation("CalendarEventCreatedBy")
 
   @@schema("public")
 }
@@ -120,6 +121,7 @@ model Group {
   documentFolders   DocumentFolder[]
   emergencyContacts EmergencyContact[]
   documents         Document[]
+  calendarEvents    CalendarEvent[]
 
   @@schema("public")
 }
@@ -493,6 +495,38 @@ model EmergencyContact {
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([groupId, sortOrder])
+  @@schema("public")
+}
+
+/// Casa: eventos de la Agenda (turnos, cumpleaños, visitas), compartidos por grupo como los
+/// contactos de emergencia. `date` es un día de calendario (sin zona horaria) y `time` la hora
+/// opcional "HH:MM" (sin hora = todo el día), así el evento cae el mismo día en cualquier teléfono.
+model CalendarEvent {
+  id          Int                 @id @default(autoincrement())
+  groupId     Int
+  title       String
+  date        DateTime            @db.Date
+  time        String?
+  note        String?
+  repeat      CalendarEventRepeat @default(NONE)
+  createdById Int?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  group       Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy   User?               @relation("CalendarEventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([groupId, date])
+  @@schema("public")
+}
+
+/// Repetición de un evento de la Agenda. Mensual y anual caen el mismo día del mes; si ese mes no
+/// lo tiene (31, o 29 de febrero), cae el último día del mes.
+enum CalendarEventRepeat {
+  NONE
+  WEEKLY
+  MONTHLY
+  YEARLY
+
   @@schema("public")
 }
 

@@ -3,6 +3,7 @@ import { createTRPCRouter } from '~/server/api/trpc';
 
 import { userRouter } from './routers/user';
 import { bankTransactionsRouter } from './routers/bankTransactions';
+import { calendarRouter } from './routers/calendar';
 import { documentsRouter } from './routers/documents';
 import { emergencyRouter } from './routers/emergency';
 import { expenseRouter } from './routers/expense';
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   group: groupRouter,
   user: userRouter,
   bankTransactions: bankTransactionsRouter,
+  calendar: calendarRouter,
   documents: documentsRouter,
   emergency: emergencyRouter,
   expense: expenseRouter,
