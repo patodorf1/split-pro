@@ -661,6 +661,15 @@
     "balances": "Balances",
     "groups": "Groups"
   },
+  "notification_prompt": {
+    "description": "We'll let you know when the other person adds an expense, and in the morning what's on today's agenda. The app icon also shows how many notices there are.",
+    "granted": "You will receive notifications now.",
+    "later": "Remind later",
+    "request_error": "Error requesting notifications.",
+    "subscribe": "Turn on",
+    "subscribe_error": "Cannot subscribe on this device.",
+    "title": "Turn on notifications"
+  },
   "payer": {
     "paid": "Paid by",
     "received": "Received by",

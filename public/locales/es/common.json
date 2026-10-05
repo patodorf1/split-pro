@@ -631,6 +631,15 @@
     "groups": "Grupos",
     "recurring": "Recurrente"
   },
+  "notification_prompt": {
+    "description": "Te avisamos cuando el otro carga un gasto, y a la mañana lo que hay para hoy en la agenda. Además, el ícono de la app muestra cuántos avisos hay.",
+    "granted": "Listo, vas a recibir notificaciones.",
+    "later": "Más tarde",
+    "request_error": "No se pudieron activar las notificaciones.",
+    "subscribe": "Activar",
+    "subscribe_error": "No se pudo activar en este dispositivo.",
+    "title": "Activar notificaciones"
+  },
   "payer": {
     "paid": "Pagó",
     "received": "Recibió",

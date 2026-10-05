@@ -6,6 +6,9 @@ import { db } from '~/server/db';
 import { pushNotification } from '~/server/notification';
 import { getCurrencyHelpers } from '~/utils/numbers';
 
+/** Casa: idioma y formato de montos de las notificaciones. */
+const NOTIFICATION_LOCALE = 'es-AR';
+
 export const getSubscriptionEndpoint = (subscription: string) => {
   try {
     const parsed = JSON.parse(subscription) as { endpoint?: string };
@@ -132,12 +135,13 @@ export async function sendExpensePushNotification(expenseId: string) {
         ({ userId, amount }) => userId !== expense.addedBy && 0n !== amount,
       );
 
-  // A way to localize it and reuse our utils would be ideal
+  // Casa: las notificaciones salen en español (los dos usuarios usan la app en es-AR).
   const getUserDisplayName = (user: { name: string | null; email: string | null } | null) =>
     user?.name ?? user?.email ?? '';
 
   const formatAmount = (currency: string, amount: bigint) => {
     const { toUIString } = getCurrencyHelpers({
+      locale: NOTIFICATION_LOCALE,
       currency: isCurrencyCode(currency) ? currency : 'USD',
     });
     return toUIString(amount);
@@ -152,7 +156,7 @@ export async function sendExpensePushNotification(expenseId: string) {
     if (expense.deletedBy) {
       return {
         title: getUserDisplayName(expense.deletedByUser),
-        message: `Deleted ${expense.name}`,
+        message: `Borró ${expense.name}`,
       };
     }
 
@@ -160,7 +164,7 @@ export async function sendExpensePushNotification(expenseId: string) {
     if (expense.updatedByUser) {
       return {
         title: getUserDisplayName(expense.updatedByUser),
-        message: `Updated ${expense.name} ${amount}`,
+        message: `Editó ${expense.name} · ${amount}`,
       };
     }
 
@@ -169,7 +173,7 @@ export async function sendExpensePushNotification(expenseId: string) {
       const toAmount = formatAmount(expense.conversionTo.currency, expense.conversionTo.amount);
       return {
         title: adder,
-        message: `${payer} converted ${amount} → ${toAmount}`,
+        message: `${payer} cambió ${amount} → ${toAmount}`,
       };
     }
 
@@ -177,14 +181,14 @@ export async function sendExpensePushNotification(expenseId: string) {
     if (expense.splitType === SplitType.SETTLEMENT) {
       return {
         title: adder,
-        message: `${payer} settled up ${amount}`,
+        message: `${payer} transfirió ${amount} para saldar`,
       };
     }
 
     // Regular expense
     return {
       title: adder,
-      message: `${payer} paid ${amount} for ${expense.name}`,
+      message: `${payer} pagó ${amount} · ${expense.name}`,
     };
   };
 
@@ -256,11 +260,11 @@ export async function sendGroupSimplifyDebtsToggleNotification(
       user?.name ?? user?.email ?? '';
 
     const togglerName = getUserDisplayName(togglerUser);
-    const stateText = newState ? 'on' : 'off';
+    const stateText = newState ? 'activó' : 'desactivó';
 
     const pushData = {
       title: togglerName,
-      message: `turned ${stateText} debt simplification for ${group.name}`,
+      message: `${stateText} la simplificación de deudas en ${group.name}`,
       data: {
         url: `/groups/${groupId}`,
       },
