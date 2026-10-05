@@ -20,6 +20,10 @@ export async function register() {
       await import('./server/api/services/notificationService');
     console.log('Starting recurrent expense notification checking...');
     setTimeout(checkRecurrenceNotifications, 1000 * 10); // Start after 10 seconds
+
+    // Casa: aviso de la mañana con lo de hoy (y el numerito del ícono de la app).
+    const { checkDailyNotices } = await import('./server/api/services/dailyNoticesService');
+    setTimeout(checkDailyNotices, 1000 * 30);
   }
 
   if (process.env.NEXT_RUNTIME !== 'nodejs') {

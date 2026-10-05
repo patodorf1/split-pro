@@ -2,17 +2,13 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import {
-  type AgendaKind,
   type DayRange,
-  type EventRepeat,
   MAX_RANGE_DAYS,
   addDaysToKey,
   calendarEventFieldsSchema,
   compareAgendaItems,
-  dayKeyFromDbDate,
   dayKeySchema,
   dbDateFromDayKey,
-  expandOccurrences,
   formatDay,
   parseDay,
   rangeLength,
@@ -21,41 +17,16 @@ import { cronOccurrencesBetween } from '~/lib/cron';
 import { REMINDER_TIME_ZONE } from '~/lib/documentReminders';
 import { getZonedCalendarDay, zonedStartOfDay } from '~/lib/stats';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
+import {
+  type AgendaEventItem,
+  type AgendaItemBase,
+  EVENT_SELECT,
+  findEventItems,
+} from '~/server/calendar/events';
 import { memberOf } from '~/server/documents/access';
 import { type db as dbClient } from '~/server/db';
 
 type Db = typeof dbClient;
-
-const EVENT_SELECT = {
-  id: true,
-  groupId: true,
-  title: true,
-  date: true,
-  time: true,
-  note: true,
-  repeat: true,
-} as const;
-
-interface AgendaItemBase {
-  /** Clave única dentro de una respuesta (sirve de `key` en React). */
-  key: string;
-  kind: AgendaKind;
-  /** Día de calendario "AAAA-MM-DD". */
-  date: string;
-  /** "HH:MM" o null (todo el día). */
-  time: string | null;
-  title: string;
-}
-
-export interface AgendaEventItem extends AgendaItemBase {
-  kind: 'event';
-  eventId: number;
-  groupId: number;
-  note: string | null;
-  repeat: EventRepeat;
-  /** Fecha de inicio guardada (la de la primera vez), para editar el evento. */
-  startDate: string;
-}
 
 export interface AgendaExpiryItem extends AgendaItemBase {
   kind: 'expiry';
@@ -73,6 +44,8 @@ export interface AgendaRecurringItem extends AgendaItemBase {
   currency: string;
   category: string;
 }
+
+export { type AgendaEventItem, findEventItems };
 
 export type AgendaItem = AgendaEventItem | AgendaExpiryItem | AgendaRecurringItem;
 
@@ -99,40 +72,6 @@ const zonedDayKey = (instant: Date, timeZone: string): string =>
 /** Evento al que el usuario tiene acceso (miembro del grupo dueño), o null. */
 export const findAccessibleEvent = async (db: Db, id: number, userId: number) =>
   db.calendarEvent.findFirst({ where: { id, group: memberOf(userId) } });
-
-/** Eventos propios de los grupos del usuario, con las repeticiones ya abiertas en el rango. */
-export const findEventItems = async (
-  db: Db,
-  userId: number,
-  range: DayRange,
-): Promise<AgendaEventItem[]> => {
-  const events = await db.calendarEvent.findMany({
-    where: {
-      group: memberOf(userId),
-      date: { lte: dbDateFromDayKey(range.to) },
-      OR: [{ repeat: { not: 'NONE' } }, { date: { gte: dbDateFromDayKey(range.from) } }],
-    },
-    orderBy: [{ date: 'asc' }, { id: 'asc' }],
-    select: EVENT_SELECT,
-  });
-
-  return events.flatMap((event) => {
-    const startDate = dayKeyFromDbDate(event.date);
-
-    return expandOccurrences({ date: startDate, repeat: event.repeat }, range).map((date) => ({
-      key: `event-${event.id}-${date}`,
-      kind: 'event' as const,
-      date,
-      time: event.time,
-      title: event.title,
-      eventId: event.id,
-      groupId: event.groupId,
-      note: event.note,
-      repeat: event.repeat,
-      startDate,
-    }));
-  });
-};
 
 /**
  * Vencimientos de documentos del rango. El día se cuenta en Argentina, igual que los avisos de

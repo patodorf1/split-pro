@@ -8,7 +8,8 @@ export type NextPageWithUser<T = {}> = NextPage<{ user: User } & T> & { auth: bo
 export interface PushMessage {
   title: string;
   message: string;
-  data?: { url?: string };
+  /** `badge`: numerito para el ícono de la app (avisos de hoy). */
+  data?: { url?: string; badge?: number };
 }
 
 export interface SplitwisePicture {

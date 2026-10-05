@@ -1,6 +1,6 @@
 import { CalendarDaysIcon, ChevronRightIcon, ClockIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { DocumentViewer } from '~/components/documents/DocumentViewer';
@@ -9,16 +9,13 @@ import {
   downloadDocument,
   getViewerKind,
 } from '~/components/documents/documentClient';
-import { useTimeZone } from '~/components/dashboard/hooks';
+import { type TodayEvent, useTodayEvents } from '~/hooks/useTodayNotices';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
-import { formatDay } from '~/lib/agenda';
 import { REMINDER_VISIBLE_ITEMS } from '~/lib/documentReminders';
-import { getZonedCalendarDay } from '~/lib/stats';
 import { cn } from '~/lib/utils';
 import { type RouterOutputs, api } from '~/utils/api';
 
 type Expiry = RouterOutputs['documents']['upcomingExpiries'][number];
-type TodayEvent = Extract<RouterOutputs['calendar']['range'][number], { kind: 'event' }>;
 
 const useExpiryLabel = () => {
   const { t } = useTranslationWithUtils();
@@ -111,18 +108,6 @@ const ExpiryRow: React.FC<{
         <XIcon className="size-3.5" />
       </button>
     </li>
-  );
-};
-
-/** Eventos propios de la Agenda para hoy (turnos, cumpleaños…), en el día del teléfono. */
-const useTodayEvents = (): TodayEvent[] => {
-  const timeZone = useTimeZone();
-  const today = useMemo(() => formatDay(getZonedCalendarDay(timeZone)), [timeZone]);
-  const todayQuery = api.calendar.range.useQuery({ from: today, to: today, timeZone });
-
-  return useMemo(
-    () => (todayQuery.data ?? []).filter((item): item is TodayEvent => 'event' === item.kind),
-    [todayQuery.data],
   );
 };
 

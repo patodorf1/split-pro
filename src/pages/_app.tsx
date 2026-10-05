@@ -14,6 +14,7 @@ import { LoadingSpinner } from '~/components/ui/spinner';
 import { ThemeProvider } from 'next-themes';
 import { ThemeColorMeta } from '~/components/Theme/ThemeColorMeta';
 import { useDeviceCache, useUnauthenticatedHandler } from '~/hooks/useDeviceCache';
+import { AppBadgeSync } from '~/hooks/useTodayNotices';
 import { useRememberLastRoute } from '~/hooks/useRememberLastRoute';
 import { DEFAULT_THEME, NEXT_THEMES_LIST } from '~/lib/themes';
 import { CurrencyHelpersProvider } from '~/contexts/CurrencyHelpersContext';
@@ -212,7 +213,13 @@ const Auth: React.FC<{ Page: NextPageWithUser; pageProps: any }> = ({ Page, page
     );
   }
 
-  return <Page key={pageUser.id} user={pageUser} {...pageProps} />;
+  return (
+    <>
+      {/* Numerito del ícono de la app: sólo con la sesión confirmada (pide datos del usuario). */}
+      {'authenticated' === status ? <AppBadgeSync /> : null}
+      <Page key={pageUser.id} user={pageUser} {...pageProps} />
+    </>
+  );
 };
 
 export default api.withTRPC(appWithTranslation(MyApp, i18nConfig));

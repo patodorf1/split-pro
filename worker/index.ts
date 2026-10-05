@@ -191,12 +191,23 @@ const serwist = new Serwist({
 
 self.addEventListener('push', function (event) {
   const { title, message, data } = JSON.parse(event?.data?.text() ?? '{}') as PushMessage;
+  const nav = self.navigator as WorkerNavigator & {
+    setAppBadge?: (count?: number) => Promise<void>;
+  };
+  // Casa: el aviso de la mañana trae el numerito del ícono (avisos de hoy).
+  const badge =
+    'number' === typeof data?.badge && nav.setAppBadge
+      ? nav.setAppBadge(data.badge).catch(() => undefined)
+      : Promise.resolve();
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: message,
-      icon: '/icons/android-chrome-192x192.png',
-      data,
-    }),
+    Promise.all([
+      self.registration.showNotification(title, {
+        body: message,
+        icon: '/icons/android-chrome-192x192.png',
+        data,
+      }),
+      badge,
+    ]),
   );
 });
 

@@ -70,6 +70,7 @@ model User {
   documentReminders    DocumentReminderState[]
   checkedShoppingItems ShoppingItem[]          @relation("ShoppingItemCheckedBy")
   calendarEvents       CalendarEvent[]         @relation("CalendarEventCreatedBy")
+  dailyNotices         DailyNoticeLog[]
 
   @@schema("public")
 }
@@ -539,5 +540,17 @@ model DolarBlueRate {
   sell      Float
   updatedAt DateTime @updatedAt
 
+  @@schema("public")
+}
+
+/// Casa: aviso de la mañana ("hoy en casa") ya mandado a una persona en un día (Argentina). Evita
+/// mandarlo dos veces el mismo día, aunque la app se reinicie.
+model DailyNoticeLog {
+  userId Int
+  day    DateTime @db.Date
+  sentAt DateTime @default(now())
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
   @@schema("public")
 }
