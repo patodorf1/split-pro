@@ -47,7 +47,7 @@ const expiryLine = (name: string, daysLeft: number) => {
 /** Lo de hoy para una persona: cuántos avisos son y una línea por cada uno. */
 export const buildTodayNotices = async (userId: number, day: string, now: Date = new Date()) => {
   const [events, expiries] = await Promise.all([
-    findEventItems(db, userId, { from: day, to: day }),
+    findEventItems(db, { userId }, { from: day, to: day }),
     findUpcomingExpiries(db, userId, now),
   ]);
 

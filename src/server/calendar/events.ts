@@ -47,15 +47,25 @@ export interface AgendaEventItem extends AgendaItemBase {
   startDate: string;
 }
 
-/** Eventos propios de los grupos del usuario, con las repeticiones ya abiertas en el rango. */
+/**
+ * De quién es la Agenda que se mira: la app muestra todos los grupos de la persona; la API externa
+ * (el asistente) mira un solo grupo, el de la URL.
+ */
+export type AgendaScope = { userId: number } | { groupId: number };
+
+/** Filtro de grupo para Prisma según el alcance. */
+export const scopeGroupFilter = (scope: AgendaScope) =>
+  'userId' in scope ? memberOf(scope.userId) : { id: scope.groupId };
+
+/** Eventos propios del alcance, con las repeticiones ya abiertas en el rango. */
 export const findEventItems = async (
   db: Db,
-  userId: number,
+  scope: AgendaScope,
   range: DayRange,
 ): Promise<AgendaEventItem[]> => {
   const events = await db.calendarEvent.findMany({
     where: {
-      group: memberOf(userId),
+      group: scopeGroupFilter(scope),
       date: { lte: dbDateFromDayKey(range.to) },
       OR: [{ repeat: { not: 'NONE' } }, { date: { gte: dbDateFromDayKey(range.from) } }],
     },

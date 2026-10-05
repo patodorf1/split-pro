@@ -578,3 +578,128 @@ The query endpoints (`summary`, and the filters of the list) add these `400` cod
 
 Unknown fields are rejected (`400`), so a typo like `paidby` does not silently fall back to a
 default.
+
+## Agenda / Calendar
+
+Endpoints for the assistant to **read the Agenda of a group and add, move or delete its own
+events**. Same key, same header, same errors format and same assumption as expenses (the key can
+touch every group; `createdBy` must be a member of the group in the URL).
+
+What it reads is what the app's Agenda shows for that group, built by the same code
+(`src/server/calendar/agenda.ts`): the group's own events with their repetitions already expanded,
+document expiry dates and the next runs of recurring expenses. Days are Buenos Aires days.
+
+### GET /api/external/groups/{groupId}/calendar
+
+| param  | notes                                                                                            |
+| ------ | ------------------------------------------------------------------------------------------------ |
+| `from` | `YYYY-MM-DD`, inclusive. Default: today. Only `from`: 14 days from there.                        |
+| `to`   | `YYYY-MM-DD`, inclusive. Default: `from` + 13 days. Max 366 days; `to < from` → `invalid_range`. |
+| `q`    | optional text in the title (or the note of an event), case and accent insensitive.               |
+
+```bash
+# ¿Qué tenemos estas dos semanas?
+curl -s "$BASE/api/external/groups/1/calendar" -H "Authorization: Bearer $SPLIT_API_KEY"
+
+# ¿Cuándo es el cumple de Clari?
+curl -s "$BASE/api/external/groups/1/calendar?from=2026-10-05&to=2027-10-04&q=clari" \
+  -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groupId": 1,
+  "from": "2026-10-05",
+  "to": "2026-10-18",
+  "q": null,
+  "items": [
+    {
+      "kind": "recurring",
+      "date": "2026-10-07",
+      "time": null,
+      "title": "Alquiler",
+      "expenseId": "…",
+      "amount": 500000,
+      "currency": "ARS",
+      "category": "rent"
+    },
+    {
+      "kind": "event",
+      "date": "2026-10-09",
+      "time": "10:00",
+      "title": "Viene el plomero",
+      "eventId": 3,
+      "note": null,
+      "repeat": "none",
+      "startDate": "2026-10-09"
+    },
+    {
+      "kind": "expiry",
+      "date": "2026-10-12",
+      "time": null,
+      "title": "Seguro del auto",
+      "documentId": "…",
+      "folder": "Auto"
+    }
+  ]
+}
+```
+
+Items are sorted by day, all-day first, then by time. A repeating event shows once per occurrence
+in the range, all with the same `eventId`; `startDate` is the stored first date.
+
+### POST /api/external/groups/{groupId}/calendar
+
+| field       | notes                                                                 |
+| ----------- | --------------------------------------------------------------------- |
+| `title`     | required, up to 80 characters (spaces are collapsed).                 |
+| `date`      | required, `YYYY-MM-DD`: the first (or only) day.                      |
+| `time`      | optional `HH:MM` (24 h). Missing, empty or `null`: all day.           |
+| `note`      | optional, up to 200 characters.                                       |
+| `repeat`    | optional `none` (default), `weekly`, `monthly` or `yearly`, any case. |
+| `createdBy` | optional email or id of a member; shown as the author.                |
+
+Monthly and yearly repetitions fall on the same day of the month; when a month does not have it
+(31st, February 29th) they fall on its last day.
+
+Not duplicating: if the group already has an event with the same title (case insensitive), the
+same start date and the same time, the API answers `200` with `"created": false` and that event
+instead of creating a second one. A new one answers `201` with `"created": true`.
+
+```bash
+curl -s -X POST "$BASE/api/external/groups/1/calendar" \
+  -H "Authorization: Bearer $SPLIT_API_KEY" -H "Content-Type: application/json" \
+  -d '{"title":"Viene el plomero","date":"2026-10-09","time":"10:00","createdBy":"patodorf@gmail.com"}'
+```
+
+```json
+{
+  "groupId": 1,
+  "created": true,
+  "event": {
+    "id": 3,
+    "groupId": 1,
+    "title": "Viene el plomero",
+    "date": "2026-10-09",
+    "time": "10:00",
+    "note": null,
+    "repeat": "none",
+    "createdBy": { "id": 1, "name": "Pato", "email": "patodorf@gmail.com" },
+    "createdAt": "2026-10-05T17:11:41.827Z"
+  }
+}
+```
+
+### PATCH /api/external/groups/{groupId}/calendar/{eventId}
+
+Changes only the fields sent (`title`, `date`, `time`, `note`, `repeat`); `"time": null` makes it
+an all-day event. Answers `{ groupId, event }`.
+
+### DELETE /api/external/groups/{groupId}/calendar/{eventId}
+
+Deletes the event, like the app (there is no trash). Answers `{ groupId, deleted: true, event }`
+with what was deleted.
+
+Only the group's own events can be changed. Expiry dates are edited in Documents and recurring
+expenses in the app. Codes: `404 event_not_found` (wrong id or another group's event),
+`409 group_archived`, `400 validation_error` / `invalid_date` / `invalid_range`.

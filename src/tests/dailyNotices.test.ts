@@ -45,10 +45,14 @@ describe('sendDailyNotices', () => {
 
   it('sends today with the badge count to everyone subscribed', async () => {
     expect(await sendDailyNotices(AFTER_EIGHT)).toBe(2);
-    expect(mockFindEventItems).toHaveBeenCalledWith(mockDb, 1, {
-      from: '2026-10-05',
-      to: '2026-10-05',
-    });
+    expect(mockFindEventItems).toHaveBeenCalledWith(
+      mockDb,
+      { userId: 1 },
+      {
+        from: '2026-10-05',
+        to: '2026-10-05',
+      },
+    );
     expect(mockSendPush).toHaveBeenCalledWith([1], {
       title: 'Hoy en casa',
       message: '17:30 · Turno dentista\nVence en 3 días: Seguro Fox',

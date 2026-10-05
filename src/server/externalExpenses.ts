@@ -99,7 +99,7 @@ export const loadGroup = async (rawGroupId: string | undefined) => {
 
 export type LoadedGroup = Awaited<ReturnType<typeof loadGroup>>;
 
-const assertGroupWritable = (group: LoadedGroup) => {
+export const assertGroupWritable = (group: LoadedGroup) => {
   if (group.archivedAt) {
     throw new ExternalApiError(
       409,

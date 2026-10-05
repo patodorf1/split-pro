@@ -60,7 +60,10 @@ const invalid = (field: string, es: string, en: string, code = 'invalid_field') 
   new ExternalApiError(400, code, `${field}: ${es}`, `${field}: ${en}`, field);
 
 /** Una persona se indica por email o por id de usuario. */
-const personRefSchema = z.union([z.number().int().positive(), z.string().trim().min(1).max(254)]);
+export const personRefSchema = z.union([
+  z.number().int().positive(),
+  z.string().trim().min(1).max(254),
+]);
 export type PersonRef = z.infer<typeof personRefSchema>;
 
 /** Valida un id o email suelto (p. ej. `deletedBy` en un DELETE). */
