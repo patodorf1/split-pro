@@ -703,3 +703,254 @@ with what was deleted.
 Only the group's own events can be changed. Expiry dates are edited in Documents and recurring
 expenses in the app. Codes: `404 event_not_found` (wrong id or another group's event),
 `409 group_archived`, `400 validation_error` / `invalid_date` / `invalid_range`.
+
+## Stock
+
+Endpoints for the assistant to **read and update what there is at home** (the Stock tab of
+Cocina). Same key, same header, same errors format and same assumption as expenses and the
+Agenda: the key can touch every group, and `addedBy` must be a member of the group in the URL.
+
+Everything goes through the service the app uses (`src/server/stock/service.ts`): names are
+compared with `stockKey` (case, accents, extra spaces and simple plurals do not matter:
+"Tomates" = "tomate"), nothing is ever duplicated, and what was pending in Compras goes through
+the same bridge as a tick in the app. There are no quantities: a product is there or it is not.
+
+Sections, in any case: `fridge` (Heladera), `freezer` (Freezer), `pantry` (Alacena), `produce`
+(Frutas y verduras) and `cleaning` (Limpieza). Reading, adding and finishing answer with a `text`
+in Spanish, ready to send as is.
+
+### GET /api/external/groups/{groupId}/stock
+
+| param | notes                                                                                                         |
+| ----- | ------------------------------------------------------------------------------------------------------------- |
+| `q`   | optional: only products whose name contains these whole words ("arroz" finds "Arroz yamaní", "arr" does not). |
+
+```bash
+# ¿Qué hay?
+curl -s "$BASE/api/external/groups/1/stock" -H "Authorization: Bearer $SPLIT_API_KEY"
+# ¿Queda arroz?
+curl -s "$BASE/api/external/groups/1/stock?q=arroz" -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groupId": 1,
+  "q": null,
+  "total": 2,
+  "sections": [
+    {
+      "section": "fridge",
+      "label": "Heladera",
+      "items": [
+        {
+          "id": "…",
+          "name": "Leche",
+          "note": null,
+          "section": "fridge",
+          "sectionLabel": "Heladera",
+          "source": "app",
+          "addedBy": { "id": 1, "name": "Pato", "email": "patodorf@gmail.com" },
+          "createdAt": "2026-10-06T12:00:00.000Z",
+          "updatedAt": "2026-10-06T12:00:00.000Z"
+        }
+      ]
+    },
+    { "section": "pantry", "label": "Alacena", "items": ["…"] }
+  ],
+  "text": "Heladera: Leche.\nAlacena: Arroz (medio paquete)."
+}
+```
+
+Sections come in the app order, without the empty ones; inside each one, alphabetical. `source`
+is `app`, `alexa` or `api`.
+
+### POST /api/external/groups/{groupId}/stock
+
+| field     | notes                                                                                                           |
+| --------- | --------------------------------------------------------------------------------------------------------------- |
+| `items`   | required, 1 to 30: `{ "name": "Pollo", "note": "dos pechugas", "section": "fridge" }`; only `name` is required. |
+| `addedBy` | optional email or id of a member: author of what is added and of the tick in Compras.                           |
+
+Repeated names in the same request count once. For each name:
+
+1. If the same product is **pending in Compras**, it is ticked as bought and the bridge adds it to
+   the Stock (with the name it had in Compras), exactly as a tick in the app: `fromShopping: true`.
+2. Otherwise it is added in the section the app guesses (what the family taught first, then the
+   list of common products, then Alacena). If it was already there it comes back with
+   `status: "already"` and nothing is created.
+3. `section` and `note`, when sent, are applied to the product, new or existing. A `section`
+   different from the stored one is **learned** for that product, as when it is changed in the
+   app.
+
+One transaction for the whole request: all or nothing. Answers `200`:
+
+```json
+{
+  "groupId": 1,
+  "items": [
+    { "id": "…", "name": "Tomates", "section": "produce", "status": "added", "fromShopping": true },
+    { "id": "…", "name": "Pollo", "section": "freezer", "status": "added", "fromShopping": false },
+    { "id": "…", "name": "Leche", "section": "fridge", "status": "already", "fromShopping": false }
+  ],
+  "text": "Sumé al Stock: Tomates (Frutas y verduras), Pollo (Freezer). Ya estaba: Leche (Heladera). Tildé en Compras: Tomates."
+}
+```
+
+(Each item also carries the rest of the fields of the GET.)
+
+### POST /api/external/groups/{groupId}/stock/finish
+
+"Se terminó": `{ "items": ["Leche", "Detergente"], "addedBy": "…" }` (1 to 30 names). For each
+name:
+
+- `finished`: the product was in the Stock. It leaves the Stock and goes to Compras, unless the
+  same thing is already pending there (`addedToShopping: false`).
+- `not_in_stock`: nothing with that name in the Stock. It goes to Compras anyway (whoever says it
+  ran out wants to buy it), unless it is already pending.
+- `candidates`: only partial matches ("pollo" against "Pechugas de pollo"). **Nothing is
+  touched**; send the exact name to finish one of them.
+
+```json
+{
+  "groupId": 1,
+  "items": [
+    { "name": "Leche", "status": "finished", "addedToShopping": true, "item": { "id": "…" } },
+    { "name": "pollo", "status": "candidates", "candidates": ["Pechugas de pollo"] }
+  ],
+  "text": "Leche salió del Stock y fue a Compras. \"pollo\": en el Stock hay Pechugas de pollo. No saqué nada."
+}
+```
+
+### PATCH /api/external/groups/{groupId}/stock/{itemId}
+
+Changes only the fields sent: `name`, `note` (`null` clears it) and `section`. A changed section
+is learned for that product. Answers `{ groupId, item }`.
+
+### DELETE /api/external/groups/{groupId}/stock/{itemId}
+
+Takes it out **without** sending it to Compras ("lo tiramos"). Answers
+`{ groupId, removed: true, item }`.
+
+Codes: `400 validation_error` (the `field` says which), `400 not_a_member` (`addedBy`),
+`404 stock_item_not_found` (wrong id or another group's item), `409 already_in_stock` (renaming
+to a name that is already in the Stock), `409 group_archived`.
+
+## Recetas / Recipes
+
+Endpoints for the assistant to **read the recipe book with what is missing today, save recipes,
+and send what is missing to Compras**. Same key, header, errors format and assumption as the rest
+(`createdBy` and `addedBy` must be members of the group in the URL).
+
+Same code as the Comidas tab (`src/server/recipes/service.ts`): a main ingredient is at home when
+some product of the Stock outside Limpieza contains it as whole words ("pollo" is covered by
+"Pechugas de pollo"; "pan rallado" is not covered by "Pan lactal"). Cooking never changes the
+Stock.
+
+Kinds, in any case: `protein` (Proteínas), `main` (Platos), `salad` (Ensaladas) and `side`
+(Guarniciones).
+
+### GET /api/external/groups/{groupId}/recipes
+
+| param  | notes                                                                                           |
+| ------ | ----------------------------------------------------------------------------------------------- |
+| `kind` | optional, one of the kinds; anything else is `400 invalid_field`.                               |
+| `q`    | optional text in the title, whole words, plural or not ("milanesas" finds "Milanesa de pollo"). |
+
+```json
+{
+  "groupId": 1,
+  "kind": null,
+  "q": null,
+  "ready": [
+    { "id": "…", "title": "Solomillo", "kind": "protein", "kindLabel": "Proteínas", "missing": [] }
+  ],
+  "oneMissing": [
+    {
+      "id": "…",
+      "title": "Milanesas de carne",
+      "kind": "protein",
+      "kindLabel": "Proteínas",
+      "missing": [{ "name": "carne", "inShopping": false }]
+    }
+  ],
+  "moreMissing": ["…"],
+  "text": "Podés hacer: Solomillo.\nTe falta una cosa: Milanesas de carne (carne).\nA 9 más les faltan dos cosas o más."
+}
+```
+
+Three parts, like the Comidas tab, each one alphabetical. `inShopping: true` means it is already
+pending in Compras.
+
+### GET /api/external/groups/{groupId}/recipes/{recipeId}
+
+```json
+{
+  "groupId": 1,
+  "recipe": {
+    "id": "…",
+    "title": "Milanesas de pollo",
+    "kind": "protein",
+    "kindLabel": "Proteínas",
+    "yield": "Para 1,8 kg",
+    "ingredients": ["pollo", "pan rallado", "huevo"],
+    "missing": [],
+    "body": "1. Condimentar la carne\n- 3 cucharitas de sal\n…",
+    "intro": [],
+    "steps": [
+      {
+        "number": 1,
+        "title": "Condimentar la carne",
+        "blocks": [{ "type": "list", "items": ["3 cucharitas de sal"] }]
+      }
+    ],
+    "source": "import",
+    "createdBy": null,
+    "createdAt": "…",
+    "updatedAt": "…",
+    "text": "Milanesas de pollo\nPara 1,8 kg\nPrincipales: pollo, pan rallado, huevo.\nTenés todo para hacerla.\n\n1. Condimentar la carne\n…"
+  }
+}
+```
+
+`body` is the step by step in plain text (numbered steps, `- ` lists, `Tip:` advice). `intro` and
+`steps` are the same text parsed by `parseRecipeBody`, the function the app uses to draw it.
+`text` is ready to send by WhatsApp.
+
+### POST /api/external/groups/{groupId}/recipes
+
+| field         | notes                                                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | required, up to 80 characters (longer is a `400`, it is not cut); unique in the group with the same name rule as products. |
+| `kind`        | required.                                                                                                                  |
+| `ingredients` | required, 1 to 12 **main** ingredients (what has to be at home; never salt, oil or spices). Repeated count once.           |
+| `body`        | optional step by step, up to 20,000 characters.                                                                            |
+| `yield`       | optional, up to 80 characters ("Para 1,8 kg").                                                                             |
+| `createdBy`   | optional email or id of a member.                                                                                          |
+
+Answers `201` with `{ groupId, created: true, recipe, text }`; `text` is like
+`Guardé "Pollo al horno" como Platos, con: pollo, papa.` A title that already exists in the group
+is `409 recipe_title_taken` (field `title`).
+
+### PATCH /api/external/groups/{groupId}/recipes/{recipeId}
+
+Changes only what is sent (`title`, `kind`, `ingredients`, `body`, `yield`); `ingredients`
+replaces the whole list. Answers `200` with `{ groupId, recipe, text }`. Recipes are deleted in
+the app.
+
+### POST /api/external/groups/{groupId}/recipes/{recipeId}/add-missing
+
+Optional body: `{ "addedBy": "…" }`. Recomputes what is missing (the list may be old) and adds to
+Compras each missing ingredient that is not already pending, with a capital first letter.
+
+```json
+{
+  "groupId": 1,
+  "recipeId": "…",
+  "added": ["Carne"],
+  "alreadyPending": ["Pan rallado"],
+  "text": "Sumé a Compras: Carne. Ya estaba en Compras: Pan rallado."
+}
+```
+
+Codes: `400 validation_error` / `invalid_field`, `400 not_a_member`, `404 recipe_not_found`,
+`409 recipe_title_taken`, `409 group_archived`.
