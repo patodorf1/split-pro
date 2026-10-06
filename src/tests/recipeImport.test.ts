@@ -271,4 +271,18 @@ describe('buildImportSql', () => {
     expect(sql).toContain("('huevos', 'huevo', 2)");
     expect(sql).not.toContain("'huevo', 'huevo'");
   });
+
+  it('sets the client encoding and guards the target group', () => {
+    const sql = buildImportSql(7, []);
+
+    expect(sql).toContain("SET client_encoding = 'UTF8';");
+    expect(sql).toContain(
+      `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM "public"."Group" WHERE id = 7 AND name = 'Casa') THEN RAISE EXCEPTION 'El grupo 7 no es Casa'; END IF; END $$;`,
+    );
+    expect(sql.indexOf('DO $$')).toBeLessThan(sql.indexOf('BEGIN;'));
+  });
+
+  it.each([0, -1, 1.5, Number.NaN])('rejects the invalid group id %s', (groupId) => {
+    expect(() => buildImportSql(groupId, [])).toThrow('groupId inválido');
+  });
 });

@@ -929,6 +929,11 @@
       "oneMissing": "Nothing one ingredient away.",
       "moreMissing": "No more recipes of this kind."
     },
+    "part_empty_all": {
+      "ready": "Nothing can be made with what you have.",
+      "oneMissing": "No recipe is one ingredient away.",
+      "moreMissing": "No more recipes."
+    },
     "missing_chip": "missing {{name}}",
     "add_missing": {
       "one": "Add {{name}} to Shopping",

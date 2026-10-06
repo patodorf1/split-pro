@@ -104,7 +104,7 @@ export const MealsTab: React.FC<{
                 ))
               ) : (
                 <p className="text-muted-foreground px-1 text-sm">
-                  {t(`meals.part_empty.${part}`)}
+                  {t(`meals.${undefined === kind ? 'part_empty_all' : 'part_empty'}.${part}`)}
                 </p>
               )}
             </section>

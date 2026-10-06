@@ -899,6 +899,11 @@
       "oneMissing": "Nada a un ingrediente de distancia.",
       "moreMissing": "No hay más recetas de este tipo."
     },
+    "part_empty_all": {
+      "ready": "Con lo que hay no sale ninguna receta.",
+      "oneMissing": "Ninguna receta está a un ingrediente de distancia.",
+      "moreMissing": "No hay más recetas."
+    },
     "missing_chip": "falta {{name}}",
     "add_missing": {
       "one": "Sumar {{name}} a Compras",

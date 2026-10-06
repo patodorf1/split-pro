@@ -234,12 +234,20 @@ const recipeInsertSql = (groupId: number, recipe: ImportableRecipe): string => {
 };
 
 /** Todo el recetario en una transacción. Se puede correr de nuevo: no duplica. */
-export const buildImportSql = (groupId: number, recipes: readonly ImportableRecipe[]): string =>
-  [
+export const buildImportSql = (groupId: number, recipes: readonly ImportableRecipe[]): string => {
+  if (!Number.isInteger(groupId) || 0 >= groupId) {
+    throw new Error(`groupId inválido: ${groupId}`);
+  }
+
+  return [
     '-- Recetario inicial de la casa (repetible: los títulos que ya existen se saltean)',
+    "SET client_encoding = 'UTF8';",
     'SET standard_conforming_strings = on;',
+    // Con `-v ON_ERROR_STOP=1`, si el grupo no es "Casa" esto corta antes del BEGIN y no se escribe nada.
+    `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM "public"."Group" WHERE id = ${groupId} AND name = 'Casa') THEN RAISE EXCEPTION 'El grupo ${groupId} no es Casa'; END IF; END $$;`,
     'BEGIN;',
     ...recipes.map((recipe) => recipeInsertSql(groupId, recipe)),
     'COMMIT;',
     '',
   ].join('\n\n');
+};
