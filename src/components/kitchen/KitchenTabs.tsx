@@ -3,7 +3,7 @@ import React from 'react';
 
 import { cn } from '~/lib/utils';
 
-export const KITCHEN_TABS = ['shopping', 'stock'] as const;
+export const KITCHEN_TABS = ['shopping', 'stock', 'meals'] as const;
 export type KitchenTab = (typeof KITCHEN_TABS)[number];
 
 export const isKitchenTab = (value: unknown): value is KitchenTab =>
