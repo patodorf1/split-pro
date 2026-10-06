@@ -189,7 +189,9 @@ describe('finishStockItem', () => {
     });
 
     expect(result?.addedToShopping).toBe(true);
-    expect(db.stockItem.delete).toHaveBeenCalledWith({ where: { id: 'stock-1' } });
+    expect(db.stockItem.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'stock-1', groupId: 1 },
+    });
     expect(db.shoppingItem.create.mock.calls[0][0].data).toMatchObject({
       groupId: 1,
       name: 'Leche',
@@ -211,6 +213,23 @@ describe('finishStockItem', () => {
     });
 
     expect(result?.addedToShopping).toBe(false);
+    expect(db.shoppingItem.create).not.toHaveBeenCalled();
+  });
+
+  it('skips an item a concurrent finish already removed (no throw, no Compras)', async () => {
+    const db = makeDb();
+    db.stockItem.findFirst.mockResolvedValue(row());
+    db.stockItem.deleteMany.mockResolvedValue({ count: 0 });
+
+    const result = await finishStockItem(db as never, {
+      groupId: 1,
+      id: 'stock-1',
+      userId: 7,
+      source: 'APP',
+    });
+
+    expect(result).toBeNull();
+    expect(db.stockItem.delete).not.toHaveBeenCalled();
     expect(db.shoppingItem.create).not.toHaveBeenCalled();
   });
 

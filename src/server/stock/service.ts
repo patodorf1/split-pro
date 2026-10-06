@@ -277,7 +277,15 @@ export const finishStockItem = async (
     return null;
   }
 
-  await db.stockItem.delete({ where: { id: item.id } });
+  // deleteMany, no delete: si otro "se acabó" lo sacó justo antes, no tira P2025 y no aborta el
+  // lote; ya no está, así que se saltea.
+  const { count } = await db.stockItem.deleteMany({
+    where: { id: item.id, groupId: input.groupId },
+  });
+
+  if (0 === count) {
+    return null;
+  }
 
   const addedToShopping = await addToShoppingUnlessPending(db, {
     groupId: input.groupId,

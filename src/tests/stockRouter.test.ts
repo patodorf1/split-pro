@@ -42,6 +42,7 @@ const makeDb = (member = true) => {
       }),
       update: jest.fn().mockImplementation(({ data }) => Promise.resolve(row(data))),
       delete: jest.fn().mockResolvedValue(row()),
+      deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     stockPlacement: {
       findMany: jest.fn().mockResolvedValue([]),
@@ -113,7 +114,7 @@ describe('stock router', () => {
   it('answers not found when the item vanished between the check and the delete (double tap)', async () => {
     const db = makeDb();
     db.stockItem.findFirst.mockResolvedValue(row());
-    db.stockItem.delete.mockRejectedValue({ code: 'P2025' });
+    db.stockItem.deleteMany.mockResolvedValue({ count: 0 });
 
     await expect(callerFor(db).finish({ groupId: 1, id: ITEM_ID })).rejects.toMatchObject({
       code: 'NOT_FOUND',

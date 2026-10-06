@@ -18,6 +18,7 @@ const mockDb = {
     createMany: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    deleteMany: jest.fn(),
   },
   stockPlacement: { findMany: jest.fn(), upsert: jest.fn() },
   shoppingItem: {
@@ -131,6 +132,11 @@ beforeEach(() => {
   mockDb.stockItem.delete.mockImplementation(({ where }: { where: { id: string } }) => {
     stock = stock.filter((item) => item.id !== where.id);
     return Promise.resolve({});
+  });
+  mockDb.stockItem.deleteMany.mockImplementation(({ where }: { where: { id: string } }) => {
+    const before = stock.length;
+    stock = stock.filter((item) => item.id !== where.id);
+    return Promise.resolve({ count: before - stock.length });
   });
   mockDb.stockPlacement.findMany.mockResolvedValue([]);
   mockDb.stockPlacement.upsert.mockResolvedValue({});
@@ -285,6 +291,21 @@ describe('finishExternalStock', () => {
       { name: 'Leche', status: 'finished', addedToShopping: true },
       { name: 'Detergente', status: 'finished', addedToShopping: false },
     ]);
+  });
+
+  it('does not abort the batch when a concurrent finish already took one item', async () => {
+    stock = [row('Leche', { section: 'FRIDGE' }), row('Arroz', { section: 'PANTRY' })];
+    pending = [];
+    // Entre la lectura y el borrado, otro "se terminó" se llevó la leche.
+    mockDb.stockItem.deleteMany.mockImplementationOnce(() => Promise.resolve({ count: 0 }));
+
+    const result = await finishExternalStock(
+      casa,
+      parseExternalStockFinish({ items: ['Leche', 'Arroz'] }),
+    );
+
+    expect(result.items).toHaveLength(2);
+    expect(result.items[1]).toMatchObject({ name: 'Arroz', status: 'finished' });
   });
 
   it('sends to Compras what was not in the stock', async () => {
