@@ -1,3 +1,4 @@
+import { shoppingRouter } from '~/server/api/routers/shopping';
 import { stockRouter } from '~/server/api/routers/stock';
 
 // El router importa el contexto de tRPC, que trae la sesión y el cliente de la base: acá se usa
@@ -127,5 +128,86 @@ describe('stock router', () => {
     await expect(
       callerFor(db).updateItem({ groupId: 1, id: ITEM_ID, name: 'Huevos' }),
     ).rejects.toMatchObject({ code: 'CONFLICT', message: 'already_in_stock' });
+  });
+});
+
+describe('shopping.setChecked bridge', () => {
+  const makeShoppingDb = () => {
+    const base = makeDb();
+    const db = {
+      ...base,
+      shoppingItem: {
+        count: jest.fn().mockResolvedValue(1),
+        findMany: jest.fn().mockResolvedValue([]),
+        update: jest
+          .fn()
+          .mockImplementation(({ data }) =>
+            Promise.resolve({ id: '11111111-1111-4111-8111-111111111111', name: 'Leche', ...data }),
+          ),
+      },
+      stockItem: { ...base.stockItem, deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      $transaction: jest.fn(),
+    };
+
+    db.$transaction.mockImplementation((fn: (tx: typeof db) => unknown) => fn(db));
+
+    return db;
+  };
+
+  const shoppingCaller = (db: ReturnType<typeof makeShoppingDb>) =>
+    shoppingRouter.createCaller({
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- sesión mínima de prueba
+      session: { user: { id: 7 }, expires: '' } as never,
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- base falsa de prueba
+      db: db as never,
+    });
+
+  it('puts what was bought in the stock', async () => {
+    const db = makeShoppingDb();
+    const result = await shoppingCaller(db).setChecked({
+      groupId: 1,
+      id: '11111111-1111-4111-8111-111111111111',
+      checked: true,
+    });
+
+    expect(result.stock).toEqual({ name: 'Leche', section: 'FRIDGE', created: true });
+    expect(db.stockItem.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          expect.objectContaining({
+            key: 'leche',
+            source: 'APP',
+            addedBy: 7,
+            fromShoppingItemId: '11111111-1111-4111-8111-111111111111',
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('undoes it when unchecked', async () => {
+    const db = makeShoppingDb();
+    const result = await shoppingCaller(db).setChecked({
+      groupId: 1,
+      id: '11111111-1111-4111-8111-111111111111',
+      checked: false,
+    });
+
+    expect(result.stock).toBeNull();
+    expect(db.stockItem.deleteMany).toHaveBeenCalledWith({
+      where: { fromShoppingItemId: '11111111-1111-4111-8111-111111111111' },
+    });
+    expect(db.stockItem.createMany).not.toHaveBeenCalled();
+  });
+
+  it('runs the check and the stock change in one transaction', async () => {
+    const db = makeShoppingDb();
+    await shoppingCaller(db).setChecked({
+      groupId: 1,
+      id: '11111111-1111-4111-8111-111111111111',
+      checked: true,
+    });
+
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
   });
 });

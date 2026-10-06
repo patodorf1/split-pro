@@ -13,6 +13,7 @@ import {
 } from '~/lib/shopping';
 import { createTRPCRouter, groupProcedure } from '~/server/api/trpc';
 import { type db as dbClient } from '~/server/db';
+import { addBoughtToStock, undoBoughtFromStock } from '~/server/stock/service';
 
 const SHOPPING_USER_SELECT = {
   id: true,
@@ -168,19 +169,45 @@ export const shoppingRouter = createTRPCRouter({
       });
     }),
 
+  /**
+   * Tildar o destildar. Lo comprado entra al Stock en la misma transacción; destildar saca del
+   * Stock lo que trajo esta compra (ver `src/server/stock/service.ts`).
+   */
   setChecked: groupProcedure
     .input(z.object({ id: z.string().uuid(), checked: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       await assertItemInGroup(ctx.db, input.id, input.groupId);
 
-      return ctx.db.shoppingItem.update({
-        where: { id: input.id },
-        data: {
-          checked: input.checked,
-          checkedAt: input.checked ? new Date() : null,
-          checkedBy: input.checked ? ctx.session.user.id : null,
-        },
-        select: SHOPPING_ITEM_SELECT,
+      return ctx.db.$transaction(async (tx) => {
+        const item = await tx.shoppingItem.update({
+          where: { id: input.id },
+          data: {
+            checked: input.checked,
+            checkedAt: input.checked ? new Date() : null,
+            checkedBy: input.checked ? ctx.session.user.id : null,
+          },
+          select: SHOPPING_ITEM_SELECT,
+        });
+
+        if (!input.checked) {
+          await undoBoughtFromStock(tx, item.id);
+
+          return { ...item, stock: null };
+        }
+
+        const bought = await addBoughtToStock(
+          tx,
+          { id: item.id, groupId: input.groupId, name: item.name },
+          'APP',
+          ctx.session.user.id,
+        );
+
+        return {
+          ...item,
+          stock: bought
+            ? { name: bought.item.name, section: bought.item.section, created: bought.created }
+            : null,
+        };
       });
     }),
 

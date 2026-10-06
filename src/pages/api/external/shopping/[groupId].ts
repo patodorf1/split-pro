@@ -15,6 +15,7 @@ import {
 import { PENDING_SHOPPING_ITEM_ORDER, SHOPPING_ITEM_SELECT } from '~/server/api/routers/shopping';
 import { db } from '~/server/db';
 import { getBearerToken, isExternalApiEnabled, isValidExternalApiKey } from '~/server/externalApi';
+import { addBoughtToStock, undoBoughtFromStock } from '~/server/stock/service';
 
 /**
  * API externa de la lista de compras, pensada para Home Assistant / n8n.
@@ -91,6 +92,24 @@ const serializeItem = (item: ShoppingItemPayload) => ({
 
 const readSingleQueryParam = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;
+
+/**
+ * Puente con el Stock cuando una sincronización cambia el tildado: lo comprado entra (sin
+ * persona detrás) y lo destildado sale si lo había traído esa compra.
+ */
+const syncStock = async (
+  item: { id: string; name: string },
+  groupId: number,
+  wasChecked: boolean,
+  isChecked: boolean,
+  source: ShoppingItemSource,
+) => {
+  if (isChecked && !wasChecked) {
+    await addBoughtToStock(db, { id: item.id, groupId, name: item.name }, source, null);
+  } else if (!isChecked && wasChecked) {
+    await undoBoughtFromStock(db, item.id);
+  }
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Sin clave configurada, la API externa directamente no existe.
@@ -251,6 +270,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
         },
         select: SHOPPING_ITEM_SELECT,
       });
+      await syncStock(item, groupId, match.checked, item.checked, source);
       updated += 1;
       results.push(item);
       remember({ ...match, name: item.name, externalId: item.externalId, checked: item.checked });
@@ -268,6 +288,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
         },
         select: SHOPPING_ITEM_SELECT,
       });
+      await syncStock(item, groupId, false, item.checked, source);
       created += 1;
       results.push(item);
       // Lo creó la sync, así que no tiene persona detrás.
@@ -301,7 +322,7 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, groupId: n
           : {}),
       },
       orderBy: [{ checked: 'asc' }, { createdAt: 'desc' }],
-      select: { id: true },
+      select: { id: true, checked: true },
     });
 
     if (!match) {
@@ -309,18 +330,18 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, groupId: n
       continue;
     }
 
-    results.push(
-      await db.shoppingItem.update({
-        where: { id: match.id },
-        data: {
-          checked: input.checked,
-          checkedAt: input.checked ? new Date() : null,
-          // Quien marcó fue un sistema externo, no una persona de la app.
-          checkedBy: null,
-        },
-        select: SHOPPING_ITEM_SELECT,
-      }),
-    );
+    const updated = await db.shoppingItem.update({
+      where: { id: match.id },
+      data: {
+        checked: input.checked,
+        checkedAt: input.checked ? new Date() : null,
+        // Quien marcó fue un sistema externo, no una persona de la app.
+        checkedBy: null,
+      },
+      select: SHOPPING_ITEM_SELECT,
+    });
+    await syncStock(updated, groupId, match.checked, updated.checked, 'API');
+    results.push(updated);
   }
 
   return res.status(200).json({
