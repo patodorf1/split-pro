@@ -1,5 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-
 import itemHandler from '~/pages/api/external/groups/[groupId]/stock/[itemId]';
 import finishHandler from '~/pages/api/external/groups/[groupId]/stock/finish';
 import stockHandler from '~/pages/api/external/groups/[groupId]/stock/index';
@@ -10,6 +8,7 @@ import {
   removeExternalStockItem,
   updateExternalStockItem,
 } from '~/server/externalStock';
+import { callHandler as call } from '~/tests/helpers/callHandler';
 
 const mockDb = { group: { findUnique: jest.fn() } };
 
@@ -39,32 +38,6 @@ jest.mock('~/server/externalStock', () => ({
 
 const ITEM_ID = '22222222-2222-4222-8222-222222222222';
 const pato = { id: 1, name: 'Pato', email: 'patodorf@gmail.com' };
-
-type Handler = (req: NextApiRequest, res: NextApiResponse) => Promise<unknown>;
-
-const call = async (
-  handler: Handler,
-  method: string,
-  query: Record<string, string>,
-  body?: unknown,
-) => {
-  const json = jest.fn();
-  const res = {
-    setHeader: jest.fn(),
-    status: jest.fn().mockReturnValue({ json }),
-  } as unknown as NextApiResponse;
-
-  await handler(
-    { method, headers: { authorization: 'Bearer key' }, query, body } as unknown as NextApiRequest,
-    res,
-  );
-
-  return {
-    status: (res.status as jest.Mock).mock.calls[0]?.[0],
-    body: json.mock.calls[0]?.[0],
-    headers: (res.setHeader as jest.Mock).mock.calls,
-  };
-};
 
 beforeEach(() => {
   jest.resetAllMocks();
