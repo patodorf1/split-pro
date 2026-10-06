@@ -208,7 +208,7 @@
       "expenses": "Expenses",
       "home": "Home",
       "more": "More",
-      "shopping": "Shopping"
+      "shopping": "Kitchen"
     },
     "recent": {
       "title": "Latest movements",
@@ -749,7 +749,8 @@
       "cleared_one": "{{count}} bought item cleared",
       "cleared_other": "{{count}} bought items cleared",
       "error": "That didn't work. Try again."
-    }
+    },
+    "hint_to_stock": "Check what you bought and it moves to the pantry."
   },
   "spending_charts": {
     "blue": {
@@ -860,5 +861,53 @@
     "show_all_currencies": "Show all currencies",
     "today": "Today",
     "in_group": "In group"
+  },
+  "kitchen": {
+    "title": "Kitchen",
+    "tabs": {
+      "shopping": "Shopping",
+      "stock": "Pantry"
+    },
+    "toast": {
+      "to_stock": "{{name}} moved to the pantry ({{section}})"
+    }
+  },
+  "stock": {
+    "add_placeholder": "What is there? Separate with commas",
+    "actions": {
+      "add": "Add",
+      "finished": "Ran out",
+      "remove": "Remove without buying",
+      "save": "Save"
+    },
+    "sections": {
+      "FRIDGE": "Fridge",
+      "FREEZER": "Freezer",
+      "PANTRY": "Pantry",
+      "PRODUCE": "Fruit and veg",
+      "CLEANING": "Cleaning"
+    },
+    "edit": {
+      "title": "Edit",
+      "name": "Name",
+      "note": "Note",
+      "note_placeholder": "Half a pack",
+      "section": "Where it goes"
+    },
+    "empty": {
+      "title": "Nothing here yet",
+      "subtitle": "Write what you have at home, or send it to Charly as a voice note."
+    },
+    "hint": "\"Ran out\" sends it to Shopping. Swipe to remove without buying.",
+    "toast": {
+      "added_one": "Added to the pantry",
+      "added_other": "{{count}} added to the pantry",
+      "already_there": "Already there: {{names}}",
+      "finished": "{{name}} went to Shopping",
+      "finished_already": "{{name}} left the pantry (already in Shopping)",
+      "removed": "{{name}} left the pantry",
+      "conflict": "There is already one with that name",
+      "error": "Could not save. Try again."
+    }
   }
 }

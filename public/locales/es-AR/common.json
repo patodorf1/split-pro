@@ -209,7 +209,7 @@
       "expenses": "Gastos",
       "home": "Inicio",
       "more": "Más",
-      "shopping": "Compras"
+      "shopping": "Cocina"
     },
     "recent": {
       "title": "Últimos movimientos",
@@ -723,7 +723,8 @@
       "cleared_one": "Limpiamos {{count}} comprado",
       "cleared_other": "Limpiamos {{count}} comprados",
       "error": "No salió. Probá de nuevo."
-    }
+    },
+    "hint_to_stock": "Tildá lo que compraste y pasa al Stock."
   },
   "spending_charts": {
     "blue": {
@@ -834,5 +835,53 @@
     "show_all_currencies": "Mostrar todas las monedas",
     "today": "Hoy",
     "total_balance": "Balance total"
+  },
+  "kitchen": {
+    "title": "Cocina",
+    "tabs": {
+      "shopping": "Compras",
+      "stock": "Stock"
+    },
+    "toast": {
+      "to_stock": "{{name}} pasó al Stock ({{section}})"
+    }
+  },
+  "stock": {
+    "add_placeholder": "¿Qué hay? Separá con comas",
+    "actions": {
+      "add": "Agregar",
+      "finished": "Se acabó",
+      "remove": "Sacar sin comprar",
+      "save": "Guardar"
+    },
+    "sections": {
+      "FRIDGE": "Heladera",
+      "FREEZER": "Freezer",
+      "PANTRY": "Alacena",
+      "PRODUCE": "Frutas y verduras",
+      "CLEANING": "Limpieza"
+    },
+    "edit": {
+      "title": "Editar",
+      "name": "Nombre",
+      "note": "Nota",
+      "note_placeholder": "Medio paquete",
+      "section": "Dónde va"
+    },
+    "empty": {
+      "title": "Todavía no hay nada",
+      "subtitle": "Escribí lo que hay en casa, o mandáselo a Charly por audio."
+    },
+    "hint": "\"Se acabó\" lo manda a Compras. Deslizalo para sacarlo sin comprar.",
+    "toast": {
+      "added_one": "Agregado al Stock",
+      "added_other": "{{count}} agregados al Stock",
+      "already_there": "Ya estaba: {{names}}",
+      "finished": "{{name}} fue a Compras",
+      "finished_already": "{{name}} salió del Stock (ya estaba en Compras)",
+      "removed": "{{name}} salió del Stock",
+      "conflict": "Ya hay uno con ese nombre",
+      "error": "No se pudo guardar. Probá de nuevo."
+    }
   }
 }
