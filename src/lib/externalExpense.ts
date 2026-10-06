@@ -154,6 +154,10 @@ export const zodErrorToExternal = (error: z.ZodError): ExternalApiError => {
   return invalid(field, `${es}${extra}`, en, 'validation_error');
 };
 
+/** Un parámetro de la URL: si viene repetido (`?a=1&a=2`), el primero. */
+export const readSingleQueryParam = (value: string | string[] | undefined): string | undefined =>
+  Array.isArray(value) ? value[0] : value;
+
 /**
  * Valida un body con zod; el primer error sale como un 400 legible (ver `zodErrorToExternal`).
  * Un POST sin body llega como `''` (Next.js no sabe de qué tipo es): vale lo mismo que `{}`.

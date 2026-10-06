@@ -11,7 +11,12 @@ import {
   parseDay,
   rangeLength,
 } from '~/lib/agenda';
-import { ExternalApiError, parseExternalBody, personRefSchema } from '~/lib/externalExpense';
+import {
+  ExternalApiError,
+  parseExternalBody,
+  personRefSchema,
+  readSingleQueryParam,
+} from '~/lib/externalExpense';
 
 /**
  * Parseo puro (sin base) de la API externa de la Agenda, pensada para el asistente por WhatsApp.
@@ -49,9 +54,6 @@ export const parseExternalEventCreate = (body: unknown) =>
 export const parseExternalEventPatch = (body: unknown) =>
   parseExternalBody(externalEventPatchSchema, body);
 
-const single = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value;
-
 const badDay = (field: string) =>
   new ExternalApiError(
     400,
@@ -62,7 +64,7 @@ const badDay = (field: string) =>
   );
 
 const readDay = (query: Record<string, string | string[] | undefined>, field: string) => {
-  const raw = single(query[field])?.trim();
+  const raw = readSingleQueryParam(query[field])?.trim();
 
   if (!raw) {
     return undefined;
@@ -120,7 +122,7 @@ export const parseExternalAgendaQuery = (
     );
   }
 
-  const search = normalizeSearch(single(query.q) ?? '');
+  const search = normalizeSearch(readSingleQueryParam(query.q) ?? '');
 
   return { range, search: search || null };
 };

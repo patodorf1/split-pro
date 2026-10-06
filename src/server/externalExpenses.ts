@@ -6,12 +6,15 @@ import {
   type ParsedExternalEntry,
   minorToUnits,
   parseExternalEntry,
+  readSingleQueryParam,
 } from '~/lib/externalExpense';
 import { simplifyDebts } from '~/lib/simplify';
 import { createExpense, deleteExpense } from '~/server/api/services/splitService';
 import { db } from '~/server/db';
 import { getBearerToken, isExternalApiEnabled, isValidExternalApiKey } from '~/server/externalApi';
 import { getCurrencyHelpers } from '~/utils/numbers';
+
+export { readSingleQueryParam };
 
 /**
  * Lógica con base de datos de la API externa de gastos. Los endpoints viven en
@@ -24,9 +27,6 @@ import { getCurrencyHelpers } from '~/utils/numbers';
 
 /** Una reserva de idempotencia sin gasto más vieja que esto se considera abandonada. */
 const STALE_RESERVATION_MS = 2 * 60 * 1000;
-
-export const readSingleQueryParam = (value: string | string[] | undefined): string | undefined =>
-  Array.isArray(value) ? value[0] : value;
 
 export const sendExternalError = (res: NextApiResponse, error: ExternalApiError) =>
   res.status(error.status).json(error.toJSON());

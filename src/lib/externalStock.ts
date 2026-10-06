@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-import { type PersonRef, parseExternalBody, personRefSchema } from '~/lib/externalExpense';
+import {
+  type PersonRef,
+  parseExternalBody,
+  personRefSchema,
+  readSingleQueryParam,
+} from '~/lib/externalExpense';
 import { cleanShoppingItemName } from '~/lib/shopping';
 import { MAX_STOCK_NOTE_LENGTH, STOCK_SECTIONS, type StockSection, stockKey } from '~/lib/stock';
 
@@ -130,8 +135,7 @@ export const parseExternalStockPatch = (body: unknown): ExternalStockPatch =>
 
 /** `?q=arroz`: texto a buscar dentro de los nombres, o null. */
 export const parseExternalStockQuery = (query: Record<string, string | string[] | undefined>) => {
-  const raw = Array.isArray(query.q) ? query.q[0] : query.q;
-  const q = cleanShoppingItemName(raw ?? '');
+  const q = cleanShoppingItemName(readSingleQueryParam(query.q) ?? '');
 
   return { q: stockKey(q) ? q : null };
 };
