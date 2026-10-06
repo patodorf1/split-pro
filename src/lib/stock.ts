@@ -287,3 +287,28 @@ export const guessStockSection = (
 
   return best?.section ?? DEFAULT_STOCK_SECTION;
 };
+
+/** Productos cuyo nombre contiene `text` como palabras completas ("arroz" → "Arroz yamaní"). */
+export const stockItemsMatching = <T extends { key: string }>(
+  items: readonly T[],
+  text: string,
+): T[] => {
+  const key = stockKey(text);
+
+  return key ? items.filter((item) => containsWords(item.key, key)) : [];
+};
+
+/**
+ * Un producto del Stock por cómo lo nombró alguien. Primero el mismo nombre ("tomates" es
+ * "Tomate"); si no está, los que lo contienen ("pollo" → "Pechugas de pollo") quedan como
+ * candidatos y no se elige ninguno: nada sale del Stock por una coincidencia a medias.
+ */
+export const matchStockName = <T extends { key: string }>(
+  items: readonly T[],
+  name: string,
+): { exact: T | undefined; candidates: T[] } => {
+  const key = stockKey(name);
+  const exact = key ? items.find((item) => item.key === key) : undefined;
+
+  return { exact, candidates: exact ? [] : stockItemsMatching(items, name) };
+};

@@ -155,6 +155,23 @@ export const zodErrorToExternal = (error: z.ZodError): ExternalApiError => {
 };
 
 /**
+ * Valida un body con zod; el primer error sale como un 400 legible (ver `zodErrorToExternal`).
+ * Un POST sin body llega como `''` (Next.js no sabe de qué tipo es): vale lo mismo que `{}`.
+ */
+export const parseExternalBody = <T>(
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+  body: unknown,
+): T => {
+  const parsed = schema.safeParse(null === body || undefined === body || '' === body ? {} : body);
+
+  if (!parsed.success) {
+    throw zodErrorToExternal(parsed.error);
+  }
+
+  return parsed.data;
+};
+
+/**
  * Convierte un importe en unidades de moneda (45000.5 o "45000.50") a centavos BigInt, sin pasar
  * por aritmética de punto flotante: se trabaja sobre el texto. Más decimales de los que admite la
  * moneda es un error (no redondeamos en silencio plata de nadie).

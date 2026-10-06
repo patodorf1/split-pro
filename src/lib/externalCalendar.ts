@@ -11,7 +11,7 @@ import {
   parseDay,
   rangeLength,
 } from '~/lib/agenda';
-import { ExternalApiError, personRefSchema, zodErrorToExternal } from '~/lib/externalExpense';
+import { ExternalApiError, parseExternalBody, personRefSchema } from '~/lib/externalExpense';
 
 /**
  * Parseo puro (sin base) de la API externa de la Agenda, pensada para el asistente por WhatsApp.
@@ -43,20 +43,11 @@ export const externalEventPatchSchema = calendarEventFieldsSchema
 export type ExternalEventCreate = z.infer<typeof externalEventCreateSchema>;
 export type ExternalEventPatch = z.infer<typeof externalEventPatchSchema>;
 
-const parseWith = <T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, body: unknown): T => {
-  const parsed = schema.safeParse(body ?? {});
-
-  if (!parsed.success) {
-    throw zodErrorToExternal(parsed.error);
-  }
-
-  return parsed.data;
-};
-
 export const parseExternalEventCreate = (body: unknown) =>
-  parseWith(externalEventCreateSchema, body);
+  parseExternalBody(externalEventCreateSchema, body);
 
-export const parseExternalEventPatch = (body: unknown) => parseWith(externalEventPatchSchema, body);
+export const parseExternalEventPatch = (body: unknown) =>
+  parseExternalBody(externalEventPatchSchema, body);
 
 const single = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value;
