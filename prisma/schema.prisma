@@ -70,6 +70,7 @@ model User {
   documentReminders    DocumentReminderState[]
   checkedShoppingItems ShoppingItem[]          @relation("ShoppingItemCheckedBy")
   stockItemsAdded      StockItem[]             @relation("StockItemAddedBy")
+  recipesCreated       Recipe[]                @relation("RecipeCreatedBy")
   calendarEvents       CalendarEvent[]         @relation("CalendarEventCreatedBy")
   dailyNotices         DailyNoticeLog[]
 
@@ -121,6 +122,7 @@ model Group {
   shoppingItems     ShoppingItem[]
   stockItems        StockItem[]
   stockPlacements   StockPlacement[]
+  recipes           Recipe[]
   externalExpenses  ExternalExpense[]
   documentFolders   DocumentFolder[]
   emergencyContacts EmergencyContact[]
@@ -363,6 +365,41 @@ model StockPlacement {
   @@schema("public")
 }
 
+/// Casa: recetario de la casa, por grupo. `titleKey` es el título comparable (ver `recipeTitleKey`)
+/// y no se repite en el grupo. `body` es el paso a paso en texto simple (ver `parseRecipeBody`).
+model Recipe {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId     Int
+  title       String
+  titleKey    String
+  kind        RecipeKind
+  yieldText   String?
+  body        String             @default("")
+  source      RecipeSource       @default(APP)
+  createdById Int?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  group       Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy   User?              @relation("RecipeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  ingredients RecipeIngredient[]
+
+  @@unique([groupId, titleKey])
+  @@schema("public")
+}
+
+/// Casa: ingredientes principales de una receta (los que se comparan con el Stock), en orden.
+model RecipeIngredient {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId String @db.Uuid
+  name     String
+  key      String
+  position Int
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeId, key])
+  @@schema("public")
+}
+
 /// Casa: secciones de documentos de la familia (Clari, Pato, Kuga, Lancha…). El dueño es un grupo:
 /// tienen acceso los miembros de ese grupo. `icon` es una clave de la lista corta de íconos de la UI.
 model DocumentFolder {
@@ -516,6 +553,25 @@ enum StockSection {
   PANTRY
   PRODUCE
   CLEANING
+
+  @@schema("public")
+}
+
+/// Tipos de receta, en el orden de los filtros de Comidas. Ver `RECIPE_KINDS`.
+enum RecipeKind {
+  PROTEIN
+  MAIN
+  SALAD
+  SIDE
+
+  @@schema("public")
+}
+
+/// De dónde vino una receta: la app, la API externa (Charly) o la carga del cuaderno.
+enum RecipeSource {
+  APP
+  API
+  IMPORT
 
   @@schema("public")
 }
