@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { MAX_SHOPPING_ITEM_NAME_LENGTH, parseShoppingItems } from '~/lib/shopping';
 import { MAX_STOCK_NOTE_LENGTH, STOCK_SECTIONS } from '~/lib/stock';
+import { isRecordNotFound, isUniqueViolation } from '~/server/api/prismaErrors';
 import { createTRPCRouter, groupProcedure } from '~/server/api/trpc';
 import {
   STOCK_ITEM_SELECT,
@@ -16,20 +17,17 @@ import {
 const notFound = () => new TRPCError({ code: 'NOT_FOUND', message: 'Stock item not found' });
 const alreadyInStock = () => new TRPCError({ code: 'CONFLICT', message: 'already_in_stock' });
 
-const prismaCode = (error: unknown) =>
-  'object' === typeof error && null !== error && 'code' in error ? error.code : undefined;
-
 /**
  * Carreras entre dos teléfonos: P2025 es "ya no existe" (doble toque, otro lo sacó antes) y P2002
  * es "ese nombre ya está" (dos renombres a la vez). Se traducen a lo mismo que ya responde el
  * chequeo previo.
  */
 const mapRaceError = (error: unknown) => {
-  if (error instanceof StockConflictError || 'P2002' === prismaCode(error)) {
+  if (error instanceof StockConflictError || isUniqueViolation(error)) {
     return alreadyInStock();
   }
 
-  if ('P2025' === prismaCode(error)) {
+  if (isRecordNotFound(error)) {
     return notFound();
   }
 

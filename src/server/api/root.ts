@@ -7,6 +7,7 @@ import { calendarRouter } from './routers/calendar';
 import { documentsRouter } from './routers/documents';
 import { emergencyRouter } from './routers/emergency';
 import { expenseRouter } from './routers/expense';
+import { recipesRouter } from './routers/recipes';
 import { shoppingRouter } from './routers/shopping';
 import { statsRouter } from './routers/stats';
 import { stockRouter } from './routers/stock';
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
   documents: documentsRouter,
   emergency: emergencyRouter,
   expense: expenseRouter,
+  recipes: recipesRouter,
   shopping: shoppingRouter,
   stock: stockRouter,
   stats: statsRouter,
