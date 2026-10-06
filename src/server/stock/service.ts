@@ -1,0 +1,270 @@
+import { Prisma, type PrismaClient, type ShoppingItemSource } from '@prisma/client';
+
+import { cleanOptionalText, cleanShoppingItemName } from '~/lib/shopping';
+import { MAX_STOCK_NOTE_LENGTH, type StockSection, guessStockSection, stockKey } from '~/lib/stock';
+
+/**
+ * Acceso a datos del Stock. Recibe el cliente por parámetro para poder correr dentro de la misma
+ * transacción que tilda un ítem de Compras (el puente) y para testearse sin base.
+ */
+
+export type StockDb = Pick<
+  PrismaClient | Prisma.TransactionClient,
+  'stockItem' | 'stockPlacement' | 'shoppingItem'
+>;
+
+export const STOCK_ITEM_SELECT = {
+  id: true,
+  name: true,
+  note: true,
+  section: true,
+  source: true,
+  createdAt: true,
+  updatedAt: true,
+  addedByUser: { select: { id: true, name: true, email: true, image: true } },
+} as const;
+
+export type StockItemView = Prisma.StockItemGetPayload<{ select: typeof STOCK_ITEM_SELECT }>;
+
+const WITH_KEY = { ...STOCK_ITEM_SELECT, key: true } as const;
+
+/** Renombrar un producto al nombre de otro que ya está en el Stock. */
+export class StockConflictError extends Error {
+  constructor(readonly existing: StockItemView) {
+    super('Already in stock');
+    this.name = 'StockConflictError';
+  }
+}
+
+const withoutKey = ({ key: _key, ...item }: StockItemView & { key: string }): StockItemView => item;
+
+const loadLearned = async (db: StockDb, groupId: number) =>
+  new Map(
+    (
+      await db.stockPlacement.findMany({ where: { groupId }, select: { key: true, section: true } })
+    ).map((placement) => [placement.key, placement.section as StockSection]),
+  );
+
+const isUniqueViolation = (error: unknown) =>
+  error instanceof Prisma.PrismaClientKnownRequestError && 'P2002' === error.code;
+
+/** Suma productos al Stock sin duplicar: lo que ya estaba vuelve en `duplicates`. */
+export const addToStock = async (
+  db: StockDb,
+  input: {
+    groupId: number;
+    items: { name: string; note?: string | null }[];
+    source: ShoppingItemSource;
+    addedBy: number | null;
+    fromShoppingItemId?: string | null;
+  },
+) => {
+  const wanted = new Map<string, { name: string; note?: string }>();
+
+  for (const raw of input.items) {
+    const name = cleanShoppingItemName(raw.name);
+    const key = stockKey(name);
+
+    if (key && !wanted.has(key)) {
+      wanted.set(key, { name, note: cleanOptionalText(raw.note, MAX_STOCK_NOTE_LENGTH) });
+    }
+  }
+
+  const [learned, existing] = await Promise.all([
+    loadLearned(db, input.groupId),
+    db.stockItem.findMany({
+      where: { groupId: input.groupId, key: { in: [...wanted.keys()] } },
+      select: WITH_KEY,
+    }),
+  ]);
+  const existingByKey = new Map(existing.map((item) => [item.key, item]));
+
+  const created: StockItemView[] = [];
+  const duplicates: StockItemView[] = [];
+
+  for (const [key, { name, note }] of wanted) {
+    const already = existingByKey.get(key);
+
+    if (already) {
+      duplicates.push(withoutKey(already));
+      continue;
+    }
+
+    try {
+      const item = await db.stockItem.create({
+        data: {
+          groupId: input.groupId,
+          name,
+          key,
+          note: note ?? null,
+          section: guessStockSection(name, learned),
+          source: input.source,
+          addedBy: input.addedBy,
+          fromShoppingItemId: input.fromShoppingItemId ?? null,
+        },
+        select: WITH_KEY,
+      });
+      created.push(withoutKey(item));
+    } catch (error) {
+      // Otro pedido lo agregó en el medio (dos teléfonos a la vez): es un duplicado, no un error.
+      if (!isUniqueViolation(error)) {
+        throw error;
+      }
+      const winner = await db.stockItem.findFirst({
+        where: { groupId: input.groupId, key },
+        select: WITH_KEY,
+      });
+      if (winner) {
+        duplicates.push(withoutKey(winner));
+      }
+    }
+  }
+
+  return { created, duplicates };
+};
+
+/**
+ * Puente: un ítem de Compras se tildó como comprado. Lo suma al Stock (si no estaba) anotando qué
+ * compra lo trajo, para poder deshacerlo si el tilde fue un error.
+ */
+export const addBoughtToStock = async (
+  db: StockDb,
+  item: { id: string; groupId: number; name: string },
+  source: ShoppingItemSource,
+  addedBy: number | null,
+) => {
+  const { created, duplicates } = await addToStock(db, {
+    groupId: item.groupId,
+    items: [{ name: item.name }],
+    source,
+    addedBy,
+    fromShoppingItemId: item.id,
+  });
+
+  if (created[0]) {
+    return { item: created[0], created: true };
+  }
+
+  return duplicates[0] ? { item: duplicates[0], created: false } : null;
+};
+
+/**
+ * Puente al revés: se destildó un ítem de Compras. Sale del Stock solo lo que trajo esa compra y
+ * nadie editó después (editar borra `fromShoppingItemId`).
+ */
+export const undoBoughtFromStock = async (db: StockDb, shoppingItemId: string) =>
+  (await db.stockItem.deleteMany({ where: { fromShoppingItemId: shoppingItemId } })).count;
+
+const findInGroup = (db: StockDb, groupId: number, id: string) =>
+  db.stockItem.findFirst({ where: { id, groupId }, select: WITH_KEY });
+
+/** "Se acabó": sale del Stock y va a Compras, salvo que ya esté pendiente ahí. */
+export const finishStockItem = async (
+  db: StockDb,
+  input: { groupId: number; id: string; userId: number | null; source: ShoppingItemSource },
+) => {
+  const item = await findInGroup(db, input.groupId, input.id);
+
+  if (!item) {
+    return null;
+  }
+
+  await db.stockItem.delete({ where: { id: item.id } });
+
+  const pending = await db.shoppingItem.findMany({
+    where: { groupId: input.groupId, checked: false },
+    select: { id: true, name: true },
+  });
+  const alreadyPending = pending.some((entry) => stockKey(entry.name) === item.key);
+
+  if (!alreadyPending) {
+    await db.shoppingItem.create({
+      data: {
+        groupId: input.groupId,
+        name: item.name,
+        addedBy: input.userId,
+        source: input.source,
+      },
+    });
+  }
+
+  return { item: withoutKey(item), addedToShopping: !alreadyPending };
+};
+
+/** Sacar sin comprar: solo sale del Stock. */
+export const removeStockItem = async (db: StockDb, input: { groupId: number; id: string }) => {
+  const item = await findInGroup(db, input.groupId, input.id);
+
+  if (!item) {
+    return null;
+  }
+
+  await db.stockItem.delete({ where: { id: item.id } });
+
+  return withoutKey(item);
+};
+
+/**
+ * Editar nombre, nota o sección. Cambiar la sección la deja aprendida para ese producto en el
+ * grupo. Cualquier edición desengancha la compra de origen (ya no se deshace con un destilde).
+ */
+export const updateStockItem = async (
+  db: StockDb,
+  input: {
+    groupId: number;
+    id: string;
+    name?: string;
+    note?: string | null;
+    section?: StockSection;
+  },
+) => {
+  const item = await findInGroup(db, input.groupId, input.id);
+
+  if (!item) {
+    return null;
+  }
+
+  const name = undefined === input.name ? undefined : cleanShoppingItemName(input.name);
+
+  if ('' === name) {
+    throw new Error('Empty stock item name');
+  }
+
+  const key = name ? stockKey(name) : item.key;
+
+  if (key !== item.key) {
+    const other = await db.stockItem.findFirst({
+      where: { groupId: input.groupId, key },
+      select: WITH_KEY,
+    });
+
+    if (other) {
+      throw new StockConflictError(withoutKey(other));
+    }
+  }
+
+  if (input.section) {
+    await db.stockPlacement.upsert({
+      where: { groupId_key: { groupId: input.groupId, key } },
+      create: { groupId: input.groupId, key, section: input.section },
+      update: { section: input.section },
+    });
+  }
+
+  const updated = await db.stockItem.update({
+    where: { id: item.id },
+    data: {
+      name,
+      key,
+      note:
+        undefined === input.note
+          ? undefined
+          : (cleanOptionalText(input.note, MAX_STOCK_NOTE_LENGTH) ?? null),
+      section: input.section,
+      fromShoppingItemId: null,
+    },
+    select: WITH_KEY,
+  });
+
+  return withoutKey(updated);
+};
