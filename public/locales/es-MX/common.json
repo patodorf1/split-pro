@@ -839,7 +839,8 @@
     "title": "Cocina",
     "tabs": {
       "shopping": "Compras",
-      "stock": "Stock"
+      "stock": "Stock",
+      "meals": "Comidas"
     },
     "toast": {
       "to_stock": "{{name}} pasó al Stock ({{section}})"
@@ -880,6 +881,74 @@
       "finished_already": "{{name}} salió del Stock (ya estaba en Compras)",
       "removed": "{{name}} salió del Stock",
       "conflict": "Ya hay uno con ese nombre",
+      "error": "No se pudo guardar. Probá de nuevo."
+    }
+  },
+  "meals": {
+    "kinds": {
+      "ALL": "Todo",
+      "PROTEIN": "Proteínas",
+      "MAIN": "Platos",
+      "SALAD": "Ensaladas",
+      "SIDE": "Guarniciones"
+    },
+    "parts": {
+      "ready": "Podés hacer",
+      "oneMissing": "Te falta una cosa",
+      "moreMissing": "Más recetas"
+    },
+    "part_empty": {
+      "ready": "Con lo que hay no sale ninguna de este tipo.",
+      "oneMissing": "Nada a un ingrediente de distancia.",
+      "moreMissing": "No hay más recetas de este tipo."
+    },
+    "missing_chip": "falta {{name}}",
+    "add_missing": {
+      "one": "Sumar {{name}} a Compras",
+      "many": "Sumar lo que falta a Compras",
+      "done": "Ya está todo en Compras"
+    },
+    "actions": {
+      "add": "Agregar receta",
+      "back": "Comidas",
+      "edit": "Editar",
+      "save": "Guardar",
+      "delete": "Borrar receta",
+      "write_steps": "Escribir el paso a paso"
+    },
+    "recipe": {
+      "ready": "Tenés todo para hacerla",
+      "missing": "Te falta",
+      "no_steps": "Esta receta todavía no tiene paso a paso. Dictáselo a Charly o escribilo acá.",
+      "not_found": "No encontramos esta receta."
+    },
+    "editor": {
+      "new_title": "Receta nueva",
+      "edit_title": "Editar receta",
+      "title": "Nombre",
+      "kind": "Tipo",
+      "yield": "Rinde",
+      "yield_placeholder": "Para 1,8 kg",
+      "ingredients": "Ingredientes principales",
+      "ingredients_placeholder": "pollo, pan rallado, huevo",
+      "ingredients_hint": "Separados por coma, de 1 a 12. Sal, aceite y especias no cuentan.",
+      "body": "Paso a paso",
+      "body_placeholder": "1. Condimentar la carne\n- 3 cucharitas de sal\nTip: pisar el ajo con sal",
+      "body_hint": "Cada paso empieza con su número (1. Condimentar). Los ingredientes van con guion (-) y los consejos con \"Tip:\".",
+      "delete_title": "¿Borrar la receta?",
+      "delete_description": "{{title}} sale del recetario. No se puede deshacer."
+    },
+    "empty": {
+      "title": "Todavía no hay recetas",
+      "subtitle": "Agregá una con el botón + o dictásela a Charly."
+    },
+    "toast": {
+      "added_one": "{{name}} fue a Compras",
+      "added_other": "{{count}} cosas fueron a Compras",
+      "already": "Ya estaba todo en Compras",
+      "saved": "Receta guardada",
+      "deleted": "Receta borrada",
+      "conflict": "Ya hay una receta con ese nombre",
       "error": "No se pudo guardar. Probá de nuevo."
     }
   }
