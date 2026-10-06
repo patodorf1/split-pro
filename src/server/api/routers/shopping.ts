@@ -179,6 +179,10 @@ export const shoppingRouter = createTRPCRouter({
       await assertItemInGroup(ctx.db, input.id, input.groupId);
 
       return ctx.db.$transaction(async (tx) => {
+        const previous = await tx.shoppingItem.findUnique({
+          where: { id: input.id },
+          select: { checked: true },
+        });
         const item = await tx.shoppingItem.update({
           where: { id: input.id },
           data: {
@@ -188,6 +192,12 @@ export const shoppingRouter = createTRPCRouter({
           },
           select: SHOPPING_ITEM_SELECT,
         });
+
+        // Solo cuando el estado cambia de verdad: un segundo teléfono con la pantalla vieja no
+        // debe volver a meter al Stock algo que ya se usó.
+        if (previous?.checked === input.checked) {
+          return { ...item, stock: null };
+        }
 
         if (!input.checked) {
           await undoBoughtFromStock(tx, item.id);

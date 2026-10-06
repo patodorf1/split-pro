@@ -15,7 +15,7 @@ import {
 import { PENDING_SHOPPING_ITEM_ORDER, SHOPPING_ITEM_SELECT } from '~/server/api/routers/shopping';
 import { db } from '~/server/db';
 import { getBearerToken, isExternalApiEnabled, isValidExternalApiKey } from '~/server/externalApi';
-import { addBoughtToStock, undoBoughtFromStock } from '~/server/stock/service';
+import { type StockDb, addBoughtToStock, undoBoughtFromStock } from '~/server/stock/service';
 
 /**
  * API externa de la lista de compras, pensada para Home Assistant / n8n.
@@ -95,9 +95,11 @@ const readSingleQueryParam = (value: string | string[] | undefined): string | un
 
 /**
  * Puente con el Stock cuando una sincronización cambia el tildado: lo comprado entra (sin
- * persona detrás) y lo destildado sale si lo había traído esa compra.
+ * persona detrás) y lo destildado sale si lo había traído esa compra. Se llama con el cliente de
+ * la transacción que cambió el ítem, así un fallo del Stock deshace también el tilde.
  */
 const syncStock = async (
+  client: StockDb,
   item: { id: string; name: string },
   groupId: number,
   wasChecked: boolean,
@@ -105,9 +107,9 @@ const syncStock = async (
   source: ShoppingItemSource,
 ) => {
   if (isChecked && !wasChecked) {
-    await addBoughtToStock(db, { id: item.id, groupId, name: item.name }, source, null);
+    await addBoughtToStock(client, { id: item.id, groupId, name: item.name }, source, null);
   } else if (!isChecked && wasChecked) {
-    await undoBoughtFromStock(db, item.id);
+    await undoBoughtFromStock(client, item.id);
   }
 };
 
@@ -253,42 +255,52 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, groupId: nu
         externalId: input.externalId,
       });
 
-      const item = await db.shoppingItem.update({
-        where: { id: match.id },
-        data: {
-          name: owned.name,
-          externalId: owned.externalId,
-          quantity,
-          note,
-          ...(undefined === input.checked
-            ? {}
-            : {
-                checked: input.checked,
-                checkedAt: input.checked ? new Date() : null,
-                checkedBy: null,
-              }),
-        },
-        select: SHOPPING_ITEM_SELECT,
+      // Ítem y Stock en una sola transacción: si el Stock falla, el tilde no queda a medias y
+      // el reintento de la sync vuelve a ver el cambio.
+      const item = await db.$transaction(async (tx) => {
+        const saved = await tx.shoppingItem.update({
+          where: { id: match.id },
+          data: {
+            name: owned.name,
+            externalId: owned.externalId,
+            quantity,
+            note,
+            ...(undefined === input.checked
+              ? {}
+              : {
+                  checked: input.checked,
+                  checkedAt: input.checked ? new Date() : null,
+                  checkedBy: null,
+                }),
+          },
+          select: SHOPPING_ITEM_SELECT,
+        });
+        await syncStock(tx, saved, groupId, match.checked, saved.checked, source);
+
+        return saved;
       });
-      await syncStock(item, groupId, match.checked, item.checked, source);
       updated += 1;
       results.push(item);
       remember({ ...match, name: item.name, externalId: item.externalId, checked: item.checked });
     } else {
-      const item = await db.shoppingItem.create({
-        data: {
-          groupId,
-          name,
-          quantity: quantity ?? null,
-          note: note ?? null,
-          source,
-          externalId: input.externalId ?? null,
-          checked: input.checked ?? false,
-          checkedAt: input.checked ? new Date() : null,
-        },
-        select: SHOPPING_ITEM_SELECT,
+      const item = await db.$transaction(async (tx) => {
+        const saved = await tx.shoppingItem.create({
+          data: {
+            groupId,
+            name,
+            quantity: quantity ?? null,
+            note: note ?? null,
+            source,
+            externalId: input.externalId ?? null,
+            checked: input.checked ?? false,
+            checkedAt: input.checked ? new Date() : null,
+          },
+          select: SHOPPING_ITEM_SELECT,
+        });
+        await syncStock(tx, saved, groupId, false, saved.checked, source);
+
+        return saved;
       });
-      await syncStock(item, groupId, false, item.checked, source);
       created += 1;
       results.push(item);
       // Lo creó la sync, así que no tiene persona detrás.
@@ -330,17 +342,21 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, groupId: n
       continue;
     }
 
-    const updated = await db.shoppingItem.update({
-      where: { id: match.id },
-      data: {
-        checked: input.checked,
-        checkedAt: input.checked ? new Date() : null,
-        // Quien marcó fue un sistema externo, no una persona de la app.
-        checkedBy: null,
-      },
-      select: SHOPPING_ITEM_SELECT,
+    const updated = await db.$transaction(async (tx) => {
+      const saved = await tx.shoppingItem.update({
+        where: { id: match.id },
+        data: {
+          checked: input.checked,
+          checkedAt: input.checked ? new Date() : null,
+          // Quien marcó fue un sistema externo, no una persona de la app.
+          checkedBy: null,
+        },
+        select: SHOPPING_ITEM_SELECT,
+      });
+      await syncStock(tx, saved, groupId, match.checked, saved.checked, 'API');
+
+      return saved;
     });
-    await syncStock(updated, groupId, match.checked, updated.checked, 'API');
     results.push(updated);
   }
 

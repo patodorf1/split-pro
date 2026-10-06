@@ -139,6 +139,7 @@ describe('shopping.setChecked bridge', () => {
       shoppingItem: {
         count: jest.fn().mockResolvedValue(1),
         findMany: jest.fn().mockResolvedValue([]),
+        findUnique: jest.fn().mockResolvedValue({ checked: false }),
         update: jest
           .fn()
           .mockImplementation(({ data }) =>
@@ -187,6 +188,7 @@ describe('shopping.setChecked bridge', () => {
 
   it('undoes it when unchecked', async () => {
     const db = makeShoppingDb();
+    db.shoppingItem.findUnique.mockResolvedValue({ checked: true });
     const result = await shoppingCaller(db).setChecked({
       groupId: 1,
       id: '11111111-1111-4111-8111-111111111111',
@@ -198,6 +200,32 @@ describe('shopping.setChecked bridge', () => {
       where: { fromShoppingItemId: '11111111-1111-4111-8111-111111111111' },
     });
     expect(db.stockItem.createMany).not.toHaveBeenCalled();
+  });
+
+  it('does nothing to the stock when the check does not change (stale second phone)', async () => {
+    const db = makeShoppingDb();
+    db.shoppingItem.findUnique.mockResolvedValue({ checked: true });
+    const result = await shoppingCaller(db).setChecked({
+      groupId: 1,
+      id: '11111111-1111-4111-8111-111111111111',
+      checked: true,
+    });
+
+    expect(result.stock).toBeNull();
+    expect(db.stockItem.createMany).not.toHaveBeenCalled();
+    expect(db.stockItem.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('does nothing to the stock when unchecking an item that was not checked', async () => {
+    const db = makeShoppingDb();
+    const result = await shoppingCaller(db).setChecked({
+      groupId: 1,
+      id: '11111111-1111-4111-8111-111111111111',
+      checked: false,
+    });
+
+    expect(result.stock).toBeNull();
+    expect(db.stockItem.deleteMany).not.toHaveBeenCalled();
   });
 
   it('runs the check and the stock change in one transaction', async () => {
