@@ -9,6 +9,7 @@ import { emergencyRouter } from './routers/emergency';
 import { expenseRouter } from './routers/expense';
 import { shoppingRouter } from './routers/shopping';
 import { statsRouter } from './routers/stats';
+import { stockRouter } from './routers/stock';
 
 /**
  * This is the primary router for your server.
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
   emergency: emergencyRouter,
   expense: expenseRouter,
   shopping: shoppingRouter,
+  stock: stockRouter,
   stats: statsRouter,
 });
 
