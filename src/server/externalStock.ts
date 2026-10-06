@@ -1,4 +1,4 @@
-import { ExternalApiError, isUuid, resolveMember } from '~/lib/externalExpense';
+import { ExternalApiError, isUuid, resolveOptionalMemberId } from '~/lib/externalExpense';
 import {
   type ExternalStockAdd,
   type ExternalStockAddItem,
@@ -86,9 +86,6 @@ const mapStockError = (error: unknown) => {
 
   return error;
 };
-
-const resolveAuthor = (group: LoadedGroup, ref: ExternalStockAdd['addedBy']) =>
-  undefined === ref ? null : resolveMember(ref, group.members, 'addedBy').id;
 
 /** Lo que hay, por sección (o lo que contiene `q`). */
 export const listExternalStock = async (group: LoadedGroup, query: { q: string | null }) => {
@@ -183,7 +180,7 @@ const pendingChanges = (entry: ExternalStockAddItem, item: StockItemView) => {
  */
 export const addExternalStock = async (group: LoadedGroup, input: ExternalStockAdd) => {
   assertGroupWritable(group);
-  const userId = resolveAuthor(group, input.addedBy);
+  const userId = resolveOptionalMemberId(input.addedBy, group.members, 'addedBy');
 
   try {
     const results = await db.$transaction(async (tx) => {
@@ -273,7 +270,7 @@ export const addExternalStock = async (group: LoadedGroup, input: ExternalStockA
  */
 export const finishExternalStock = async (group: LoadedGroup, input: ExternalStockFinish) => {
   assertGroupWritable(group);
-  const userId = resolveAuthor(group, input.addedBy);
+  const userId = resolveOptionalMemberId(input.addedBy, group.members, 'addedBy');
 
   try {
     const outcomes = await db.$transaction(async (tx) => {

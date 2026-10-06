@@ -10,6 +10,7 @@ import {
   parseExternalEntry,
   parseListLimit,
   resolveMember,
+  resolveOptionalMemberId,
 } from '~/lib/externalExpense';
 import { buildSettlementInput } from '~/lib/settlement';
 
@@ -140,6 +141,14 @@ describe('resolveMember', () => {
     expect(error.code).toBe('not_a_member');
     expect(error.field).toBe('paidBy');
     expect(() => resolveMember(9, casa.members, 'paidBy')).toThrow(ExternalApiError);
+  });
+});
+
+describe('resolveOptionalMemberId', () => {
+  it('is null without a reference and the member id with one', () => {
+    expect(resolveOptionalMemberId(undefined, casa.members, 'addedBy')).toBeNull();
+    expect(resolveOptionalMemberId('mbelenbilbao@gmail.com', casa.members, 'addedBy')).toBe(2);
+    expect(() => resolveOptionalMemberId(9, casa.members, 'addedBy')).toThrow(ExternalApiError);
   });
 });
 

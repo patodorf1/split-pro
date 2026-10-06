@@ -330,6 +330,13 @@ export const resolveMember = <T extends Pick<User, 'id' | 'email'>>(
   return member;
 };
 
+/** La persona de un campo opcional (`createdBy`, `addedBy`): su id, o null si no vino. */
+export const resolveOptionalMemberId = <T extends Pick<User, 'id' | 'email'>>(
+  ref: PersonRef | undefined,
+  members: T[],
+  field: string,
+): number | null => (undefined === ref ? null : resolveMember(ref, members, field).id);
+
 export interface ExternalGroupContext<TMember extends User = User> {
   groupId: number;
   defaultCurrency: string | null;
