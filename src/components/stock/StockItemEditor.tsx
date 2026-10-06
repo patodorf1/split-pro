@@ -53,12 +53,19 @@ export const StockItemEditor: React.FC<{
     if (!trimmed) {
       return;
     }
+    const nextName = trimmed === item.name ? undefined : trimmed;
+    const nextNote = note.trim() === (item.note ?? '') ? undefined : note;
+    const nextSection = section === item.section ? undefined : section;
+    // Sin cambios no se manda nada: guardar igual lo desprendería de la compra que lo trajo.
+    if (undefined === nextName && undefined === nextNote && undefined === nextSection) {
+      return;
+    }
     updateItem.mutate({
       groupId,
       id: item.id,
-      name: trimmed === item.name ? undefined : trimmed,
-      note: note.trim() === (item.note ?? '') ? undefined : note,
-      section: section === item.section ? undefined : section,
+      name: nextName,
+      note: nextNote,
+      section: nextSection,
     });
   }, [groupId, item, name, note, section, updateItem]);
 

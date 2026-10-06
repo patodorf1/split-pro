@@ -18,6 +18,9 @@ export const SwipeToRemove: React.FC<{
   const moved = useRef(false);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if ('mouse' === e.pointerType && 0 !== e.button) {
+      return;
+    }
     start.current = { x: e.clientX, y: e.clientY, dragging: false };
     moved.current = false;
   }, []);
@@ -53,6 +56,12 @@ export const SwipeToRemove: React.FC<{
     }
   }, [dx, onRemove]);
 
+  // Cancelado por el sistema (gesto de iOS, el navegador se queda con el puntero): nunca saca.
+  const onPointerCancel = useCallback(() => {
+    start.current = null;
+    setDx(0);
+  }, []);
+
   const onClickCapture = useCallback((e: React.MouseEvent) => {
     if (moved.current) {
       e.preventDefault();
@@ -78,7 +87,7 @@ export const SwipeToRemove: React.FC<{
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerCancel={onPointerCancel}
         onClickCapture={onClickCapture}
       >
         {children}
