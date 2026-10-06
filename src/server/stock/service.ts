@@ -156,6 +156,23 @@ export const undoBoughtFromStock = async (db: StockDb, shoppingItemId: string) =
 const findInGroup = (db: StockDb, groupId: number, id: string) =>
   db.stockItem.findFirst({ where: { id, groupId }, select: WITH_KEY });
 
+/**
+ * Claves (ver `stockKey`) de lo que está pendiente en Compras. "Se acabó" y "Sumar lo que falta"
+ * las usan para no anotar dos veces lo mismo ("tomates" pendiente cubre "tomate").
+ */
+export const loadPendingShoppingKeys = async (
+  db: Pick<PrismaClient | Prisma.TransactionClient, 'shoppingItem'>,
+  groupId: number,
+) =>
+  new Set(
+    (
+      await db.shoppingItem.findMany({
+        where: { groupId, checked: false },
+        select: { id: true, name: true },
+      })
+    ).map((entry) => stockKey(entry.name)),
+  );
+
 /** "Se acabó": sale del Stock y va a Compras, salvo que ya esté pendiente ahí. */
 export const finishStockItem = async (
   db: StockDb,
@@ -169,11 +186,7 @@ export const finishStockItem = async (
 
   await db.stockItem.delete({ where: { id: item.id } });
 
-  const pending = await db.shoppingItem.findMany({
-    where: { groupId: input.groupId, checked: false },
-    select: { id: true, name: true },
-  });
-  const alreadyPending = pending.some((entry) => stockKey(entry.name) === item.key);
+  const alreadyPending = (await loadPendingShoppingKeys(db, input.groupId)).has(item.key);
 
   if (!alreadyPending) {
     await db.shoppingItem.create({
