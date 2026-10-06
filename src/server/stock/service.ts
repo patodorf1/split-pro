@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient, type ShoppingItemSource } from '@prisma/client';
+import type { Prisma, PrismaClient, ShoppingItemSource } from '@prisma/client';
 
 import { cleanOptionalText, cleanShoppingItemName } from '~/lib/shopping';
 import { MAX_STOCK_NOTE_LENGTH, type StockSection, guessStockSection, stockKey } from '~/lib/stock';
@@ -45,9 +45,6 @@ const loadLearned = async (db: StockDb, groupId: number) =>
     ).map((placement) => [placement.key, placement.section as StockSection]),
   );
 
-const isUniqueViolation = (error: unknown) =>
-  error instanceof Prisma.PrismaClientKnownRequestError && 'P2002' === error.code;
-
 /** Suma productos al Stock sin duplicar: lo que ya estaba vuelve en `duplicates`. */
 export const addToStock = async (
   db: StockDb,
@@ -79,44 +76,45 @@ export const addToStock = async (
   ]);
   const existingByKey = new Map(existing.map((item) => [item.key, item]));
 
+  const missing = [...wanted].filter(([key]) => !existingByKey.has(key));
+
+  if (missing.length) {
+    /*
+     * Sin capturar errores: una violación de unicidad aborta la transacción en Postgres (25P02) y
+     * arrastraría el tilde de Compras. `skipDuplicates` (ON CONFLICT DO NOTHING) nunca aborta: si
+     * otro pedido lo agregó en el medio (dos teléfonos a la vez), queda el suyo.
+     */
+    await db.stockItem.createMany({
+      data: missing.map(([key, { name, note }]) => ({
+        groupId: input.groupId,
+        name,
+        key,
+        note: note ?? null,
+        section: guessStockSection(name, learned),
+        source: input.source,
+        addedBy: input.addedBy,
+        fromShoppingItemId: input.fromShoppingItemId ?? null,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  const current = missing.length
+    ? await db.stockItem.findMany({
+        where: { groupId: input.groupId, key: { in: [...wanted.keys()] } },
+        select: WITH_KEY,
+      })
+    : existing;
+  const currentByKey = new Map(current.map((item) => [item.key, item]));
+
   const created: StockItemView[] = [];
   const duplicates: StockItemView[] = [];
 
-  for (const [key, { name, note }] of wanted) {
-    const already = existingByKey.get(key);
+  for (const key of wanted.keys()) {
+    const item = currentByKey.get(key);
 
-    if (already) {
-      duplicates.push(withoutKey(already));
-      continue;
-    }
-
-    try {
-      const item = await db.stockItem.create({
-        data: {
-          groupId: input.groupId,
-          name,
-          key,
-          note: note ?? null,
-          section: guessStockSection(name, learned),
-          source: input.source,
-          addedBy: input.addedBy,
-          fromShoppingItemId: input.fromShoppingItemId ?? null,
-        },
-        select: WITH_KEY,
-      });
-      created.push(withoutKey(item));
-    } catch (error) {
-      // Otro pedido lo agregó en el medio (dos teléfonos a la vez): es un duplicado, no un error.
-      if (!isUniqueViolation(error)) {
-        throw error;
-      }
-      const winner = await db.stockItem.findFirst({
-        where: { groupId: input.groupId, key },
-        select: WITH_KEY,
-      });
-      if (winner) {
-        duplicates.push(withoutKey(winner));
-      }
+    if (item) {
+      (existingByKey.has(key) ? duplicates : created).push(withoutKey(item));
     }
   }
 

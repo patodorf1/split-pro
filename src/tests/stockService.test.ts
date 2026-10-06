@@ -21,13 +21,26 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const makeDb = () => ({
+const makeDb = () => {
+  // `seed` es lo que ya estaba en el Stock; `inserted` es lo que dejó createMany.
+  const seed: Record<string, unknown>[] = [];
+  const inserted: Record<string, unknown>[] = [];
+
+  return {
+    seed,
+    ...makeClient(seed, inserted),
+  };
+};
+
+const makeClient = (seed: Record<string, unknown>[], inserted: Record<string, unknown>[]) => ({
   stockItem: {
-    findMany: jest.fn().mockResolvedValue([]),
+    findMany: jest.fn().mockImplementation(() => Promise.resolve([...seed, ...inserted])),
     findFirst: jest.fn().mockResolvedValue(null),
-    create: jest
-      .fn()
-      .mockImplementation(({ data }) => Promise.resolve(row({ id: 'new', ...data }))),
+    createMany: jest.fn().mockImplementation(({ data }: { data: { key: string }[] }) => {
+      inserted.push(...data.map((entry) => row({ id: `new-${entry.key}`, ...entry })));
+
+      return Promise.resolve({ count: data.length });
+    }),
     update: jest.fn().mockImplementation(({ data }) => Promise.resolve(row(data))),
     delete: jest.fn().mockResolvedValue(row()),
     deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -54,14 +67,16 @@ describe('addToStock', () => {
 
     expect(created).toHaveLength(2);
     expect(duplicates).toHaveLength(0);
-    expect(db.stockItem.create.mock.calls[0][0].data).toMatchObject({
+    const { data, skipDuplicates } = db.stockItem.createMany.mock.calls[0][0];
+    expect(skipDuplicates).toBe(true);
+    expect(data[0]).toMatchObject({
       groupId: 1,
       name: 'Leche',
       key: 'leche',
       section: 'FRIDGE',
       addedBy: 7,
     });
-    expect(db.stockItem.create.mock.calls[1][0].data).toMatchObject({
+    expect(data[1]).toMatchObject({
       section: 'CLEANING',
       note: 'la grande',
     });
@@ -69,7 +84,7 @@ describe('addToStock', () => {
 
   it('never duplicates, inside the batch or against what is there', async () => {
     const db = makeDb();
-    db.stockItem.findMany.mockResolvedValue([row({ name: 'Tomates', key: 'tomate' })]);
+    db.seed.push(row({ name: 'Tomates', key: 'tomate' }));
 
     const { created, duplicates } = await addToStock(db as never, {
       groupId: 1,
@@ -79,8 +94,28 @@ describe('addToStock', () => {
     });
 
     expect(duplicates.map((item) => item.name)).toEqual(['Tomates']);
-    expect(created).toHaveLength(1);
-    expect(db.stockItem.create).toHaveBeenCalledTimes(1);
+    expect(created.map((item) => item.name)).toEqual(['Huevos']);
+    expect(db.stockItem.createMany).toHaveBeenCalledTimes(1);
+    expect(db.stockItem.createMany.mock.calls[0][0].data).toHaveLength(1);
+  });
+
+  it('survives another request inserting the same product first (no throw, no abort)', async () => {
+    const db = makeDb();
+    // Antes del insert no estaba; después sí (otro teléfono lo agregó en el medio).
+    db.stockItem.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([row({ name: 'Leche', key: 'leche' })]);
+
+    const { created, duplicates } = await addToStock(db as never, {
+      groupId: 1,
+      items: [{ name: 'Leche' }],
+      source: 'APP',
+      addedBy: 7,
+    });
+
+    expect(db.stockItem.createMany.mock.calls[0][0].skipDuplicates).toBe(true);
+    expect(created.map((item) => item.name)).toEqual(['Leche']);
+    expect(duplicates).toHaveLength(0);
   });
 
   it('uses the section the group taught it', async () => {
@@ -94,7 +129,7 @@ describe('addToStock', () => {
       addedBy: null,
     });
 
-    expect(db.stockItem.create.mock.calls[0][0].data.section).toBe('FRIDGE');
+    expect(db.stockItem.createMany.mock.calls[0][0].data[0].section).toBe('FRIDGE');
   });
 });
 
@@ -109,7 +144,7 @@ describe('bridge with Compras', () => {
     );
 
     expect(result?.created).toBe(true);
-    expect(db.stockItem.create.mock.calls[0][0].data).toMatchObject({
+    expect(db.stockItem.createMany.mock.calls[0][0].data[0]).toMatchObject({
       fromShoppingItemId: 'shop-1',
       source: 'ALEXA',
     });
@@ -117,7 +152,7 @@ describe('bridge with Compras', () => {
 
   it('does nothing new when it was already there', async () => {
     const db = makeDb();
-    db.stockItem.findMany.mockResolvedValue([row()]);
+    db.seed.push(row());
 
     const result = await addBoughtToStock(
       db as never,
@@ -127,7 +162,7 @@ describe('bridge with Compras', () => {
     );
 
     expect(result?.created).toBe(false);
-    expect(db.stockItem.create).not.toHaveBeenCalled();
+    expect(db.stockItem.createMany).not.toHaveBeenCalled();
   });
 
   it('undoes only what that purchase brought', async () => {
