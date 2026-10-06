@@ -13,7 +13,7 @@ import {
 } from '~/lib/shopping';
 import { createTRPCRouter, groupProcedure } from '~/server/api/trpc';
 import { type db as dbClient } from '~/server/db';
-import { addBoughtToStock, undoBoughtFromStock } from '~/server/stock/service';
+import { setShoppingItemChecked } from '~/server/stock/service';
 
 const SHOPPING_USER_SELECT = {
   id: true,
@@ -179,44 +179,19 @@ export const shoppingRouter = createTRPCRouter({
       await assertItemInGroup(ctx.db, input.id, input.groupId);
 
       return ctx.db.$transaction(async (tx) => {
-        // El cambio de estado se decide en la propia escritura: si dos teléfonos tildan a la vez,
-        // solo uno ve el cambio real y solo ese mueve el Stock.
-        const { count } = await tx.shoppingItem.updateMany({
-          where: { id: input.id, groupId: input.groupId, checked: !input.checked },
-          data: {
-            checked: input.checked,
-            checkedAt: input.checked ? new Date() : null,
-            checkedBy: input.checked ? ctx.session.user.id : null,
-          },
-        });
-        const item = await tx.shoppingItem.findUniqueOrThrow({
-          where: { id: input.id },
+        const { item, stock } = await setShoppingItemChecked(tx, {
+          id: input.id,
+          groupId: input.groupId,
+          checked: input.checked,
+          userId: ctx.session.user.id,
+          source: 'APP',
           select: SHOPPING_ITEM_SELECT,
         });
 
-        // Un segundo teléfono con la pantalla vieja no debe volver a meter al Stock algo que ya
-        // se usó.
-        if (0 === count) {
-          return { ...item, stock: null };
-        }
-
-        if (!input.checked) {
-          await undoBoughtFromStock(tx, item.id);
-
-          return { ...item, stock: null };
-        }
-
-        const bought = await addBoughtToStock(
-          tx,
-          { id: item.id, groupId: input.groupId, name: item.name },
-          'APP',
-          ctx.session.user.id,
-        );
-
         return {
           ...item,
-          stock: bought
-            ? { name: bought.item.name, section: bought.item.section, created: bought.created }
+          stock: stock
+            ? { name: stock.item.name, section: stock.item.section, created: stock.created }
             : null,
         };
       });

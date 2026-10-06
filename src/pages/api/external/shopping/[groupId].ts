@@ -15,7 +15,12 @@ import {
 import { PENDING_SHOPPING_ITEM_ORDER, SHOPPING_ITEM_SELECT } from '~/server/api/routers/shopping';
 import { db } from '~/server/db';
 import { getBearerToken, isExternalApiEnabled, isValidExternalApiKey } from '~/server/externalApi';
-import { type StockDb, addBoughtToStock, undoBoughtFromStock } from '~/server/stock/service';
+import {
+  type StockDb,
+  addBoughtToStock,
+  setShoppingItemChecked,
+  undoBoughtFromStock,
+} from '~/server/stock/service';
 
 /**
  * API externa de la lista de compras, pensada para Home Assistant / n8n.
@@ -343,43 +348,32 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, groupId: n
     }
 
     const updated = await db.$transaction(async (tx) => {
-      // El cambio real se decide en la propia escritura, dentro de la transacción: dos
-      // sincronizaciones a la vez no pueden meter la misma compra al Stock dos veces.
-      const checkedData = {
+      // Quien marcó fue un sistema externo, no una persona de la app. El cambio real se decide
+      // en la propia escritura (ver `setShoppingItemChecked`).
+      const { item, changed } = await setShoppingItemChecked(tx, {
+        id: match.id,
+        groupId,
         checked: input.checked,
-        checkedAt: input.checked ? new Date() : null,
-        // Quien marcó fue un sistema externo, no una persona de la app.
-        checkedBy: null,
-      };
-      const { count } = await tx.shoppingItem.updateMany({
-        where: { id: match.id, groupId, checked: !input.checked },
-        data: checkedData,
-      });
-
-      if (0 === count) {
-        // Sin cambio de estado: se responde igual que siempre (la fecha de tildado se refresca),
-        // pero el Stock no se toca.
-        return tx.shoppingItem.update({
-          where: { id: match.id },
-          data: checkedData,
-          select: SHOPPING_ITEM_SELECT,
-        });
-      }
-
-      const saved = await tx.shoppingItem.findUniqueOrThrow({
-        where: { id: match.id },
+        userId: null,
+        source: (saved) => ('ALEXA' === saved.source ? 'ALEXA' : 'API'),
         select: SHOPPING_ITEM_SELECT,
       });
-      await syncStock(
-        tx,
-        saved,
-        groupId,
-        !saved.checked,
-        saved.checked,
-        'ALEXA' === saved.source ? 'ALEXA' : 'API',
-      );
 
-      return saved;
+      if (changed) {
+        return item;
+      }
+
+      // Sin cambio de estado: se responde igual que siempre (la fecha de tildado se refresca),
+      // pero el Stock no se toca.
+      return tx.shoppingItem.update({
+        where: { id: match.id },
+        data: {
+          checked: input.checked,
+          checkedAt: input.checked ? new Date() : null,
+          checkedBy: null,
+        },
+        select: SHOPPING_ITEM_SELECT,
+      });
     });
     results.push(updated);
   }

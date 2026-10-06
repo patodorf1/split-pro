@@ -153,6 +153,73 @@ export const addBoughtToStock = async (
 export const undoBoughtFromStock = async (db: StockDb, shoppingItemId: string) =>
   (await db.stockItem.deleteMany({ where: { fromShoppingItemId: shoppingItemId } })).count;
 
+/** Lo que se lee del ítem de Compras que se tilda o destilda (`select` de quien llama + id y nombre). */
+type CheckableShoppingSelect = Prisma.ShoppingItemSelect & { id: true; name: true };
+
+// TypeScript no resuelve el pago de un `select` genérico: `CheckableShoppingSelect` garantiza el nombre.
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- el select siempre incluye `name`
+const nameOf = (item: unknown) => (item as { name: string }).name;
+
+/**
+ * Tilda o destilda un ítem de Compras y mueve el Stock en consecuencia (el puente de las dos
+ * puntas). Lo usan la app, la API externa de Compras y la del Stock, para que las tres hagan lo
+ * mismo.
+ *
+ * El cambio de estado se decide en la propia escritura (`updateMany` condicional): si dos pedidos
+ * llegan a la vez, solo uno ve el cambio real (`changed`) y solo ese toca el Stock; el otro no
+ * puede meter dos veces la misma compra. Tildar suma al Stock (`stock`, null si ya estaba y no se
+ * pudo anotar); destildar saca lo que trajo esta compra. Siempre devuelve el ítem leído con el
+ * `select` pedido. `source` puede depender del ítem leído (la API de Compras usa el del propio
+ * ítem). Corre en la transacción de quien llama: si el Stock falla, el tilde también se deshace.
+ */
+export const setShoppingItemChecked = async <S extends CheckableShoppingSelect>(
+  db: StockDb,
+  input: {
+    id: string;
+    groupId: number;
+    checked: boolean;
+    /** Quién tilda; null si fue un sistema externo. Al destildar no se guarda. */
+    userId: number | null;
+    source:
+      | ShoppingItemSource
+      | ((item: Prisma.ShoppingItemGetPayload<{ select: S }>) => ShoppingItemSource);
+    select: S;
+  },
+) => {
+  const { count } = await db.shoppingItem.updateMany({
+    where: { id: input.id, groupId: input.groupId, checked: !input.checked },
+    data: {
+      checked: input.checked,
+      checkedAt: input.checked ? new Date() : null,
+      checkedBy: input.checked ? input.userId : null,
+    },
+  });
+  const item = await db.shoppingItem.findUniqueOrThrow({
+    where: { id: input.id },
+    select: input.select,
+  });
+
+  if (0 === count) {
+    return { item, changed: false, stock: null };
+  }
+
+  if (!input.checked) {
+    await undoBoughtFromStock(db, input.id);
+
+    return { item, changed: true, stock: null };
+  }
+
+  const source = 'function' === typeof input.source ? input.source(item) : input.source;
+  const stock = await addBoughtToStock(
+    db,
+    { id: input.id, groupId: input.groupId, name: nameOf(item) },
+    source,
+    input.userId,
+  );
+
+  return { item, changed: true, stock };
+};
+
 const findInGroup = (db: StockDb, groupId: number, id: string) =>
   db.stockItem.findFirst({ where: { id, groupId }, select: WITH_KEY });
 
@@ -173,6 +240,32 @@ export const loadPendingShoppingKeys = async (
     ).map((entry) => stockKey(entry.name)),
   );
 
+/**
+ * Anota algo en Compras, salvo que ya haya uno igual pendiente ("tomates" pendiente cubre
+ * "tomate"). Devuelve si lo anotó.
+ */
+export const addToShoppingUnlessPending = async (
+  db: Pick<PrismaClient | Prisma.TransactionClient, 'shoppingItem'>,
+  input: { groupId: number; name: string; userId: number | null; source: ShoppingItemSource },
+) => {
+  const alreadyPending = (await loadPendingShoppingKeys(db, input.groupId)).has(
+    stockKey(input.name),
+  );
+
+  if (!alreadyPending) {
+    await db.shoppingItem.create({
+      data: {
+        groupId: input.groupId,
+        name: input.name,
+        addedBy: input.userId,
+        source: input.source,
+      },
+    });
+  }
+
+  return !alreadyPending;
+};
+
 /** "Se acabó": sale del Stock y va a Compras, salvo que ya esté pendiente ahí. */
 export const finishStockItem = async (
   db: StockDb,
@@ -186,20 +279,14 @@ export const finishStockItem = async (
 
   await db.stockItem.delete({ where: { id: item.id } });
 
-  const alreadyPending = (await loadPendingShoppingKeys(db, input.groupId)).has(item.key);
+  const addedToShopping = await addToShoppingUnlessPending(db, {
+    groupId: input.groupId,
+    name: item.name,
+    userId: input.userId,
+    source: input.source,
+  });
 
-  if (!alreadyPending) {
-    await db.shoppingItem.create({
-      data: {
-        groupId: input.groupId,
-        name: item.name,
-        addedBy: input.userId,
-        source: input.source,
-      },
-    });
-  }
-
-  return { item: withoutKey(item), addedToShopping: !alreadyPending };
+  return { item: withoutKey(item), addedToShopping };
 };
 
 /** Sacar sin comprar: solo sale del Stock. */

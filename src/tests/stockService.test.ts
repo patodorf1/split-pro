@@ -4,6 +4,7 @@ import {
   addToStock,
   finishStockItem,
   removeStockItem,
+  setShoppingItemChecked,
   undoBoughtFromStock,
   updateStockItem,
 } from '~/server/stock/service';
@@ -262,5 +263,85 @@ describe('updateStockItem', () => {
     await expect(
       updateStockItem(db as never, { groupId: 1, id: 'stock-1', name: 'huevo' }),
     ).rejects.toBeInstanceOf(StockConflictError);
+  });
+});
+
+describe('setShoppingItemChecked', () => {
+  const makeCheckDb = (count: number) => {
+    const db = makeDb();
+
+    return Object.assign(db, {
+      shoppingItem: {
+        ...db.shoppingItem,
+        updateMany: jest.fn().mockResolvedValue({ count }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'shop-1', name: 'Leche' }),
+      },
+    });
+  };
+  const input = {
+    id: 'shop-1',
+    groupId: 1,
+    userId: 7,
+    select: { id: true, name: true },
+  } as const;
+
+  it('ticks with the person and the source, and puts the purchase in the stock', async () => {
+    const db = makeCheckDb(1);
+    const result = await setShoppingItemChecked(db as never, {
+      ...input,
+      checked: true,
+      source: 'API',
+    });
+
+    expect(db.shoppingItem.updateMany).toHaveBeenCalledWith({
+      where: { id: 'shop-1', groupId: 1, checked: false },
+      data: { checked: true, checkedAt: expect.any(Date), checkedBy: 7 },
+    });
+    expect(result).toMatchObject({ changed: true, item: { name: 'Leche' } });
+    expect(result.stock?.created).toBe(true);
+    expect(db.stockItem.createMany.mock.calls[0][0].data[0]).toMatchObject({
+      source: 'API',
+      addedBy: 7,
+      fromShoppingItemId: 'shop-1',
+    });
+  });
+
+  it('asks for the source once it has read the item', async () => {
+    const db = makeCheckDb(1);
+    const source = jest.fn().mockReturnValue('ALEXA');
+
+    await setShoppingItemChecked(db as never, { ...input, checked: true, source });
+
+    expect(source).toHaveBeenCalledWith({ id: 'shop-1', name: 'Leche' });
+    expect(db.stockItem.createMany.mock.calls[0][0].data[0]).toMatchObject({ source: 'ALEXA' });
+  });
+
+  it('does not touch the stock when somebody else already changed it', async () => {
+    const db = makeCheckDb(0);
+    const result = await setShoppingItemChecked(db as never, {
+      ...input,
+      checked: true,
+      source: 'API',
+    });
+
+    expect(result).toMatchObject({ changed: false, stock: null });
+    expect(db.stockItem.createMany).not.toHaveBeenCalled();
+  });
+
+  it('takes out of the stock what the purchase brought when unticking', async () => {
+    const db = makeCheckDb(1);
+    const result = await setShoppingItemChecked(db as never, {
+      ...input,
+      checked: false,
+      source: 'API',
+    });
+
+    expect(db.shoppingItem.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { checked: false, checkedAt: null, checkedBy: null } }),
+    );
+    expect(db.stockItem.deleteMany).toHaveBeenCalledWith({
+      where: { fromShoppingItemId: 'shop-1' },
+    });
+    expect(result).toMatchObject({ changed: true, stock: null });
   });
 });
