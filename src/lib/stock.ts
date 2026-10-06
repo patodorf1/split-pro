@@ -16,24 +16,27 @@ export const isStockSection = (value: unknown): value is StockSection =>
   'string' === typeof value && (STOCK_SECTIONS as readonly string[]).includes(value);
 
 /**
- * Singular simple del español, suficiente para nombres de almacén: "tomates" → "tomate",
- * "limones" → "limon", "panes" → "pan", "nueces" → "nuez". Las palabras de tres letras o menos
- * no se tocan ("gas", "te").
+ * Raíz común del singular y el plural, suficiente para nombres de almacén. La clave nunca se
+ * muestra, así que no hace falta que sea una palabra real: solo que "carne" y "carnes",
+ * "postre" y "postres", "limón" y "limones", "nuez" y "nueces" den lo mismo. Las palabras de tres
+ * letras o menos no se tocan ("gas", "te").
  */
 const singularWord = (word: string): string => {
   if (word.length <= 3) {
     return word;
   }
-  if (word.endsWith('ces')) {
-    return `${word.slice(0, -3)}z`;
+
+  const stem = word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
+
+  if (stem.endsWith('ce')) {
+    return `${stem.slice(0, -2)}z`;
   }
-  if (/[lnrdj]es$/.test(word)) {
-    return word.slice(0, -2);
+
+  if (/[lnrdj]e$/.test(stem)) {
+    return stem.slice(0, -1);
   }
-  if (word.endsWith('s') && !word.endsWith('ss')) {
-    return word.slice(0, -1);
-  }
-  return word;
+
+  return stem;
 };
 
 /**
@@ -133,6 +136,7 @@ const SECTION_WORDS: Record<StockSection, string[]> = {
     'avena',
     'quinoa',
     'polenta',
+    'pure',
     'pure de tomate',
     'tomate triturado',
     'caldo',
@@ -264,11 +268,20 @@ export const guessStockSection = (
     return taught;
   }
 
-  let best: (typeof SECTION_ENTRIES)[number] | undefined;
+  let best: { section: StockSection; words: number; position: number } | undefined;
 
-  for (const entry of SECTION_ENTRIES) {
-    if (containsWords(key, entry.key) && (!best || entry.words > best.words)) {
-      best = entry;
+  // Primero lo más largo ("leche de coco" le gana a "leche"); a igual largo, lo que aparece antes
+  // en el nombre, porque en español el sustantivo principal va primero ("caldo de pollo" es de
+  // alacena, no de freezer).
+  for (const entry of SECTION_ENTRIES.filter((candidate) => containsWords(key, candidate.key))) {
+    const position = ` ${key} `.indexOf(` ${entry.key} `);
+
+    if (
+      !best ||
+      entry.words > best.words ||
+      (entry.words === best.words && position < best.position)
+    ) {
+      best = { section: entry.section, words: entry.words, position };
     }
   }
 

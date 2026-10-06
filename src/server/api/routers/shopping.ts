@@ -179,23 +179,24 @@ export const shoppingRouter = createTRPCRouter({
       await assertItemInGroup(ctx.db, input.id, input.groupId);
 
       return ctx.db.$transaction(async (tx) => {
-        const previous = await tx.shoppingItem.findUnique({
-          where: { id: input.id },
-          select: { checked: true },
-        });
-        const item = await tx.shoppingItem.update({
-          where: { id: input.id },
+        // El cambio de estado se decide en la propia escritura: si dos teléfonos tildan a la vez,
+        // solo uno ve el cambio real y solo ese mueve el Stock.
+        const { count } = await tx.shoppingItem.updateMany({
+          where: { id: input.id, groupId: input.groupId, checked: !input.checked },
           data: {
             checked: input.checked,
             checkedAt: input.checked ? new Date() : null,
             checkedBy: input.checked ? ctx.session.user.id : null,
           },
+        });
+        const item = await tx.shoppingItem.findUniqueOrThrow({
+          where: { id: input.id },
           select: SHOPPING_ITEM_SELECT,
         });
 
-        // Solo cuando el estado cambia de verdad: un segundo teléfono con la pantalla vieja no
-        // debe volver a meter al Stock algo que ya se usó.
-        if (previous?.checked === input.checked) {
+        // Un segundo teléfono con la pantalla vieja no debe volver a meter al Stock algo que ya
+        // se usó.
+        if (0 === count) {
           return { ...item, stock: null };
         }
 

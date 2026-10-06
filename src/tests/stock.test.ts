@@ -22,6 +22,17 @@ describe('stockKey', () => {
     expect(stockKey('Papas fritas')).toBe(stockKey('papa frita'));
   });
 
+  it('gives singular and plural words ending in -e the same key', () => {
+    expect(stockKey('Carnes')).toBe(stockKey('carne'));
+    expect(stockKey('Postres')).toBe(stockKey('postre'));
+    expect(stockKey('Dulces')).toBe(stockKey('dulce'));
+    expect(stockKey('Dulces de leche')).toBe(stockKey('dulce de leche'));
+    expect(stockKey('Panes')).toBe(stockKey('pan'));
+    expect(stockKey('Limones')).toBe(stockKey('limón'));
+    expect(stockKey('Nueces')).toBe(stockKey('nuez'));
+    expect(stockKey('Flores')).toBe(stockKey('flor'));
+  });
+
   it('keeps short words and different products apart', () => {
     expect(stockKey('gas')).toBe('gas');
     expect(stockKey('leche descremada')).not.toBe(stockKey('leche'));
@@ -43,6 +54,15 @@ describe('guessStockSection', () => {
     expect(guessStockSection('Arroz')).toBe('PANTRY');
     expect(guessStockSection('Tomates')).toBe('PRODUCE');
     expect(guessStockSection('Lavandina')).toBe('CLEANING');
+    expect(guessStockSection('Carnes')).toBe('FREEZER');
+    expect(guessStockSection('Postres')).toBe('FRIDGE');
+    expect(guessStockSection('Dulces de leche')).toBe('FRIDGE');
+  });
+
+  it('breaks ties by the earliest match, since the main noun comes first', () => {
+    expect(guessStockSection('Caldo de pollo')).toBe('PANTRY');
+    expect(guessStockSection('Puré de papas')).toBe('PANTRY');
+    expect(guessStockSection('Pollo con caldo')).toBe('FREEZER');
   });
 
   it('prefers the longest match', () => {

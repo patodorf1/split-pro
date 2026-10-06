@@ -41,7 +41,7 @@ export const stockRouter = createTRPCRouter({
   getList: groupProcedure.query(({ ctx, input }) =>
     ctx.db.stockItem.findMany({
       where: { groupId: input.groupId },
-      orderBy: { name: 'asc' },
+      orderBy: { key: 'asc' },
       select: STOCK_ITEM_SELECT,
     }),
   ),

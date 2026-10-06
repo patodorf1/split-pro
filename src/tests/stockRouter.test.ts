@@ -77,6 +77,15 @@ describe('stock router', () => {
     expect(result.created).toHaveLength(3);
   });
 
+  it('lists items in a stable order by key (no case or accent surprises)', async () => {
+    const db = makeDb();
+    await callerFor(db).getList({ groupId: 1 });
+
+    expect(db.stockItem.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { groupId: 1 }, orderBy: { key: 'asc' } }),
+    );
+  });
+
   it('rejects people outside the group', async () => {
     await expect(callerFor(makeDb(false)).getList({ groupId: 1 })).rejects.toMatchObject({
       code: 'FORBIDDEN',
@@ -139,12 +148,11 @@ describe('shopping.setChecked bridge', () => {
       shoppingItem: {
         count: jest.fn().mockResolvedValue(1),
         findMany: jest.fn().mockResolvedValue([]),
-        findUnique: jest.fn().mockResolvedValue({ checked: false }),
-        update: jest
+        // count 1 = el tildado cambió de verdad en esta escritura; count 0 = ya estaba así.
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: jest
           .fn()
-          .mockImplementation(({ data }) =>
-            Promise.resolve({ id: '11111111-1111-4111-8111-111111111111', name: 'Leche', ...data }),
-          ),
+          .mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111', name: 'Leche' }),
       },
       stockItem: { ...base.stockItem, deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
       $transaction: jest.fn(),
@@ -186,9 +194,24 @@ describe('shopping.setChecked bridge', () => {
     );
   });
 
+  it('decides the real change inside the write itself', async () => {
+    const db = makeShoppingDb();
+    await shoppingCaller(db).setChecked({
+      groupId: 1,
+      id: '11111111-1111-4111-8111-111111111111',
+      checked: true,
+    });
+
+    expect(db.shoppingItem.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: '11111111-1111-4111-8111-111111111111', groupId: 1, checked: false },
+        data: expect.objectContaining({ checked: true, checkedBy: 7 }),
+      }),
+    );
+  });
+
   it('undoes it when unchecked', async () => {
     const db = makeShoppingDb();
-    db.shoppingItem.findUnique.mockResolvedValue({ checked: true });
     const result = await shoppingCaller(db).setChecked({
       groupId: 1,
       id: '11111111-1111-4111-8111-111111111111',
@@ -204,7 +227,7 @@ describe('shopping.setChecked bridge', () => {
 
   it('does nothing to the stock when the check does not change (stale second phone)', async () => {
     const db = makeShoppingDb();
-    db.shoppingItem.findUnique.mockResolvedValue({ checked: true });
+    db.shoppingItem.updateMany.mockResolvedValue({ count: 0 });
     const result = await shoppingCaller(db).setChecked({
       groupId: 1,
       id: '11111111-1111-4111-8111-111111111111',
@@ -218,6 +241,7 @@ describe('shopping.setChecked bridge', () => {
 
   it('does nothing to the stock when unchecking an item that was not checked', async () => {
     const db = makeShoppingDb();
+    db.shoppingItem.updateMany.mockResolvedValue({ count: 0 });
     const result = await shoppingCaller(db).setChecked({
       groupId: 1,
       id: '11111111-1111-4111-8111-111111111111',
