@@ -69,6 +69,7 @@ model User {
   uploadedDocuments    Document[]              @relation("DocumentUploadedBy")
   documentReminders    DocumentReminderState[]
   checkedShoppingItems ShoppingItem[]          @relation("ShoppingItemCheckedBy")
+  stockItemsAdded      StockItem[]             @relation("StockItemAddedBy")
   calendarEvents       CalendarEvent[]         @relation("CalendarEventCreatedBy")
   dailyNotices         DailyNoticeLog[]
 
@@ -118,6 +119,8 @@ model Group {
   groupBalances     BalanceView[]
   groupDefaultSplit GroupDefaultSplit?
   shoppingItems     ShoppingItem[]
+  stockItems        StockItem[]
+  stockPlacements   StockPlacement[]
   externalExpenses  ExternalExpense[]
   documentFolders   DocumentFolder[]
   emergencyContacts EmergencyContact[]
@@ -316,10 +319,47 @@ model ShoppingItem {
   group         Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
   addedByUser   User?              @relation("ShoppingItemAddedBy", fields: [addedBy], references: [id], onDelete: SetNull)
   checkedByUser User?              @relation("ShoppingItemCheckedBy", fields: [checkedBy], references: [id], onDelete: SetNull)
+  stockItems    StockItem[]
 
   @@unique([groupId, externalId])
   @@index([groupId])
   @@index([groupId, checked])
+  @@schema("public")
+}
+
+/// Casa: qué hay en casa, por grupo. Hay o no hay: sin cantidades. `key` es el nombre comparable
+/// (sin tildes, en singular, ver `stockKey`) y no se repite en el grupo. `fromShoppingItemId` es la
+/// compra que lo trajo, para deshacer un tilde equivocado; se borra apenas alguien lo edita.
+model StockItem {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId            Int
+  name               String
+  key                String
+  note               String?
+  section            StockSection
+  source             ShoppingItemSource @default(APP)
+  addedBy            Int?
+  fromShoppingItemId String?            @db.Uuid
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  group              Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  addedByUser        User?              @relation("StockItemAddedBy", fields: [addedBy], references: [id], onDelete: SetNull)
+  fromShoppingItem   ShoppingItem?      @relation(fields: [fromShoppingItemId], references: [id], onDelete: SetNull)
+
+  @@unique([groupId, key])
+  @@index([fromShoppingItemId])
+  @@schema("public")
+}
+
+/// Casa: dónde guarda este grupo cada producto, aprendido cuando alguien cambia la sección a mano.
+model StockPlacement {
+  groupId   Int
+  key       String
+  section   StockSection
+  updatedAt DateTime     @updatedAt
+  group     Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, key])
   @@schema("public")
 }
 
@@ -465,6 +505,17 @@ enum ShoppingItemSource {
   APP
   ALEXA
   API
+
+  @@schema("public")
+}
+
+/// Secciones del Stock, en el orden en que se muestran. Ver `STOCK_SECTIONS`.
+enum StockSection {
+  FRIDGE
+  FREEZER
+  PANTRY
+  PRODUCE
+  CLEANING
 
   @@schema("public")
 }
