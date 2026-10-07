@@ -150,7 +150,7 @@ export const MealsTab: React.FC<{
                         key={card.cut.id}
                         className="card-surface flex flex-col gap-0.5 px-4 py-3"
                       >
-                        <span className="text-base font-medium">{card.cut.name}</span>
+                        <span className="text-sm">{card.cut.name}</span>
                         {card.cut.note ? (
                           <span className="text-muted-foreground text-xs">{card.cut.note}</span>
                         ) : null}
@@ -167,13 +167,16 @@ export const MealsTab: React.FC<{
           })
         : null}
 
+      {/* "Agregar receta": chiquito y flotando abajo a la derecha, sobre la barra del celular. */}
       <Button
         variant="outline"
-        className="text-primary gap-1.5 self-center rounded-full border-dashed"
+        size="icon"
+        className="text-primary bg-card/90 fixed right-4 bottom-28 z-10 size-10 rounded-full shadow-sm backdrop-blur lg:static lg:self-end"
         onClick={() => setCreating(true)}
+        aria-label={t('meals.actions.add')}
+        title={t('meals.actions.add')}
       >
-        <Plus className="size-4" />
-        {t('meals.actions.add')}
+        <Plus className="size-5" />
       </Button>
 
       {creating ? (

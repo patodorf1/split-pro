@@ -27,11 +27,11 @@ export const MissingChips: React.FC<{ missing: MissingIngredient[]; withPrefix?:
   const { t } = useTranslation();
 
   return (
-    <span className="flex flex-wrap gap-1.5">
+    <span className="flex flex-wrap gap-1">
       {missing.map((ingredient) => (
         <span
           key={ingredient.name}
-          className="rounded-full bg-amber-100 px-2.5 py-0.5 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200"
         >
           {withPrefix
             ? t('meals.missing_chip', { name: lower(ingredient.name) })
@@ -88,7 +88,7 @@ export const AddMissingButton: React.FC<{
         <Button
           variant="outline"
           size="sm"
-          className="text-primary h-9 gap-0.5 rounded-full px-2.5"
+          className="text-primary h-8 gap-0.5 rounded-full px-2"
           disabled={done || add.isPending}
           onClick={(event) => {
             event.stopPropagation();
@@ -97,8 +97,8 @@ export const AddMissingButton: React.FC<{
           aria-label={label}
           title={label}
         >
-          {done ? <Check className="size-4" /> : <Plus className="size-4" />}
-          <ShoppingCart className="size-4" />
+          {done ? <Check className="size-3.5" /> : <Plus className="size-3.5" />}
+          <ShoppingCart className="size-3.5" />
         </Button>
       ) : (
         <Button

@@ -24,13 +24,13 @@ export const RecipeCard: React.FC<{
       <button
         type="button"
         onClick={() => onOpen(recipe.id)}
-        className={cn('flex w-full flex-col gap-2 px-4 py-3 text-left', hasMissing && 'pr-20')}
+        className={cn('flex w-full flex-col gap-1.5 px-4 py-3 text-left', hasMissing && 'pr-20')}
       >
-        <span className="text-base font-medium">{recipe.title}</span>
+        <span className="text-sm">{recipe.title}</span>
         {hasMissing ? <MissingChips missing={recipe.missing} withPrefix /> : null}
       </button>
       {hasMissing ? (
-        <div className="absolute right-3 bottom-3">
+        <div className="absolute right-3 bottom-2.5">
           <AddMissingButton
             groupId={groupId}
             recipeId={recipe.id}
