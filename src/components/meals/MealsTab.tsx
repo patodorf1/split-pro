@@ -1,4 +1,4 @@
-import { BookOpen, CircleCheck, CookingPot, Plus, ShoppingCart } from 'lucide-react';
+import { Beef, BookOpen, CircleCheck, CookingPot, Plus, ShoppingCart } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import React, { useState } from 'react';
 
@@ -88,26 +88,44 @@ export const MealsTab: React.FC<{
 
       {data && !isEmptyBook
         ? PARTS.map(({ part, Icon }) => (
-            <section key={part} className="flex flex-col gap-2">
-              <SectionLabel className="flex items-center gap-1.5">
-                <Icon className="size-3.5" />
-                {t(`meals.parts.${part}`)}
-              </SectionLabel>
-              {0 < data[part].length ? (
-                data[part].map((recipe) => (
-                  <RecipeCard
-                    key={recipe.id}
-                    groupId={groupId}
-                    recipe={recipe}
-                    onOpen={onOpenRecipe}
-                  />
-                ))
-              ) : (
-                <p className="text-muted-foreground px-1 text-sm">
-                  {t(`meals.${undefined === kind ? 'part_empty_all' : 'part_empty'}.${part}`)}
-                </p>
-              )}
-            </section>
+            <React.Fragment key={part}>
+              <section className="flex flex-col gap-2">
+                <SectionLabel className="flex items-center gap-1.5">
+                  <Icon className="size-3.5" />
+                  {t(`meals.parts.${part}`)}
+                </SectionLabel>
+                {0 < data[part].length ? (
+                  data[part].map((recipe) => (
+                    <RecipeCard
+                      key={recipe.id}
+                      groupId={groupId}
+                      recipe={recipe}
+                      onOpen={onOpenRecipe}
+                    />
+                  ))
+                ) : (
+                  <p className="text-muted-foreground px-1 text-sm">
+                    {t(`meals.${undefined === kind ? 'part_empty_all' : 'part_empty'}.${part}`)}
+                  </p>
+                )}
+              </section>
+              {'ready' === part && 0 < data.cuts.length ? (
+                <section className="flex flex-col gap-2">
+                  <SectionLabel className="flex items-center gap-1.5">
+                    <Beef className="size-3.5" />
+                    {t('meals.parts.cuts')}
+                  </SectionLabel>
+                  {data.cuts.map((cut) => (
+                    <div key={cut.id} className="card-surface flex flex-col gap-0.5 px-4 py-3">
+                      <span className="text-base font-medium">{cut.name}</span>
+                      {cut.note ? (
+                        <span className="text-muted-foreground text-xs">{cut.note}</span>
+                      ) : null}
+                    </div>
+                  ))}
+                </section>
+              ) : null}
+            </React.Fragment>
           ))
         : null}
 

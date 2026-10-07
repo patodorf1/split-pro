@@ -7,7 +7,7 @@ import { Button } from '~/components/ui/button';
 import { type StockItem } from './StockItemEditor';
 import { SwipeToRemove } from './SwipeToRemove';
 
-/** Fila del Stock: tocar el nombre edita, "Se acabó" lo manda a Compras, deslizar lo saca. */
+/** Fila del Stock: tocar el nombre edita, el carrito lo manda a Compras, deslizar lo saca. */
 export const StockItemRow: React.FC<{
   item: StockItem;
   onEdit: (item: StockItem) => void;
@@ -32,12 +32,12 @@ export const StockItemRow: React.FC<{
           </button>
           <Button
             variant="outline"
-            size="sm"
-            className="text-primary shrink-0 gap-1 rounded-full"
+            size="icon"
+            className="text-primary size-9 shrink-0 rounded-full"
             onClick={() => onFinish(item)}
+            aria-label={t('stock.actions.finished')}
           >
             <ShoppingCart className="size-4" />
-            {t('stock.actions.finished')}
           </Button>
         </div>
       </SwipeToRemove>

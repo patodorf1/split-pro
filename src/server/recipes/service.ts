@@ -13,8 +13,10 @@ import {
   groupRecipesByStatus,
   missingIngredients,
   recipeTitleKey,
+  stockCuts,
 } from '~/lib/recipes';
 import { cleanOptionalText } from '~/lib/shopping';
+import { type StockSection } from '~/lib/stock';
 import { loadPendingShoppingKeys } from '~/server/stock/service';
 
 /**
@@ -76,7 +78,16 @@ export class RecipeInputError extends Error {
   }
 }
 
+interface PantryItem {
+  id: string;
+  name: string;
+  note: string | null;
+  key: string;
+  section: StockSection;
+}
+
 interface Pantry {
+  stock: PantryItem[];
   stockKeys: string[];
   pending: Set<string>;
 }
@@ -84,11 +95,14 @@ interface Pantry {
 /** Lo que hay en casa (sin Limpieza) y lo que ya está anotado en Compras. */
 const loadPantry = async (db: RecipeDb, groupId: number): Promise<Pantry> => {
   const [stock, pending] = await Promise.all([
-    db.stockItem.findMany({ where: { groupId }, select: { key: true, section: true } }),
+    db.stockItem.findMany({
+      where: { groupId },
+      select: { id: true, name: true, note: true, key: true, section: true },
+    }),
     loadPendingShoppingKeys(db, groupId),
   ]);
 
-  return { stockKeys: cookingStockKeys(stock), pending };
+  return { stock, stockKeys: cookingStockKeys(stock), pending };
 };
 
 const missingFor = (
@@ -149,14 +163,30 @@ export const listRecipes = async (db: RecipeDb, input: { groupId: number; kind?:
     loadPantry(db, input.groupId),
   ]);
 
-  return groupRecipesByStatus(
-    recipes.map((recipe) => ({
-      id: recipe.id,
-      title: recipe.title,
-      kind: recipe.kind,
-      missing: missingFor(recipe.ingredients, pantry),
-    })),
-  );
+  const withMissing = recipes.map((recipe) => ({
+    id: recipe.id,
+    title: recipe.title,
+    kind: recipe.kind,
+    missing: missingFor(recipe.ingredients, pantry),
+  }));
+  // Los cortes sin receta son proteínas: se ven en "Todo" y en "Proteínas", no en los otros tipos.
+  const cuts =
+    undefined === input.kind || 'PROTEIN' === input.kind
+      ? stockCuts(
+          pantry.stock,
+          recipes.map((recipe, index) => ({
+            title: recipe.title,
+            kind: recipe.kind,
+            ingredientKeys: recipe.ingredients.map((ingredient) => ingredient.key),
+            ready: 0 === withMissing[index]!.missing.length,
+          })),
+        )
+      : [];
+
+  return {
+    ...groupRecipesByStatus(withMissing),
+    cuts: cuts.map((item) => ({ id: item.id, name: item.name, note: item.note })),
+  };
 };
 
 /** Una receta con su paso a paso y lo que falta hoy. */

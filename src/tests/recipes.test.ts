@@ -8,8 +8,9 @@ import {
   missingIngredients,
   recipeTitleKey,
   splitIngredientText,
+  stockCuts,
 } from '~/lib/recipes';
-import { stockKey } from '~/lib/stock';
+import { type StockSection, stockKey } from '~/lib/stock';
 
 describe('recipe kinds', () => {
   it('has the four kinds of the filters, in order', () => {
@@ -94,5 +95,62 @@ describe('groupRecipesByStatus', () => {
     expect(parts.ready.map((entry) => entry.title)).toEqual(['Arroz blanco', 'Solomillo']);
     expect(parts.oneMissing.map((entry) => entry.title)).toEqual(['Ensalada']);
     expect(parts.moreMissing.map((entry) => entry.title)).toEqual(['Boniato', 'Guiso', 'Ñoquis']);
+  });
+});
+
+describe('stockCuts', () => {
+  const item = (name: string, section: StockSection = 'FREEZER') => ({
+    key: stockKey(name),
+    name,
+    section,
+  });
+
+  it('shows meat, chicken and fish without a recipe, never minced meat or broth', () => {
+    const cuts = stockCuts(
+      [
+        item('Tira de asado'),
+        item('Muslos deshuesados'),
+        item('Roast beef'),
+        item('Carne picada'),
+        item('Caldo de pollo', 'PANTRY'),
+        item('Brócoli congelado'),
+        item('Paleta', 'PANTRY'),
+      ],
+      [],
+    );
+
+    expect(cuts.map((cut) => cut.name)).toEqual([
+      'Muslos deshuesados',
+      'Roast beef',
+      'Tira de asado',
+    ]);
+  });
+
+  it('skips cuts that already have their dish', () => {
+    const cuts = stockCuts(
+      [item('Milanesas de pollo'), item('Trucha'), item('Pollo'), item('Bife americano')],
+      [
+        {
+          title: 'Milanesas de pollo',
+          kind: 'PROTEIN',
+          ingredientKeys: ['milanesa de pollo'],
+          ready: true,
+        },
+        {
+          title: 'Trucha al horno',
+          kind: 'PROTEIN',
+          ingredientKeys: ['trucha', 'limon'],
+          ready: true,
+        },
+        {
+          title: 'Pollo al curry',
+          kind: 'PROTEIN',
+          ingredientKeys: ['pollo', 'curry'],
+          ready: false,
+        },
+      ],
+    );
+
+    expect(cuts.map((cut) => cut.name)).toEqual(['Bife americano', 'Pollo']);
   });
 });

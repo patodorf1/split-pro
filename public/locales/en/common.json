@@ -899,7 +899,7 @@
       "title": "Nothing here yet",
       "subtitle": "Write what you have at home, or send it to Charly as a voice note."
     },
-    "hint": "\"Ran out\" sends it to Shopping. Swipe to remove without buying.",
+    "hint": "The cart sends it to Shopping. Swipe to remove without buying.",
     "toast": {
       "added_one": "Added to the pantry",
       "added_other": "{{count}} added to the pantry",
@@ -921,6 +921,7 @@
     },
     "parts": {
       "ready": "You can make",
+      "cuts": "Grill or oven, no recipe needed",
       "oneMissing": "One thing missing",
       "moreMissing": "More recipes"
     },

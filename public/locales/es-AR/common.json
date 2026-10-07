@@ -873,7 +873,7 @@
       "title": "Todavía no hay nada",
       "subtitle": "Escribí lo que hay en casa, o mandáselo a Charly por audio."
     },
-    "hint": "\"Se acabó\" lo manda a Compras. Deslizalo para sacarlo sin comprar.",
+    "hint": "El carrito lo manda a Compras. Deslizalo para sacarlo sin comprar.",
     "toast": {
       "added_one": "Agregado al Stock",
       "added_other": "{{count}} agregados al Stock",
@@ -895,6 +895,7 @@
     },
     "parts": {
       "ready": "Podés hacer",
+      "cuts": "A la parrilla o al horno, sin receta",
       "oneMissing": "Te falta una cosa",
       "moreMissing": "Más recetas"
     },

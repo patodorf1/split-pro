@@ -99,3 +99,84 @@ export const groupRecipesByStatus = <T extends { title: string; missing: readonl
     moreMissing: sorted.filter((recipe) => 1 < recipe.missing.length),
   };
 };
+
+/**
+ * Carnes, pollo y pescado que se cocinan sin receta: a la parrilla, al horno o a la plancha. Se
+ * buscan como palabras dentro del nombre del producto ("Tira de asado", "Muslos deshuesados").
+ */
+const CUT_KEYS = [
+  'carne',
+  'asado',
+  'vacío',
+  'matambre',
+  'matambrito',
+  'bife',
+  'entraña',
+  'cuadril',
+  'peceto',
+  'nalga',
+  'lomo',
+  'solomillo',
+  'roast beef',
+  'roastbeef',
+  'osobuco',
+  'falda',
+  'bondiola',
+  'pechito',
+  'costilla',
+  'carré',
+  'cerdo',
+  'cordero',
+  'chorizo',
+  'morcilla',
+  'salchicha',
+  'hamburguesa',
+  'milanesa',
+  'suprema',
+  'pollo',
+  'muslo',
+  'pechuga',
+  'pescado',
+  'trucha',
+  'salmón',
+  'merluza',
+  'lenguado',
+  'abadejo',
+].map(stockKey);
+
+/** Nombran una carne pero no son un plato solo: la picada y el caldo llevan receta. */
+const NOT_CUT_KEYS = ['picada', 'caldo'].map(stockKey);
+
+export const looksLikeCut = (key: string): boolean =>
+  CUT_KEYS.some((word) => containsWords(key, word)) &&
+  !NOT_CUT_KEYS.some((word) => containsWords(key, word));
+
+/**
+ * Los cortes del Stock que van en Comidas aunque no tengan receta ("Tira de asado"). Se saltean
+ * los que ya tienen su plato: el que se llama igual que una receta ("Milanesas de pollo") y el que
+ * ya entra en una proteína que se puede hacer hoy ("Trucha" con "Trucha al horno").
+ */
+export const stockCuts = <T extends { key: string; name: string; section: StockSection }>(
+  items: readonly T[],
+  recipes: readonly {
+    title: string;
+    kind: RecipeKind;
+    ingredientKeys: readonly string[];
+    ready: boolean;
+  }[],
+): T[] => {
+  const titleKeys = new Set(recipes.map((recipe) => recipeTitleKey(recipe.title)));
+  const cookedKeys = recipes
+    .filter((recipe) => recipe.ready && 'PROTEIN' === recipe.kind)
+    .flatMap((recipe) => recipe.ingredientKeys);
+
+  return items
+    .filter(
+      (item) =>
+        'CLEANING' !== item.section &&
+        looksLikeCut(item.key) &&
+        !titleKeys.has(item.key) &&
+        !cookedKeys.some((key) => containsWords(item.key, key)),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+};
