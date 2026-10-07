@@ -921,7 +921,6 @@
     },
     "parts": {
       "ready": "You can make",
-      "cuts": "Meats",
       "oneMissing": "One thing missing",
       "moreMissing": "More recipes"
     },

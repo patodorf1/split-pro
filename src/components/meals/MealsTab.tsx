@@ -1,4 +1,4 @@
-import { Beef, BookOpen, CircleCheck, CookingPot, Plus, ShoppingCart } from 'lucide-react';
+import { BookOpen, CircleCheck, CookingPot, Plus, ShoppingCart } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import React, { useState } from 'react';
 
@@ -6,9 +6,9 @@ import { Button } from '~/components/ui/button';
 import { SectionLabel } from '~/components/ui/section-label';
 import { RECIPE_KINDS, type RecipeKind } from '~/lib/recipes';
 import { cn } from '~/lib/utils';
-import { api } from '~/utils/api';
+import { type RouterOutputs, api } from '~/utils/api';
 
-import { RecipeCard } from './RecipeCard';
+import { RecipeCard, type RecipeListItem } from './RecipeCard';
 import { RecipeEditor } from './RecipeEditor';
 
 /** Mismo ritmo que Compras y Stock: si alguien cambia el Stock, Comidas se acomoda solo. */
@@ -20,6 +20,33 @@ const PARTS = [
   { part: 'oneMissing', Icon: ShoppingCart },
   { part: 'moreMissing', Icon: BookOpen },
 ] as const;
+
+type MealsData = RouterOutputs['recipes']['list'];
+type MealCard =
+  | { type: 'recipe'; title: string; recipe: RecipeListItem }
+  | { type: 'cut'; title: string; cut: MealsData['cuts'][number] };
+
+/**
+ * Las tarjetas de una parte. En "Podés hacer" entran también los cortes del Stock que se cocinan
+ * sin receta ("Tira de asado"), mezclados con las recetas en orden alfabético.
+ */
+const cardsFor = (part: (typeof PARTS)[number]['part'], data: MealsData): MealCard[] => {
+  const recipes: MealCard[] = data[part].map((recipe) => ({
+    type: 'recipe',
+    title: recipe.title,
+    recipe,
+  }));
+
+  if ('ready' !== part) {
+    return recipes;
+  }
+
+  const cuts: MealCard[] = data.cuts.map((cut) => ({ type: 'cut', title: cut.name, cut }));
+
+  return [...recipes, ...cuts].sort((a, b) =>
+    a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }),
+  );
+};
 
 /** "Todo" (sin tipo) y los cuatro tipos. */
 const FILTERS = [undefined, ...RECIPE_KINDS] as const;
@@ -44,7 +71,9 @@ export const MealsTab: React.FC<{
   );
 
   const data = listQuery.data;
-  const total = data ? data.ready.length + data.oneMissing.length + data.moreMissing.length : 0;
+  const total = data
+    ? data.ready.length + data.cuts.length + data.oneMissing.length + data.moreMissing.length
+    : 0;
   const isEmptyBook = Boolean(data) && 0 === total && undefined === kind;
 
   return (
@@ -87,46 +116,44 @@ export const MealsTab: React.FC<{
       ) : null}
 
       {data && !isEmptyBook
-        ? PARTS.map(({ part, Icon }) => (
-            <React.Fragment key={part}>
-              <section className="flex flex-col gap-2">
+        ? PARTS.map(({ part, Icon }) => {
+            const cards = cardsFor(part, data);
+
+            return (
+              <section key={part} className="flex flex-col gap-2">
                 <SectionLabel className="flex items-center gap-1.5">
                   <Icon className="size-3.5" />
                   {t(`meals.parts.${part}`)}
                 </SectionLabel>
-                {0 < data[part].length ? (
-                  data[part].map((recipe) => (
-                    <RecipeCard
-                      key={recipe.id}
-                      groupId={groupId}
-                      recipe={recipe}
-                      onOpen={onOpenRecipe}
-                    />
-                  ))
+                {0 < cards.length ? (
+                  cards.map((card) =>
+                    'recipe' === card.type ? (
+                      <RecipeCard
+                        key={card.recipe.id}
+                        groupId={groupId}
+                        recipe={card.recipe}
+                        onOpen={onOpenRecipe}
+                      />
+                    ) : (
+                      <div
+                        key={card.cut.id}
+                        className="card-surface flex flex-col gap-0.5 px-4 py-3"
+                      >
+                        <span className="text-base font-medium">{card.cut.name}</span>
+                        {card.cut.note ? (
+                          <span className="text-muted-foreground text-xs">{card.cut.note}</span>
+                        ) : null}
+                      </div>
+                    ),
+                  )
                 ) : (
                   <p className="text-muted-foreground px-1 text-sm">
                     {t(`meals.${undefined === kind ? 'part_empty_all' : 'part_empty'}.${part}`)}
                   </p>
                 )}
               </section>
-              {'ready' === part && 0 < data.cuts.length ? (
-                <section className="flex flex-col gap-2">
-                  <SectionLabel className="flex items-center gap-1.5">
-                    <Beef className="size-3.5" />
-                    {t('meals.parts.cuts')}
-                  </SectionLabel>
-                  {data.cuts.map((cut) => (
-                    <div key={cut.id} className="card-surface flex flex-col gap-0.5 px-4 py-3">
-                      <span className="text-base font-medium">{cut.name}</span>
-                      {cut.note ? (
-                        <span className="text-muted-foreground text-xs">{cut.note}</span>
-                      ) : null}
-                    </div>
-                  ))}
-                </section>
-              ) : null}
-            </React.Fragment>
-          ))
+            );
+          })
         : null}
 
       {creating ? (
