@@ -908,7 +908,10 @@
     "add_missing": {
       "one": "Sumar {{name}} a Compras",
       "many": "Sumar lo que falta a Compras",
-      "done": "Ya está todo en Compras"
+      "done": "Ya está todo en Compras",
+      "confirm": "¿Agrego {{names}} a Compras?",
+      "cancel": "Cancelar",
+      "confirm_action": "Agregar"
     },
     "actions": {
       "add": "Agregar receta",

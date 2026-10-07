@@ -7,7 +7,7 @@ import { type StockSection, containsWords, stockKey } from '~/lib/stock';
  */
 
 /** Tipos de receta, en el orden de los filtros de Comidas. */
-export const RECIPE_KINDS = ['PROTEIN', 'MAIN', 'SALAD', 'SIDE'] as const;
+export const RECIPE_KINDS = ['PROTEIN', 'SALAD', 'SIDE', 'MAIN'] as const;
 export type RecipeKind = (typeof RECIPE_KINDS)[number];
 
 export const isRecipeKind = (value: unknown): value is RecipeKind =>

@@ -938,7 +938,10 @@
     "add_missing": {
       "one": "Add {{name}} to Shopping",
       "many": "Add what is missing to Shopping",
-      "done": "Everything is in Shopping"
+      "done": "Everything is in Shopping",
+      "confirm": "Add {{names}} to Shopping?",
+      "cancel": "Cancel",
+      "confirm_action": "Add"
     },
     "actions": {
       "add": "Add recipe",

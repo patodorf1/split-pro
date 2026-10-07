@@ -1,8 +1,17 @@
-import { ShoppingCart } from 'lucide-react';
+import { Check, Plus, ShoppingCart } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
-import React from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '~/components/ui/alert-dialog';
 import { Button } from '~/components/ui/button';
 import { type RouterOutputs, api } from '~/utils/api';
 
@@ -33,18 +42,26 @@ export const MissingChips: React.FC<{ missing: MissingIngredient[]; withPrefix?:
   );
 };
 
+/** "coliflor y tomate", "pollo, huevo y pan rallado". */
+const joinNames = (names: string[]) =>
+  new Intl.ListFormat('es', { style: 'long', type: 'conjunction' }).format(names.map(lower));
+
 /**
- * "Sumar pollo a Compras" (falta una), "Sumar lo que falta a Compras" (varias) o, si todo ya está
- * pendiente, "Ya está todo en Compras" sin poder tocarlo. El servidor vuelve a calcular qué falta.
+ * Manda lo que falta a Compras, después de preguntar "¿Agrego coliflor y tomate a Compras?". En la
+ * tarjeta es un botón chico (+ y carrito) abajo a la derecha; en la receta, con texto. Si todo ya
+ * está pendiente en Compras no se puede tocar. El servidor vuelve a calcular qué falta.
  */
 export const AddMissingButton: React.FC<{
   groupId: number;
   recipeId: string;
   missing: MissingIngredient[];
-}> = ({ groupId, recipeId, missing }) => {
+  compact?: boolean;
+}> = ({ groupId, recipeId, missing, compact = false }) => {
   const { t } = useTranslation();
   const utils = api.useUtils();
+  const [confirming, setConfirming] = useState(false);
   const pending = missing.filter((ingredient) => !ingredient.inShopping);
+  const done = 0 === pending.length;
 
   const add = api.recipes.addMissingToShopping.useMutation({
     onSuccess: ({ added }) => {
@@ -59,23 +76,60 @@ export const AddMissingButton: React.FC<{
     onError: () => toast.error(t('meals.toast.error')),
   });
 
-  const label =
-    0 === pending.length
-      ? t('meals.add_missing.done')
-      : 1 === missing.length
-        ? t('meals.add_missing.one', { name: lower(missing[0]?.name ?? '') })
-        : t('meals.add_missing.many');
+  const label = done
+    ? t('meals.add_missing.done')
+    : 1 === missing.length
+      ? t('meals.add_missing.one', { name: lower(missing[0]?.name ?? '') })
+      : t('meals.add_missing.many');
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="text-primary gap-1.5 rounded-lg"
-      disabled={0 === pending.length || add.isPending}
-      onClick={() => add.mutate({ groupId, id: recipeId })}
-    >
-      <ShoppingCart className="size-4" />
-      {label}
-    </Button>
+    <>
+      {compact ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-primary h-9 gap-0.5 rounded-full px-2.5"
+          disabled={done || add.isPending}
+          onClick={(event) => {
+            event.stopPropagation();
+            setConfirming(true);
+          }}
+          aria-label={label}
+          title={label}
+        >
+          {done ? <Check className="size-4" /> : <Plus className="size-4" />}
+          <ShoppingCart className="size-4" />
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-primary gap-1.5 rounded-lg"
+          disabled={done || add.isPending}
+          onClick={() => setConfirming(true)}
+        >
+          <ShoppingCart className="size-4" />
+          {label}
+        </Button>
+      )}
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent className="rounded-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('meals.add_missing.confirm', {
+                names: joinNames(pending.map((ingredient) => ingredient.name)),
+              })}
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('meals.add_missing.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => add.mutate({ groupId, id: recipeId })}>
+              <ShoppingCart className="mr-1 size-4" />
+              {t('meals.add_missing.confirm_action')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

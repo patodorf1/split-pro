@@ -1,9 +1,8 @@
-import { BookOpen, CircleCheck, CookingPot, Plus, ShoppingCart } from 'lucide-react';
+import { BookOpen, ChevronDown, CircleCheck, CookingPot, Plus, ShoppingCart } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import React, { useState } from 'react';
 
 import { Button } from '~/components/ui/button';
-import { SectionLabel } from '~/components/ui/section-label';
 import { RECIPE_KINDS, type RecipeKind } from '~/lib/recipes';
 import { cn } from '~/lib/utils';
 import { type RouterOutputs, api } from '~/utils/api';
@@ -48,6 +47,13 @@ const cardsFor = (part: (typeof PARTS)[number]['part'], data: MealsData): MealCa
   );
 };
 
+/** "Podés hacer" arranca abierta; las otras dos, plegadas: se abren tocando el título. */
+const OPEN_BY_DEFAULT: Record<(typeof PARTS)[number]['part'], boolean> = {
+  ready: true,
+  oneMissing: false,
+  moreMissing: false,
+};
+
 /** "Todo" (sin tipo) y los cuatro tipos. */
 const FILTERS = [undefined, ...RECIPE_KINDS] as const;
 
@@ -59,6 +65,7 @@ export const MealsTab: React.FC<{
 }> = ({ groupId, kind, onKindChange, onOpenRecipe }) => {
   const { t } = useTranslation();
   const [creating, setCreating] = useState(false);
+  const [openParts, setOpenParts] = useState(OPEN_BY_DEFAULT);
 
   const listQuery = api.recipes.list.useQuery(
     { groupId, kind },
@@ -78,33 +85,22 @@ export const MealsTab: React.FC<{
 
   return (
     <div className="flex flex-col gap-4 pb-36">
-      <div className="flex items-center gap-2">
-        <div className="flex flex-1 gap-2 overflow-x-auto py-1">
-          {FILTERS.map((value) => (
-            <button
-              key={value ?? 'ALL'}
-              type="button"
-              aria-pressed={kind === value}
-              onClick={() => onKindChange(value)}
-              className={cn(
-                'shrink-0 rounded-full border px-3 py-1.5 text-sm whitespace-nowrap transition-colors',
-                kind === value
-                  ? 'border-primary/40 bg-primary-soft text-primary'
-                  : 'border-border bg-card text-foreground',
-              )}
-            >
-              {t(`meals.kinds.${value ?? 'ALL'}`)}
-            </button>
-          ))}
-        </div>
-        <Button
-          size="icon"
-          className="size-9 shrink-0 rounded-full"
-          onClick={() => setCreating(true)}
-          aria-label={t('meals.actions.add')}
-        >
-          <Plus className="size-5" />
-        </Button>
+      {/* Los cinco filtros en una sola fila, también en el celular: repartidos a lo ancho. */}
+      <div className="border-border bg-card flex gap-0.5 rounded-full border p-1">
+        {FILTERS.map((value) => (
+          <button
+            key={value ?? 'ALL'}
+            type="button"
+            aria-pressed={kind === value}
+            onClick={() => onKindChange(value)}
+            className={cn(
+              'min-w-0 flex-auto rounded-full px-1 py-1.5 text-xs font-medium whitespace-nowrap transition-colors',
+              kind === value ? 'bg-primary-soft text-primary' : 'text-muted-foreground',
+            )}
+          >
+            {t(`meals.kinds.${value ?? 'ALL'}`)}
+          </button>
+        ))}
       </div>
 
       {isEmptyBook ? (
@@ -118,14 +114,29 @@ export const MealsTab: React.FC<{
       {data && !isEmptyBook
         ? PARTS.map(({ part, Icon }) => {
             const cards = cardsFor(part, data);
+            const isOpen = openParts[part];
 
             return (
               <section key={part} className="flex flex-col gap-2">
-                <SectionLabel className="flex items-center gap-1.5">
-                  <Icon className="size-3.5" />
-                  {t(`meals.parts.${part}`)}
-                </SectionLabel>
-                {0 < cards.length ? (
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenParts((current) => ({ ...current, [part]: !isOpen }))}
+                  className="flex items-center justify-between text-left"
+                >
+                  <span className="section-label flex items-center gap-1.5">
+                    <Icon className="size-3.5" />
+                    {t(`meals.parts.${part}`)}
+                    <span className="text-muted-foreground font-normal">{cards.length}</span>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'text-muted-foreground size-4 transition-transform',
+                      isOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
+                {!isOpen ? null : 0 < cards.length ? (
                   cards.map((card) =>
                     'recipe' === card.type ? (
                       <RecipeCard
@@ -155,6 +166,15 @@ export const MealsTab: React.FC<{
             );
           })
         : null}
+
+      <Button
+        variant="outline"
+        className="text-primary gap-1.5 self-center rounded-full border-dashed"
+        onClick={() => setCreating(true)}
+      >
+        <Plus className="size-4" />
+        {t('meals.actions.add')}
+      </Button>
 
       {creating ? (
         <RecipeEditor

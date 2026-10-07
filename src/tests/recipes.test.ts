@@ -14,7 +14,7 @@ import { type StockSection, stockKey } from '~/lib/stock';
 
 describe('recipe kinds', () => {
   it('has the four kinds of the filters, in order', () => {
-    expect(RECIPE_KINDS).toEqual(['PROTEIN', 'MAIN', 'SALAD', 'SIDE']);
+    expect(RECIPE_KINDS).toEqual(['PROTEIN', 'SALAD', 'SIDE', 'MAIN']);
     expect(isRecipeKind('SALAD')).toBe(true);
     expect(isRecipeKind('DESSERT')).toBe(false);
   });
