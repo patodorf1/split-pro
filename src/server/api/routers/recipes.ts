@@ -8,7 +8,7 @@ import {
   MAX_RECIPE_YIELD_LENGTH,
   RECIPE_KINDS,
 } from '~/lib/recipes';
-import { MAX_AVOID_TITLES } from '~/lib/recipeIdeas';
+import { MAX_AVOID_TITLES, MAX_IDEAS_WITH_LENGTH } from '~/lib/recipeIdeas';
 import { MAX_SHOPPING_ITEM_NAME_LENGTH } from '~/lib/shopping';
 import { env } from '~/env';
 import { isRecordNotFound, isUniqueViolation } from '~/server/api/prismaErrors';
@@ -121,13 +121,15 @@ export const recipesRouter = createTRPCRouter({
   }),
 
   /**
-   * "Ideas con IA": dos recetas con lo que hay en el Stock, del tipo del filtro. Es mutación porque
+   * "Ideas con IA": dos recetas con lo que hay en el Stock, del tipo del filtro y, si se pide,
+   * con un ingrediente principal ("pollo"). Es mutación porque
    * cada pedido cuesta plata y da algo distinto: no se cachea ni se repite solo.
    */
   ideas: groupProcedure
     .input(
       z.object({
         kind: z.enum(RECIPE_KINDS).optional(),
+        withIngredient: z.string().trim().max(MAX_IDEAS_WITH_LENGTH).optional(),
         avoidTitles: z
           .array(z.string().max(MAX_RECIPE_TITLE_LENGTH))
           .max(MAX_AVOID_TITLES)

@@ -58,7 +58,7 @@ interface IdeasDeps {
 
 export const suggestRecipeIdeas = async (
   db: RecipeDb,
-  input: { groupId: number; kind?: RecipeKind; avoidTitles: string[] },
+  input: { groupId: number; kind?: RecipeKind; withIngredient?: string; avoidTitles: string[] },
   deps: IdeasDeps,
 ): Promise<RecipeIdeaWithMissing[]> => {
   if (!deps.apiKey) {
@@ -91,7 +91,12 @@ export const suggestRecipeIdeas = async (
       body: JSON.stringify({
         model: IDEAS_MODEL,
         max_tokens: MAX_TOKENS,
-        messages: buildIdeasMessages({ kind: input.kind, stock, avoidTitles }),
+        messages: buildIdeasMessages({
+          kind: input.kind,
+          withIngredient: input.withIngredient,
+          stock,
+          avoidTitles,
+        }),
       }),
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });

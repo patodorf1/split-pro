@@ -28,6 +28,9 @@ export const MAX_IDEA_REQUESTS_PER_DAY = 20;
 /** Títulos a evitar ("Pedir otras"): los que ya se mostraron en esta tanda. */
 export const MAX_AVOID_TITLES = 20;
 
+/** Largo máximo de "¿Con qué?" (pollo, trucha, lentejas y zanahoria…). */
+export const MAX_IDEAS_WITH_LENGTH = 60;
+
 /** Modelo de OpenRouter: rápido y barato, alcanza para recetas caseras. */
 export const IDEAS_MODEL = 'anthropic/claude-haiku-4.5';
 
@@ -105,9 +108,15 @@ const describeStock = (stock: readonly IdeasStockItem[]) => {
 /** Los mensajes para la IA: reglas fijas arriba, lo de hoy (Stock, filtro, a evitar) abajo. */
 export const buildIdeasMessages = (input: {
   kind?: RecipeKind;
+  /** "pollo": lo que la persona quiere usar sí o sí. */
+  withIngredient?: string;
   stock: readonly IdeasStockItem[];
   avoidTitles: readonly string[];
 }) => {
+  const withIngredient = input.withIngredient?.trim();
+  const base = withIngredient
+    ? `\n\nLas ${IDEAS_PER_REQUEST} ideas tienen que tener ${withIngredient} como ingrediente principal. Si no figura en el Stock, usalo igual: lo van a conseguir.`
+    : '';
   const what = input.kind
     ? `Las ${IDEAS_PER_REQUEST} ideas tienen que ser de tipo ${input.kind} (${KIND_DESCRIPTIONS[input.kind]}).`
     : `Las ${IDEAS_PER_REQUEST} ideas, de tipos distintos entre sí. Tipos: ${RECIPE_KINDS.map((kind) => `${kind} = ${KIND_DESCRIPTIONS[kind]}`).join('; ')}.`;
@@ -120,7 +129,7 @@ export const buildIdeasMessages = (input: {
     { role: 'system' as const, content: SYSTEM_PROMPT },
     {
       role: 'user' as const,
-      content: `Stock de hoy:\n${describeStock(input.stock)}\n\nProponeme ${IDEAS_PER_REQUEST} recetas. ${what}${avoid}`,
+      content: `Stock de hoy:\n${describeStock(input.stock)}\n\nProponeme ${IDEAS_PER_REQUEST} recetas. ${what}${base}${avoid}`,
     },
   ];
 };

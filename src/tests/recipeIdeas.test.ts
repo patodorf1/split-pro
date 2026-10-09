@@ -43,6 +43,15 @@ describe('buildIdeasMessages', () => {
     );
   });
 
+  it('asks for the chosen main ingredient only when there is one', () => {
+    expect(
+      buildIdeasMessages({ withIngredient: ' pollo ', stock, avoidTitles: [] })[1]!.content,
+    ).toContain('tener pollo como ingrediente principal');
+    expect(
+      buildIdeasMessages({ withIngredient: ' ', stock, avoidTitles: [] })[1]!.content,
+    ).not.toContain('ingrediente principal');
+  });
+
   it('names the titles to avoid', () => {
     const [, user] = buildIdeasMessages({ stock, avoidTitles: ['Milanesas', 'Guiso'] });
 

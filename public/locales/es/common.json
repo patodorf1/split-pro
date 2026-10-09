@@ -966,7 +966,11 @@
       "saved_toast": "{{title}} quedó en el recetario",
       "error": "No pudimos traer ideas. Probá de nuevo.",
       "error_limit": "Llegaste al tope de ideas de hoy. Mañana se renueva.",
-      "error_unavailable": "Las ideas con IA no están configuradas todavía."
+      "error_unavailable": "Las ideas con IA no están configuradas todavía.",
+      "ask": "Pedir ideas",
+      "with_label": "¿Con qué querés cocinar?",
+      "with_placeholder": "¿Con qué? (pollo, trucha…)",
+      "hint": "Escribí con qué querés cocinar, o dejalo vacío y pedí ideas con lo que haya."
     }
   }
 }

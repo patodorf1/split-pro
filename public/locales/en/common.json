@@ -996,7 +996,11 @@
       "saved_toast": "{{title}} is now in your recipes",
       "error": "We could not get ideas. Try again.",
       "error_limit": "You reached today's ideas limit. It resets tomorrow.",
-      "error_unavailable": "AI ideas are not set up yet."
+      "error_unavailable": "AI ideas are not set up yet.",
+      "ask": "Get ideas",
+      "with_label": "What do you want to cook with?",
+      "with_placeholder": "With what? (chicken, trout…)",
+      "hint": "Type what you want to cook with, or leave it empty and get ideas with what you have."
     }
   }
 }

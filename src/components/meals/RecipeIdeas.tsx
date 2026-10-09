@@ -1,12 +1,13 @@
 import { Check, ChevronDown, LoaderCircle, Sparkles } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '~/components/ui/button';
 import { AppDrawer } from '~/components/ui/drawer';
+import { Input } from '~/components/ui/input';
 import { parseRecipeBody } from '~/lib/recipeBody';
-import { MAX_AVOID_TITLES } from '~/lib/recipeIdeas';
+import { MAX_AVOID_TITLES, MAX_IDEAS_WITH_LENGTH } from '~/lib/recipeIdeas';
 import { type RecipeKind } from '~/lib/recipes';
 import { cn } from '~/lib/utils';
 import { type RouterOutputs, api } from '~/utils/api';
@@ -106,8 +107,9 @@ const IdeaCard: React.FC<{
 };
 
 /**
- * "Ideas con IA": pide dos recetas con lo que hay en el Stock, del tipo del filtro elegido. Se
- * pueden guardar en el recetario o pedir otras (sin repetir las que ya se vieron).
+ * "Ideas con IA": pide dos recetas con lo que hay en el Stock, del tipo del filtro elegido y, si se
+ * escribe, con un ingrediente principal ("pollo"). Se pueden guardar en el recetario o pedir otras
+ * (sin repetir las que ya se vieron con ese mismo ingrediente).
  */
 export const RecipeIdeas: React.FC<{
   groupId: number;
@@ -116,30 +118,42 @@ export const RecipeIdeas: React.FC<{
   onOpenRecipe: (id: string) => void;
 }> = ({ groupId, kind, onClose, onOpenRecipe }) => {
   const { t } = useTranslation();
+  const [withText, setWithText] = useState('');
   const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [seenTitles, setSeenTitles] = useState<string[]>([]);
+  // Lo ya visto, por ingrediente: cambiar de "pollo" a "trucha" arranca de cero.
+  const [seen, setSeen] = useState<{ withIngredient: string; titles: string[] }>({
+    withIngredient: '',
+    titles: [],
+  });
 
   const suggest = api.recipes.ideas.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
+      const withIngredient = variables.withIngredient ?? '';
+
       setIdeas(result);
-      setSeenTitles((current) =>
-        [...current, ...result.map((idea) => idea.title)].slice(-MAX_AVOID_TITLES),
-      );
+      setSeen((current) => ({
+        withIngredient,
+        titles: [
+          ...(current.withIngredient === withIngredient ? current.titles : []),
+          ...result.map((idea) => idea.title),
+        ].slice(-MAX_AVOID_TITLES),
+      }));
     },
   });
 
-  const ask = useCallback(
-    () => suggest.mutate({ groupId, kind, avoidTitles: seenTitles }),
-    [groupId, kind, seenTitles, suggest],
-  );
+  const ask = useCallback(() => {
+    const withIngredient = withText.trim().slice(0, MAX_IDEAS_WITH_LENGTH);
 
-  // Al abrir, el primer pedido sale solo.
-  useEffect(() => {
-    suggest.mutate({ groupId, kind, avoidTitles: [] });
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- solo al montar
-  }, []);
+    suggest.mutate({
+      groupId,
+      kind,
+      withIngredient: withIngredient || undefined,
+      avoidTitles: seen.withIngredient === withIngredient ? seen.titles : [],
+    });
+  }, [groupId, kind, seen, suggest, withText]);
 
   const errorKey = suggest.error?.message;
+  const blocked = 'ideas_limit' === errorKey || 'ideas_unavailable' === errorKey;
   const errorText =
     'ideas_limit' === errorKey
       ? t('meals.ideas.error_limit')
@@ -156,16 +170,36 @@ export const RecipeIdeas: React.FC<{
         }
       }}
       title={t('meals.ideas.title', { kind: t(`meals.kinds.${kind ?? 'ALL'}`) })}
-      actionTitle={t('meals.ideas.more')}
-      actionOnClick={ask}
-      actionDisabled={
-        suggest.isPending || 'ideas_limit' === errorKey || 'ideas_unavailable' === errorKey
-      }
-      shouldCloseOnAction={false}
       className="h-[90dvh]"
       trigger={null}
     >
       <div className="flex flex-col gap-3 px-1 pb-4 text-left">
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!suggest.isPending && !blocked) {
+              ask();
+            }
+          }}
+        >
+          <Input
+            value={withText}
+            onChange={(e) => setWithText(e.target.value)}
+            placeholder={t('meals.ideas.with_placeholder')}
+            aria-label={t('meals.ideas.with_label')}
+            maxLength={MAX_IDEAS_WITH_LENGTH}
+            autoCapitalize="none"
+            enterKeyHint="search"
+            className="min-w-0 flex-1"
+          />
+          <Button type="submit" disabled={suggest.isPending || blocked} className="gap-1.5">
+            <Sparkles className="size-4" />
+            {0 < ideas.length && seen.withIngredient === withText.trim()
+              ? t('meals.ideas.more')
+              : t('meals.ideas.ask')}
+          </Button>
+        </form>
         {suggest.isPending ? (
           <div className="text-muted-foreground mt-12 flex flex-col items-center gap-3 text-center text-sm">
             <LoaderCircle className="text-primary size-8 animate-spin" />
@@ -173,6 +207,10 @@ export const RecipeIdeas: React.FC<{
           </div>
         ) : suggest.isError ? (
           <p className="text-muted-foreground mt-12 text-center text-sm">{errorText}</p>
+        ) : 0 === ideas.length ? (
+          <p className="text-muted-foreground mt-6 px-2 text-center text-sm">
+            {t('meals.ideas.hint')}
+          </p>
         ) : (
           ideas.map((idea) => (
             <IdeaCard key={idea.title} groupId={groupId} idea={idea} onOpenRecipe={onOpenRecipe} />
