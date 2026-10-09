@@ -985,6 +985,18 @@
       "deleted": "Recipe deleted",
       "conflict": "There is already a recipe with that name",
       "error": "Could not save. Try again."
+    },
+    "ideas": {
+      "button": "AI ideas",
+      "title": "Ideas · {{kind}}",
+      "loading": "Thinking of recipes with what is in your Stock…",
+      "more": "Ask for others",
+      "save": "Save recipe",
+      "open_saved": "Saved · Open",
+      "saved_toast": "{{title}} is now in your recipes",
+      "error": "We could not get ideas. Try again.",
+      "error_limit": "You reached today's ideas limit. It resets tomorrow.",
+      "error_unavailable": "AI ideas are not set up yet."
     }
   }
 }

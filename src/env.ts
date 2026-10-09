@@ -66,6 +66,8 @@ export const env = createEnv({
       .enum(['frankfurter', 'openexchangerates', 'nbp'])
       .default('frankfurter'),
     OPEN_EXCHANGE_RATES_APP_ID: z.string().optional(),
+    /** "Ideas con IA" en Comidas. Sin clave, el botón avisa que no está disponible. */
+    OPENROUTER_API_KEY: z.string().optional(),
     OIDC_NAME: z.string().optional(),
     OIDC_CLIENT_ID: z.string().optional(),
     OIDC_CLIENT_SECRET: z.string().optional(),
@@ -140,6 +142,7 @@ export const env = createEnv({
     DEFAULT_HOMEPAGE: process.env.DEFAULT_HOMEPAGE,
     CURRENCY_RATE_PROVIDER: process.env.CURRENCY_RATE_PROVIDER,
     OPEN_EXCHANGE_RATES_APP_ID: process.env.OPEN_EXCHANGE_RATES_APP_ID,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     OIDC_NAME: process.env.OIDC_NAME,
     OIDC_CLIENT_ID: process.env.OIDC_CLIENT_ID,
     OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET,

@@ -9,6 +9,7 @@ import { type RouterOutputs, api } from '~/utils/api';
 
 import { RecipeCard, type RecipeListItem } from './RecipeCard';
 import { RecipeEditor } from './RecipeEditor';
+import { RecipeIdeas, RecipeIdeasButton } from './RecipeIdeas';
 
 /** Mismo ritmo que Compras y Stock: si alguien cambia el Stock, Comidas se acomoda solo. */
 const POLL_INTERVAL_MS = 10_000;
@@ -65,6 +66,7 @@ export const MealsTab: React.FC<{
 }> = ({ groupId, kind, onKindChange, onOpenRecipe }) => {
   const { t } = useTranslation();
   const [creating, setCreating] = useState(false);
+  const [askingIdeas, setAskingIdeas] = useState(false);
   const [openParts, setOpenParts] = useState(OPEN_BY_DEFAULT);
 
   const listQuery = api.recipes.list.useQuery(
@@ -102,6 +104,8 @@ export const MealsTab: React.FC<{
           </button>
         ))}
       </div>
+
+      <RecipeIdeasButton onClick={() => setAskingIdeas(true)} />
 
       {isEmptyBook ? (
         <div className="mt-16 flex flex-col items-center gap-3 text-center">
@@ -178,6 +182,15 @@ export const MealsTab: React.FC<{
       >
         <Plus className="size-5" />
       </Button>
+
+      {askingIdeas ? (
+        <RecipeIdeas
+          groupId={groupId}
+          kind={kind}
+          onClose={() => setAskingIdeas(false)}
+          onOpenRecipe={onOpenRecipe}
+        />
+      ) : null}
 
       {creating ? (
         <RecipeEditor

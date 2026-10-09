@@ -8,7 +8,9 @@ import {
   MAX_RECIPE_YIELD_LENGTH,
   RECIPE_KINDS,
 } from '~/lib/recipes';
+import { MAX_AVOID_TITLES } from '~/lib/recipeIdeas';
 import { MAX_SHOPPING_ITEM_NAME_LENGTH } from '~/lib/shopping';
+import { env } from '~/env';
 import { isRecordNotFound, isUniqueViolation } from '~/server/api/prismaErrors';
 import { createTRPCRouter, groupProcedure } from '~/server/api/trpc';
 import {
@@ -21,6 +23,12 @@ import {
   listRecipes,
   updateRecipe,
 } from '~/server/recipes/service';
+import {
+  IdeasFailedError,
+  IdeasLimitError,
+  IdeasUnavailableError,
+  suggestRecipeIdeas,
+} from '~/server/recipes/ideas';
 
 const notFound = () => new TRPCError({ code: 'NOT_FOUND', message: 'Recipe not found' });
 
@@ -111,6 +119,41 @@ export const recipesRouter = createTRPCRouter({
       throw mapError(error);
     }
   }),
+
+  /**
+   * "Ideas con IA": dos recetas con lo que hay en el Stock, del tipo del filtro. Es mutación porque
+   * cada pedido cuesta plata y da algo distinto: no se cachea ni se repite solo.
+   */
+  ideas: groupProcedure
+    .input(
+      z.object({
+        kind: z.enum(RECIPE_KINDS).optional(),
+        avoidTitles: z
+          .array(z.string().max(MAX_RECIPE_TITLE_LENGTH))
+          .max(MAX_AVOID_TITLES)
+          .default([]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await suggestRecipeIdeas(ctx.db, input, { apiKey: env.OPENROUTER_API_KEY });
+      } catch (error) {
+        if (error instanceof IdeasUnavailableError) {
+          throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'ideas_unavailable' });
+        }
+
+        if (error instanceof IdeasLimitError) {
+          throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'ideas_limit' });
+        }
+
+        if (error instanceof IdeasFailedError) {
+          console.error('recipes.ideas', error.message);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'ideas_failed' });
+        }
+
+        throw error;
+      }
+    }),
 
   /** "Sumar lo que falta a Compras": sin duplicar lo que ya está pendiente. */
   addMissingToShopping: groupProcedure.input(recipeId).mutation(async ({ ctx, input }) => {
