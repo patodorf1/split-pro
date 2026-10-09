@@ -968,9 +968,9 @@
       "error_limit": "Llegaste al tope de ideas de hoy. Mañana se renueva.",
       "error_unavailable": "Las ideas con IA no están configuradas todavía.",
       "ask": "Pedir ideas",
-      "with_label": "¿Con qué querés cocinar?",
-      "with_placeholder": "¿Con qué? (pollo, trucha…)",
-      "hint": "Escribí con qué querés cocinar, o dejalo vacío y pedí ideas con lo que haya."
+      "with_label": "¿Qué querés cocinar?",
+      "with_placeholder": "pollo sin queso crema…",
+      "hint": "Escribí qué querés: \"pollo\", \"pollo sin queso crema\", \"algo con trucha\". O dejalo vacío y pedí ideas con lo que haya."
     }
   }
 }

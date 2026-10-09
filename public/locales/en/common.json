@@ -998,9 +998,9 @@
       "error_limit": "You reached today's ideas limit. It resets tomorrow.",
       "error_unavailable": "AI ideas are not set up yet.",
       "ask": "Get ideas",
-      "with_label": "What do you want to cook with?",
-      "with_placeholder": "With what? (chicken, trout…)",
-      "hint": "Type what you want to cook with, or leave it empty and get ideas with what you have."
+      "with_label": "What do you want to cook?",
+      "with_placeholder": "chicken without cream cheese…",
+      "hint": "Type what you want: \"chicken\", \"chicken without cream cheese\", \"something with trout\". Or leave it empty and get ideas with what you have."
     }
   }
 }

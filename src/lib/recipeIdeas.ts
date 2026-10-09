@@ -28,8 +28,8 @@ export const MAX_IDEA_REQUESTS_PER_DAY = 20;
 /** Títulos a evitar ("Pedir otras"): los que ya se mostraron en esta tanda. */
 export const MAX_AVOID_TITLES = 20;
 
-/** Largo máximo de "¿Con qué?" (pollo, trucha, lentejas y zanahoria…). */
-export const MAX_IDEAS_WITH_LENGTH = 60;
+/** Largo máximo del pedido de "¿Con qué?" ("pollo sin queso crema", "algo rápido con trucha"). */
+export const MAX_IDEAS_WITH_LENGTH = 100;
 
 /** Modelo de OpenRouter: rápido y barato, alcanza para recetas caseras. */
 export const IDEAS_MODEL = 'anthropic/claude-haiku-4.5';
@@ -108,14 +108,14 @@ const describeStock = (stock: readonly IdeasStockItem[]) => {
 /** Los mensajes para la IA: reglas fijas arriba, lo de hoy (Stock, filtro, a evitar) abajo. */
 export const buildIdeasMessages = (input: {
   kind?: RecipeKind;
-  /** "pollo": lo que la persona quiere usar sí o sí. */
+  /** "pollo sin queso crema": un pedido libre con lo que quiere usar y lo que no. */
   withIngredient?: string;
   stock: readonly IdeasStockItem[];
   avoidTitles: readonly string[];
 }) => {
   const withIngredient = input.withIngredient?.trim();
   const base = withIngredient
-    ? `\n\nLas ${IDEAS_PER_REQUEST} ideas tienen que tener ${withIngredient} como ingrediente principal. Si no figura en el Stock, usalo igual: lo van a conseguir.`
+    ? `\n\nPedido de la persona: "${withIngredient}". Respetalo en las ${IDEAS_PER_REQUEST} ideas: lo que pide usar va como ingrediente principal (si no figura en el Stock, usalo igual: lo van a conseguir) y lo que pide sin, no lo uses en ningún paso.`
     : '';
   const what = input.kind
     ? `Las ${IDEAS_PER_REQUEST} ideas tienen que ser de tipo ${input.kind} (${KIND_DESCRIPTIONS[input.kind]}).`
