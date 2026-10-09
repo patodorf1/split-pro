@@ -114,12 +114,15 @@ export const buildIdeasMessages = (input: {
   avoidTitles: readonly string[];
 }) => {
   const withIngredient = input.withIngredient?.trim();
+  // Con pedido, las ideas son maneras distintas de cocinar eso solo: sin acompañamientos.
   const base = withIngredient
-    ? `\n\nPedido de la persona: "${withIngredient}". Respetalo en las ${IDEAS_PER_REQUEST} ideas: lo que pide usar va como ingrediente principal (si no figura en el Stock, usalo igual: lo van a conseguir) y lo que pide sin, no lo uses en ningún paso.`
+    ? `\n\nPedido de la persona: "${withIngredient}". Las ${IDEAS_PER_REQUEST} ideas son maneras distintas de cocinar lo que pide (por ejemplo al horno, a la plancha, en sartén o con una salsa), y nada más: sin acompañamientos ni guarniciones, y sin sumar legumbres, cereales, pastas ni verduras como parte del plato. Solo lo que pide, condimentos de la Alacena y, si hace falta para una salsa o un adobo, algo del Stock que lo sazone (limón, cebolla, tomate, caldo). Si no figura en el Stock, usalo igual: lo van a conseguir. Lo que pide sin, no lo uses en ningún paso.`
     : '';
   const what = input.kind
     ? `Las ${IDEAS_PER_REQUEST} ideas tienen que ser de tipo ${input.kind} (${KIND_DESCRIPTIONS[input.kind]}).`
-    : `Las ${IDEAS_PER_REQUEST} ideas, de tipos distintos entre sí. Tipos: ${RECIPE_KINDS.map((kind) => `${kind} = ${KIND_DESCRIPTIONS[kind]}`).join('; ')}.`;
+    : withIngredient
+      ? `Para cada idea elegí el tipo que corresponda. Tipos: ${RECIPE_KINDS.map((kind) => `${kind} = ${KIND_DESCRIPTIONS[kind]}`).join('; ')}.`
+      : `Las ${IDEAS_PER_REQUEST} ideas, de tipos distintos entre sí. Tipos: ${RECIPE_KINDS.map((kind) => `${kind} = ${KIND_DESCRIPTIONS[kind]}`).join('; ')}.`;
   const avoid =
     0 < input.avoidTitles.length
       ? `\n\nNo repitas ni propongas variantes de estas recetas: ${input.avoidTitles.join(', ')}.`

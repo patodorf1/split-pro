@@ -46,7 +46,10 @@ describe('buildIdeasMessages', () => {
   it('asks for the chosen main ingredient only when there is one', () => {
     expect(
       buildIdeasMessages({ withIngredient: ' pollo ', stock, avoidTitles: [] })[1]!.content,
-    ).toContain('Pedido de la persona: "pollo"');
+    ).toContain('Pedido de la persona: "pollo". Las 2 ideas son maneras distintas de cocinar');
+    expect(
+      buildIdeasMessages({ withIngredient: 'pollo', stock, avoidTitles: [] })[1]!.content,
+    ).not.toContain('de tipos distintos');
     expect(
       buildIdeasMessages({ withIngredient: ' ', stock, avoidTitles: [] })[1]!.content,
     ).not.toContain('ingrediente principal');
