@@ -195,7 +195,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
       </div>
 
-      <nav className="bg-background/80 border-border fixed bottom-0 flex w-full items-start justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
+      <nav className="bg-background/80 border-border fixed bottom-0 z-40 flex w-full items-start justify-between border-t px-2 pb-4 shadow-xs backdrop-blur-lg lg:hidden">
         <NavItem
           title={t?.('dashboard.nav.home') ?? 'Home'}
           Icon={HouseIcon}

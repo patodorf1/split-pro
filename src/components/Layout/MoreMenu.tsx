@@ -1,23 +1,24 @@
 import {
   ChartPieIcon,
-  EllipsisIcon,
   FolderOpenIcon,
   ListIcon,
   ListTodoIcon,
   type LucideIcon,
+  MenuIcon,
   PaletteIcon,
   RefreshCcwDotIcon,
   SirenIcon,
   UserCircleIcon,
   UsersIcon,
+  XIcon,
 } from 'lucide-react';
-import clsx from 'clsx';
+import { clsx } from 'clsx';
 import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { ThemePicker } from '~/components/Theme/ThemePicker';
-import { AppDrawer } from '~/components/ui/drawer';
 import { useIsClient } from '~/hooks/useIsClient';
 
 /** En filas de a tres, en este orden. Saldos por persona vive dentro de Estadísticas. */
@@ -82,64 +83,86 @@ export const MoreMenuContent: React.FC<{
 };
 
 /**
- * "Más" en la barra de abajo: no cambia de pantalla, sube un panel con el menú. Tema cierra el
- * panel y abre los temas, para no apilar dos hojas.
+ * "Más" en la barra de abajo (☰): no cambia de pantalla, despliega el menú justo arriba de la
+ * barra, que sigue a la vista. El mismo botón lo abre y lo cierra; tocar afuera también lo cierra.
+ * Tema cierra el menú y abre los temas.
  */
 export const MoreMenuNavItem: React.FC<{ title: string; isActive: boolean }> = ({
   title,
   isActive,
 }) => {
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const isClient = useIsClient();
 
+  const toggle = useCallback(() => setOpen((current) => !current), []);
   const close = useCallback(() => setOpen(false), []);
   const openTheme = useCallback(() => {
     setOpen(false);
     setThemeOpen(true);
   }, []);
 
-  const highlighted = isActive || open;
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
 
-  const button = (
-    <button
-      type="button"
-      aria-label={title}
-      className="flex min-w-0 flex-1 flex-col items-center justify-start gap-1.5 py-4"
-    >
-      <EllipsisIcon
-        className={clsx('h-6 w-6', highlighted ? 'text-primary' : 'text-muted-foreground')}
-      />
-      <span
-        className={clsx(
-          'text-center text-xs leading-tight',
-          highlighted ? 'text-primary font-medium' : 'text-muted-foreground',
-        )}
-      >
-        {title}
-      </span>
-    </button>
-  );
+    const onKeyDown = (e: KeyboardEvent) => 'Escape' === e.key && setOpen(false);
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
+  const highlighted = isActive || open;
+  const Icon = open ? XIcon : MenuIcon;
 
   return (
     <>
-      {/* El panel recién existe en el navegador: hasta entonces el botón ocupa su lugar igual. */}
-      {isClient ? (
-        <AppDrawer
-          open={open}
-          onOpenChange={setOpen}
-          title={t('dashboard.more.title')}
-          className="h-auto"
-          trigger={button}
+      <button
+        type="button"
+        aria-label={title}
+        aria-expanded={open}
+        onClick={toggle}
+        className="flex min-w-0 flex-1 flex-col items-center justify-start gap-1.5 py-4"
+      >
+        <Icon className={clsx('h-6 w-6', highlighted ? 'text-primary' : 'text-muted-foreground')} />
+        <span
+          className={clsx(
+            'text-center text-xs leading-tight',
+            highlighted ? 'text-primary font-medium' : 'text-muted-foreground',
+          )}
         >
-          <div className="pb-6">
-            <MoreMenuContent onNavigate={close} onOpenTheme={openTheme} />
-          </div>
-        </AppDrawer>
-      ) : (
-        button
-      )}
+          {title}
+        </span>
+      </button>
+
+      {/* Crece desde el botón ☰, abajo a la derecha, justo arriba de la barra. */}
+      <div
+        inert={!open}
+        aria-hidden={!open}
+        className={clsx(
+          'bg-background border-border absolute right-2 bottom-full mb-2 w-[min(22rem,calc(100vw-1rem))] origin-bottom-right rounded-3xl border p-4 shadow-[0_8px_32px_rgba(0,0,0,0.16)] transition-[transform,opacity] duration-200 ease-out',
+          open ? 'scale-100 opacity-100' : 'pointer-events-none scale-50 opacity-0',
+        )}
+      >
+        <MoreMenuContent onNavigate={close} onOpenTheme={openTheme} />
+      </div>
+
+      {/* Fondo oscuro sobre la pantalla, debajo de la barra: tocarlo cierra el menú. */}
+      {isClient
+        ? createPortal(
+            <div
+              aria-hidden
+              onClick={close}
+              className={clsx(
+                'fixed inset-0 z-30 bg-black/30 transition-opacity duration-300 lg:hidden',
+                open ? 'opacity-100' : 'pointer-events-none opacity-0',
+              )}
+            />,
+            document.body,
+          )
+        : null}
+
       <ThemePicker open={themeOpen} onOpenChange={setThemeOpen} />
     </>
   );
