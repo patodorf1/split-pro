@@ -1,4 +1,4 @@
-import { Landmark, RefreshCcwDot, X } from 'lucide-react';
+import { Landmark, X } from 'lucide-react';
 import { useRouter } from 'next/router';
 import React, { useCallback } from 'react';
 
@@ -18,7 +18,6 @@ import { CategoryPicker } from './CategoryPicker';
 import { CurrencyPicker } from './CurrencyPicker';
 import { QuickCategories } from './QuickCategories';
 import { DateSelector } from './DateSelector';
-import { RecurrenceInput } from './RecurrenceInput';
 import { PayerSelector } from './PayerSelector';
 import { SelectUserOrGroup } from './SelectUserOrGroup';
 import { SplitExpenseForm } from './SplitTypeSection';
@@ -499,20 +498,6 @@ export const AddOrEditExpensePage: React.FC<{
           <div
             className={cn('flex items-center justify-evenly px-4 lg:px-0', isTransfer && 'hidden')}
           >
-            {!expenseId && (
-              <RecurrenceInput>
-                <Button variant="ghost" size="sm">
-                  <RefreshCcwDot
-                    className={cn(
-                      cronExpression && 'text-primary',
-                      (!amtStr || !description) && 'invisible',
-                      'size-6',
-                    )}
-                  />
-                  <span className="sr-only">Toggle recurring expense options</span>
-                </Button>
-              </RecurrenceInput>
-            )}
             <div className="flex gap-2">
               <AddBankTransactions bankConnectionEnabled={bankConnectionEnabled}>
                 <Button
