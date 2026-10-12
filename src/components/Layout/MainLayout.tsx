@@ -2,14 +2,13 @@ import { clsx } from 'clsx';
 import {
   CalendarDaysIcon,
   ChartPieIcon,
-  EllipsisIcon,
   FolderOpenIcon,
   HouseIcon,
   ListIcon,
+  ListTodoIcon,
   type LucideIcon,
   PlusIcon,
   RefreshCcwDotIcon,
-  ScaleIcon,
   SirenIcon,
   UserCircleIcon,
   UsersIcon,
@@ -20,6 +19,7 @@ import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 import { LoadingSpinner } from '../ui/spinner';
+import { MoreMenuNavItem } from './MoreMenu';
 
 interface MainLayoutProps {
   title?: React.ReactNode;
@@ -105,6 +105,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             currentPath={currentPath}
           />
           <NavItemDesktop
+            title={t?.('todo.title') ?? 'To Do'}
+            Icon={ListTodoIcon}
+            link="/todo"
+            currentPath={currentPath}
+          />
+          <NavItemDesktop
             title={t?.('documents.nav') ?? 'Documents'}
             Icon={FolderOpenIcon}
             link={DOCUMENTS_LINK}
@@ -132,12 +138,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             title={t?.('dashboard.nav.shopping') ?? 'Shopping'}
             Icon={UtensilsIcon}
             link={SHOPPING_LINK}
-            currentPath={currentPath}
-          />
-          <NavItemDesktop
-            title={t?.('dashboard.more.balances') ?? 'Balances'}
-            Icon={ScaleIcon}
-            link="/balances"
             currentPath={currentPath}
           />
           <NavItemDesktop
@@ -215,11 +215,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           link={SHOPPING_LINK}
           currentPath={currentPath}
         />
-        <NavItem
+        <MoreMenuNavItem
           title={t?.('dashboard.nav.more') ?? 'More'}
-          Icon={EllipsisIcon}
-          link={MORE_LINK}
-          currentPath={currentPath}
+          isActive={isActiveLink(currentPath, MORE_LINK)}
         />
       </nav>
     </div>

@@ -14,10 +14,18 @@ import { ThemePreview } from './ThemePreview';
  * esquema claro/oscuro del sistema. La preferencia la guarda next-themes en
  * localStorage, así que es por dispositivo.
  */
-export const ThemePicker: React.FC<React.PropsWithChildren> = ({ children }) => {
+/**
+ * Sin `children` no muestra botón propio: se abre desde afuera con `open` (lo usa el menú Más,
+ * que se cierra antes de abrir los temas).
+ */
+export const ThemePicker: React.FC<
+  React.PropsWithChildren<{ open?: boolean; onOpenChange?: (open: boolean) => void }>
+> = ({ children, open: openProp, onOpenChange }) => {
   const { t } = useTranslation();
   const { theme, resolvedTheme, setTheme } = useTheme();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChange ?? setOpenState;
 
   const isSystem = theme === SYSTEM_THEME;
   // En modo automático se marca el tema al que resolvió (Lavanda o Noche).
@@ -54,7 +62,7 @@ export const ThemePicker: React.FC<React.PropsWithChildren> = ({ children }) => 
 
   return (
     <AppDrawer
-      trigger={children}
+      trigger={children ?? <span className="hidden" />}
       title={t('themes.title')}
       open={open}
       onOpenChange={setOpen}
