@@ -1,10 +1,10 @@
-import { Refrigerator } from 'lucide-react';
+import { ChevronDown, Refrigerator } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { SectionLabel } from '~/components/ui/section-label';
-import { STOCK_SECTIONS } from '~/lib/stock';
+import { STOCK_SECTIONS, type StockSection } from '~/lib/stock';
+import { cn } from '~/lib/utils';
 import { api } from '~/utils/api';
 
 import { AddStockItem } from './AddStockItem';
@@ -18,6 +18,20 @@ export const StockTab: React.FC<{ groupId: number }> = ({ groupId }) => {
   const { t } = useTranslation();
   const utils = api.useUtils();
   const [editing, setEditing] = useState<StockItem | null>(null);
+  /** Grupos plegados a mano. Todos arrancan abiertos, como en Comidas. */
+  const [closed, setClosed] = useState<ReadonlySet<StockSection>>(() => new Set());
+
+  const toggleSection = useCallback(
+    (section: StockSection) =>
+      setClosed((current) => {
+        const next = new Set(current);
+        if (!next.delete(section)) {
+          next.add(section);
+        }
+        return next;
+      }),
+    [],
+  );
 
   const listQuery = api.stock.getList.useQuery(
     { groupId },
@@ -82,22 +96,44 @@ export const StockTab: React.FC<{ groupId: number }> = ({ groupId }) => {
         </div>
       ) : null}
 
-      {sections.map(({ section, items }) => (
-        <section key={section} className="flex flex-col gap-2">
-          <SectionLabel>{t(`stock.sections.${section}`)}</SectionLabel>
-          <ul className="card-surface divide-border divide-y overflow-hidden">
-            {items.map((item) => (
-              <StockItemRow
-                key={item.id}
-                item={item}
-                onEdit={setEditing}
-                onFinish={onFinish}
-                onRemove={onRemove}
+      {sections.map(({ section, items }) => {
+        const isOpen = !closed.has(section);
+
+        return (
+          <section key={section} className="flex flex-col gap-2">
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              onClick={() => toggleSection(section)}
+              className="flex items-center justify-between text-left"
+            >
+              <span className="section-label flex items-center gap-1.5">
+                {t(`stock.sections.${section}`)}
+                <span className="text-muted-foreground font-normal">{items.length}</span>
+              </span>
+              <ChevronDown
+                className={cn(
+                  'text-muted-foreground size-4 transition-transform',
+                  isOpen && 'rotate-180',
+                )}
               />
-            ))}
-          </ul>
-        </section>
-      ))}
+            </button>
+            {isOpen ? (
+              <ul className="card-surface divide-border divide-y overflow-hidden">
+                {items.map((item) => (
+                  <StockItemRow
+                    key={item.id}
+                    item={item}
+                    onEdit={setEditing}
+                    onFinish={onFinish}
+                    onRemove={onRemove}
+                  />
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        );
+      })}
 
       {0 < sections.length ? (
         <p className="text-muted-foreground text-center text-xs">{t('stock.hint')}</p>
