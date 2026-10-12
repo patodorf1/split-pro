@@ -1,7 +1,6 @@
 import { keepPreviousData } from '@tanstack/react-query';
-import { ChevronRightIcon, ScaleIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
+import { ChevronRightIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 import Head from 'next/head';
-import Link from 'next/link';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useCategoryLabel } from '~/components/dashboard/CategoryRow';
@@ -10,6 +9,7 @@ import { MonthSwitcher } from '~/components/dashboard/MonthSwitcher';
 import { SegmentedControl } from '~/components/dashboard/SegmentedControl';
 import { SpendingCharts } from '~/components/dashboard/SpendingCharts';
 import { useMonthNavigation, useSelectedCurrency, useTimeZone } from '~/components/dashboard/hooks';
+import { BalancesSection } from '~/components/Expense/BalancesSection';
 import { ExpenseRow } from '~/components/Expense/ExpenseRow';
 import MainLayout from '~/components/Layout/MainLayout';
 import { Card } from '~/components/ui/card';
@@ -413,23 +413,11 @@ const StatsPage: NextPageWithUser = ({ user }) => {
             ) : null}
           </Card>
 
-          {/* Saldos por persona salió de Más: vive acá, a un toque. */}
-          <Card className="px-0 py-0">
-            <Link href="/balances" className="flex w-full items-center gap-3 px-4 py-4 text-left">
-              <span className="bg-primary-soft text-primary flex size-11 shrink-0 items-center justify-center rounded-full">
-                <ScaleIcon className="size-5" />
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-foreground text-base font-semibold">
-                  {t('dashboard.more.balances')}
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  {t('dashboard.stats.balances_hint')}
-                </span>
-              </span>
-              <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
-            </Link>
-          </Card>
+          {/* Saldos por persona: salió de Más y vive acá. No depende del mes elegido. */}
+          <section>
+            <SectionLabel className="mb-2 px-1">{t('dashboard.more.balances')}</SectionLabel>
+            <BalancesSection defaultCurrency={user.defaultCurrency} className="px-1" />
+          </section>
 
           <CategoryBreakdown
             categories={totals?.categories ?? EMPTY_CATEGORIES}

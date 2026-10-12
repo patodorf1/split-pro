@@ -11,7 +11,9 @@ export const BalanceEntry: React.FC<{
   entity: { name?: string | null; image?: string | null; email?: string | null };
   balances?: { currency: string; amount: bigint }[];
   id: number;
-}> = ({ entity, balances = emptyBalances, id }) => {
+  /** Dirección del detalle. Por defecto cuelga de la pantalla actual. */
+  href?: string;
+}> = ({ entity, balances = emptyBalances, id, href }) => {
   const { displayName } = useTranslationWithUtils();
   const router = useRouter();
 
@@ -23,7 +25,7 @@ export const BalanceEntry: React.FC<{
   }, []);
 
   return (
-    <Link className="flex items-center justify-between" href={`${currentRoute}/${id}`}>
+    <Link className="flex items-center justify-between" href={href ?? `${currentRoute}/${id}`}>
       <div className="flex min-w-0 items-center gap-3">
         <EntityAvatar entity={entity} size={35} />
         <div className="text-foreground truncate">{displayName(entity)}</div>
