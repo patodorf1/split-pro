@@ -238,7 +238,8 @@
         "mine": "Me",
         "ours": "Us"
       },
-      "title": "Where the month went"
+      "title": "Where the month went",
+      "balances_hint": "Who owes whom, person by person"
     },
     "title": "Home",
     "top_categories": {

@@ -239,7 +239,8 @@
         "mine": "Yo",
         "ours": "Nosotros"
       },
-      "title": "En qué se fue el mes"
+      "title": "En qué se fue el mes",
+      "balances_hint": "Quién le debe a quién, por persona"
     },
     "title": "Inicio",
     "top_categories": {

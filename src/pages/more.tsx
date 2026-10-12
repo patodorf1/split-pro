@@ -6,7 +6,6 @@ import {
   type LucideIcon,
   PaletteIcon,
   RefreshCcwDotIcon,
-  ScaleIcon,
   SirenIcon,
   UserCircleIcon,
   UsersIcon,
@@ -21,18 +20,16 @@ import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { type NextPageWithUser } from '~/types';
 import { withI18nStaticProps } from '~/utils/i18n/server';
 
+/** En filas de a tres, en este orden. */
 const ENTRIES: { href: string; labelKey: string; Icon: LucideIcon }[] = [
-  // Arriba de todo: en una urgencia tiene que estar a un toque.
-  { href: '/emergency', labelKey: 'emergency.nav', Icon: SirenIcon },
-  // Grupos salió de la barra inferior: va entre los primeros.
-  { href: '/groups', labelKey: 'navigation.groups', Icon: UsersIcon },
   { href: '/todo', labelKey: 'todo.title', Icon: ListTodoIcon },
-  // Documentos salió de la barra inferior (su lugar lo ocupa la Agenda).
   { href: '/documents', labelKey: 'documents.nav', Icon: FolderOpenIcon },
-  { href: '/balances', labelKey: 'dashboard.more.balances', Icon: ScaleIcon },
+  { href: '/emergency', labelKey: 'emergency.nav', Icon: SirenIcon },
   { href: '/activity', labelKey: 'dashboard.more.activity', Icon: ListIcon },
+  // Saldos por persona vive dentro de Estadísticas.
   { href: '/stats', labelKey: 'dashboard.more.stats', Icon: ChartPieIcon },
   { href: '/recurring', labelKey: 'dashboard.more.recurring', Icon: RefreshCcwDotIcon },
+  { href: '/groups', labelKey: 'navigation.groups', Icon: UsersIcon },
   { href: '/account', labelKey: 'dashboard.more.account', Icon: UserCircleIcon },
 ];
 
