@@ -859,7 +859,8 @@
       "FREEZER": "Freezer",
       "PANTRY": "Alacena",
       "PRODUCE": "Frutas y verduras",
-      "CLEANING": "Limpieza"
+      "CLEANING": "Limpieza",
+      "SPICES": "Especias"
     },
     "edit": {
       "title": "Editar",
@@ -958,6 +959,35 @@
       "deleted": "Receta borrada",
       "conflict": "Ya hay una receta con ese nombre",
       "error": "No se pudo guardar. Probá de nuevo."
+    }
+  },
+  "todo": {
+    "title": "To Do",
+    "add_placeholder": "¿Qué hay que hacer?",
+    "pending": "Pendientes",
+    "done": "Hechas",
+    "actions": {
+      "add": "Agregar",
+      "save": "Guardar",
+      "delete": "Borrar",
+      "clear_done": "Borrar hechas"
+    },
+    "edit": {
+      "title": "Editar tarea",
+      "task": "Tarea"
+    },
+    "empty": {
+      "title": "No hay nada pendiente",
+      "subtitle": "Anota lo que haya que hacer en la casa. Una tarea por renglón."
+    },
+    "confirm_clear_one": "Se borra {{count}} tarea hecha.",
+    "confirm_clear_other": "Se borran {{count}} tareas hechas.",
+    "toast": {
+      "added_one": "Tarea agregada",
+      "added_other": "{{count}} tareas agregadas",
+      "cleared_one": "Se borró {{count}} tarea",
+      "cleared_other": "Se borraron {{count}} tareas",
+      "error": "No se pudo guardar. Inténtalo de nuevo."
     }
   }
 }

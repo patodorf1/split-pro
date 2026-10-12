@@ -73,6 +73,8 @@ model User {
   recipesCreated       Recipe[]                @relation("RecipeCreatedBy")
   calendarEvents       CalendarEvent[]         @relation("CalendarEventCreatedBy")
   dailyNotices         DailyNoticeLog[]
+  addedTodoItems       TodoItem[]              @relation("TodoItemAddedBy")
+  doneTodoItems        TodoItem[]              @relation("TodoItemDoneBy")
 
   @@schema("public")
 }
@@ -122,6 +124,7 @@ model Group {
   shoppingItems     ShoppingItem[]
   stockItems        StockItem[]
   stockPlacements   StockPlacement[]
+  todoItems         TodoItem[]
   recipes           Recipe[]
   externalExpenses  ExternalExpense[]
   documentFolders   DocumentFolder[]
@@ -326,6 +329,25 @@ model ShoppingItem {
   @@unique([groupId, externalId])
   @@index([groupId])
   @@index([groupId, checked])
+  @@schema("public")
+}
+
+/// Casa: cosas para hacer en la casa (To Do), por grupo. Se tildan al terminarlas.
+model TodoItem {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId     Int
+  title       String
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  doneBy      Int?
+  addedBy     Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  addedByUser User?     @relation("TodoItemAddedBy", fields: [addedBy], references: [id], onDelete: SetNull)
+  doneByUser  User?     @relation("TodoItemDoneBy", fields: [doneBy], references: [id], onDelete: SetNull)
+
+  @@index([groupId, done])
   @@schema("public")
 }
 

@@ -886,7 +886,8 @@
       "FREEZER": "Freezer",
       "PANTRY": "Pantry",
       "PRODUCE": "Fruit and veg",
-      "CLEANING": "Cleaning"
+      "CLEANING": "Cleaning",
+      "SPICES": "Spices"
     },
     "edit": {
       "title": "Edit",
@@ -1001,6 +1002,35 @@
       "with_label": "What do you want to cook?",
       "with_placeholder": "chicken without cream cheese…",
       "hint": "Type what you want: \"chicken\", \"chicken without cream cheese\", \"something with trout\". Or leave it empty and get ideas with what you have."
+    }
+  },
+  "todo": {
+    "title": "To Do",
+    "add_placeholder": "What needs doing?",
+    "pending": "Pending",
+    "done": "Done",
+    "actions": {
+      "add": "Add",
+      "save": "Save",
+      "delete": "Delete",
+      "clear_done": "Clear done"
+    },
+    "edit": {
+      "title": "Edit task",
+      "task": "Task"
+    },
+    "empty": {
+      "title": "Nothing to do",
+      "subtitle": "Write down what needs doing at home. One task per line."
+    },
+    "confirm_clear_one": "{{count}} done task will be deleted.",
+    "confirm_clear_other": "{{count}} done tasks will be deleted.",
+    "toast": {
+      "added_one": "Task added",
+      "added_other": "{{count}} tasks added",
+      "cleared_one": "{{count}} task cleared",
+      "cleared_other": "{{count}} tasks cleared",
+      "error": "Could not save. Try again."
     }
   }
 }

@@ -49,6 +49,7 @@ const MORE_SECTION_LINKS = [
   GROUPS_LINK,
   EMERGENCY_LINK,
   DOCUMENTS_LINK,
+  '/todo',
   '/balances',
   '/activity',
   '/stats',
