@@ -55,6 +55,9 @@ describe('guessStockSection', () => {
     expect(guessStockSection('Tomates')).toBe('PRODUCE');
     expect(guessStockSection('Lavandina')).toBe('CLEANING');
     expect(guessStockSection('Carnes')).toBe('FREEZER');
+    expect(guessStockSection('Orégano')).toBe('SPICES');
+    expect(guessStockSection('Nuez moscada')).toBe('SPICES');
+    expect(guessStockSection('Ajo en polvo')).toBe('SPICES');
     expect(guessStockSection('Postres')).toBe('FRIDGE');
     expect(guessStockSection('Dulces de leche')).toBe('FRIDGE');
   });
@@ -82,8 +85,8 @@ describe('guessStockSection', () => {
 });
 
 describe('sections', () => {
-  it('keeps cleaning last', () => {
-    expect(STOCK_SECTIONS.at(-1)).toBe('CLEANING');
+  it('keeps cleaning and spices last', () => {
+    expect(STOCK_SECTIONS.slice(-2)).toEqual(['CLEANING', 'SPICES']);
     expect(isStockSection('FRIDGE')).toBe(true);
     expect(isStockSection('BATHROOM')).toBe(false);
   });

@@ -553,6 +553,7 @@ enum StockSection {
   PANTRY
   PRODUCE
   CLEANING
+  SPICES
 
   @@schema("public")
 }

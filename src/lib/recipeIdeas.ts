@@ -62,6 +62,7 @@ const SECTION_NAMES: Record<StockSection, string> = {
   PANTRY: 'Alacena',
   PRODUCE: 'Frutas y verduras',
   CLEANING: 'Limpieza',
+  SPICES: 'Especias',
 };
 
 /** Las reglas de cocina de la casa: vienen del prompt que Pato ya usaba para pedir recetas. */

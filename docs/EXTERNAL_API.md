@@ -716,7 +716,7 @@ compared with `stockKey` (case, accents, extra spaces and simple plurals do not 
 the same bridge as a tick in the app. There are no quantities: a product is there or it is not.
 
 Sections, in any case: `fridge` (Heladera), `freezer` (Freezer), `pantry` (Alacena), `produce`
-(Frutas y verduras) and `cleaning` (Limpieza). Reading, adding and finishing answer with a `text`
+(Frutas y verduras), `cleaning` (Limpieza) and `spices` (Especias). Reading, adding and finishing answer with a `text`
 in Spanish, ready to send as is.
 
 ### GET /api/external/groups/{groupId}/stock

@@ -25,6 +25,7 @@ export const STOCK_SECTION_LABELS: Record<StockSection, string> = {
   PANTRY: 'Alacena',
   PRODUCE: 'Frutas y verduras',
   CLEANING: 'Limpieza',
+  SPICES: 'Especias',
 };
 
 /** "fridge", "Fridge" o "FRIDGE" valen lo mismo. */

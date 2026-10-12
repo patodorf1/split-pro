@@ -5,8 +5,15 @@ import { normalizeShoppingItemName } from '~/lib/shopping';
  * Compras. Hay o no hay: no se llevan cantidades.
  */
 
-/** Orden fijo en pantalla. Limpieza siempre al final. */
-export const STOCK_SECTIONS = ['FRIDGE', 'FREEZER', 'PANTRY', 'PRODUCE', 'CLEANING'] as const;
+/** Orden fijo en pantalla. Limpieza y Especias siempre al final. */
+export const STOCK_SECTIONS = [
+  'FRIDGE',
+  'FREEZER',
+  'PANTRY',
+  'PRODUCE',
+  'CLEANING',
+  'SPICES',
+] as const;
 export type StockSection = (typeof STOCK_SECTIONS)[number];
 
 export const DEFAULT_STOCK_SECTION: StockSection = 'PANTRY';
@@ -118,7 +125,6 @@ const SECTION_WORDS: Record<StockSection, string[]> = {
     'fideo',
     'harina',
     'azucar',
-    'sal',
     'aceite',
     'vinagre',
     'atun',
@@ -140,10 +146,6 @@ const SECTION_WORDS: Record<StockSection, string[]> = {
     'pure de tomate',
     'tomate triturado',
     'caldo',
-    'oregano',
-    'pimenton',
-    'comino',
-    'pimienta',
     'mermelada',
     'miel',
     'mani',
@@ -243,6 +245,32 @@ const SECTION_WORDS: Record<StockSection, string[]> = {
     'alcohol',
     'guante',
   ],
+  SPICES: [
+    'sal',
+    'sal gruesa',
+    'pimienta',
+    'oregano',
+    'pimenton',
+    'paprika',
+    'comino',
+    'provenzal',
+    'aji molido',
+    'canela',
+    'nuez moscada',
+    'curry',
+    'curcuma',
+    'laurel',
+    'tomillo',
+    'romero seco',
+    'ajo en polvo',
+    'cebolla en polvo',
+    'clavo de olor',
+    'cardamomo',
+    'jengibre en polvo',
+    'condimento',
+    'especia',
+    'chimichurri',
+  ],
 };
 
 const SECTION_ENTRIES: { key: string; words: number; section: StockSection }[] =
@@ -271,8 +299,8 @@ export const guessStockSection = (
   let best: { section: StockSection; words: number; position: number } | undefined;
 
   // Primero lo más largo ("leche de coco" le gana a "leche"); a igual largo, lo que aparece antes
-  // en el nombre, porque en español el sustantivo principal va primero ("caldo de pollo" es de
-  // alacena, no de freezer).
+  // En el nombre, porque en español el sustantivo principal va primero ("caldo de pollo" es de
+  // Alacena, no de freezer).
   for (const entry of SECTION_ENTRIES.filter((candidate) => containsWords(key, candidate.key))) {
     const position = ` ${key} `.indexOf(` ${entry.key} `);
 
