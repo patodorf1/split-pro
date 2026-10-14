@@ -835,6 +835,83 @@ Codes: `400 validation_error` (the `field` says which), `400 not_a_member` (`add
 `404 stock_item_not_found` (wrong id or another group's item), `409 already_in_stock` (renaming
 to a name that is already in the Stock), `409 group_archived`.
 
+## To Do
+
+Endpoints for the assistant to **read and update the house To Do** (things to do at home: fix
+the tap, call the plumber). Same key, same header, same errors format and same assumption as
+the Stock: the key can touch every group, and `addedBy` / `doneBy` must be members of the group
+in the URL. Titles follow the app rules (`src/lib/todo.ts`): bullets and extra spaces are
+dropped, punctuation stays, up to 200 characters.
+
+### GET /api/external/groups/{groupId}/todo
+
+| param  | notes                                                         |
+| ------ | ------------------------------------------------------------- |
+| `done` | optional, 0 to 50 (default 10): how many done tasks to bring. |
+
+```bash
+curl -s "$BASE/api/external/groups/1/todo" -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groupId": 1,
+  "pending": [
+    {
+      "id": "…",
+      "title": "Pintar la reja",
+      "done": false,
+      "doneAt": null,
+      "addedBy": { "id": 1, "name": "Pato", "email": "patodorf@gmail.com" },
+      "doneBy": null,
+      "createdAt": "2026-10-14T12:00:00.000Z"
+    }
+  ],
+  "done": [],
+  "doneTotal": 4,
+  "text": "Para hacer en la casa (1): Pintar la reja."
+}
+```
+
+`pending` comes oldest first, as in the app; `done`, the most recently done first.
+
+### POST /api/external/groups/{groupId}/todo
+
+| field     | notes                                                  |
+| --------- | ------------------------------------------------------ |
+| `items`   | required, 1 to 30 titles: `["Cambiar el foco", "…"]`.  |
+| `addedBy` | optional email or id of a member: author of new tasks. |
+
+Repeated titles in the same request count once. A title that is **already pending** (same text
+ignoring case and accents) is not created again: it comes back with `status: "already"`, so a
+retry never duplicates. The new ones are created all or nothing. Answers `200`:
+
+```json
+{
+  "groupId": 1,
+  "items": [
+    { "id": "…", "title": "Cambiar el foco", "status": "added" },
+    { "id": "…", "title": "Pintar la reja", "status": "already" }
+  ],
+  "text": "Sumé al To Do: Cambiar el foco. Ya estaba: Pintar la reja."
+}
+```
+
+(Each item also carries the rest of the fields of the GET.)
+
+### PATCH /api/external/groups/{groupId}/todo/{itemId}
+
+`{ "done": true, "doneBy": "…" }` marks it done (who and when); `{ "done": false }` takes it back
+to pending and clears who and when. `title` renames it. Marking done one that already was keeps
+its original date. Answers `{ groupId, item }`.
+
+### DELETE /api/external/groups/{groupId}/todo/{itemId}
+
+Deletes it (no trash, as in the app). Answers `{ groupId, deleted: true, item }`.
+
+Codes: `400 validation_error` (the `field` says which), `400 not_a_member` (`addedBy`,
+`doneBy`), `404 todo_item_not_found` (wrong id or another group's task), `409 group_archived`.
+
 ## Recetas / Recipes
 
 Endpoints for the assistant to **read the recipe book with what is missing today, save recipes,
