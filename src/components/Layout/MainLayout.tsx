@@ -9,10 +9,10 @@ import {
   type LucideIcon,
   PlusIcon,
   RefreshCcwDotIcon,
+  ShoppingCartIcon,
   SirenIcon,
   UserCircleIcon,
   UsersIcon,
-  UtensilsIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -136,7 +136,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           />
           <NavItemDesktop
             title={t?.('dashboard.nav.shopping') ?? 'Shopping'}
-            Icon={UtensilsIcon}
+            Icon={ShoppingCartIcon}
             link={SHOPPING_LINK}
             currentPath={currentPath}
           />
@@ -211,7 +211,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         <AddExpenseNavItem title={t?.('navigation.add') ?? 'Add'} link={ADD_LINK} />
         <NavItem
           title={t?.('dashboard.nav.shopping') ?? 'Shopping'}
-          Icon={UtensilsIcon}
+          Icon={ShoppingCartIcon}
           link={SHOPPING_LINK}
           currentPath={currentPath}
         />

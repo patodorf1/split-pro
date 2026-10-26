@@ -99,7 +99,10 @@ export const learnedShoppingStores = (
   return learned;
 };
 
-/** Agrupa por negocio, en el orden de `SHOPPING_STORES`, respetando el orden de entrada. */
+/** Orden alfabético en castellano: sin distinguir mayúsculas ni tildes, y "2" antes que "10". */
+const byName = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
+
+/** Agrupa por negocio, en el orden de `SHOPPING_STORES`, y adentro de cada uno por nombre. */
 export const groupByShoppingStore = <T extends { name: string; store: ShoppingStore | null }>(
   items: readonly T[],
   learned?: ReadonlyMap<string, ShoppingStore>,
@@ -110,7 +113,8 @@ export const groupByShoppingStore = <T extends { name: string; store: ShoppingSt
     groups.get(item.store ?? guessShoppingStore(item.name, learned))?.push(item);
   }
 
-  return SHOPPING_STORES.map((store) => ({ store, items: groups.get(store) ?? [] })).filter(
-    (group) => 0 < group.items.length,
-  );
+  return SHOPPING_STORES.map((store) => ({
+    store,
+    items: [...(groups.get(store) ?? [])].sort((a, b) => byName.compare(a.name, b.name)),
+  })).filter((group) => 0 < group.items.length);
 };

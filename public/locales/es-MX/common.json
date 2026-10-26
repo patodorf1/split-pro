@@ -209,7 +209,7 @@
       "expenses": "Gastos",
       "home": "Inicio",
       "more": "Más",
-      "shopping": "Cocina"
+      "shopping": "Compras"
     },
     "recent": {
       "title": "Últimos movimientos",
@@ -842,7 +842,7 @@
     "total_balance": "Saldo total"
   },
   "kitchen": {
-    "title": "Cocina",
+    "title": "Compras",
     "tabs": {
       "shopping": "Compras",
       "stock": "Stock"

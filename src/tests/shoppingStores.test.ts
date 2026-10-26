@@ -41,13 +41,14 @@ describe('guessShoppingStore', () => {
 });
 
 describe('groupByShoppingStore', () => {
-  it('groups in screen order, skips empty stores and keeps the input order', () => {
+  it('groups in screen order, skips empty stores and sorts each store by name', () => {
     const items = [
       { name: 'Asado', store: null },
-      { name: 'Leche', store: null },
-      { name: 'Lechuga', store: null },
       { name: 'Pan', store: null },
       { name: 'Yerba', store: 'VERDULERIA' as const },
+      { name: 'Lechuga', store: null },
+      { name: 'leche', store: null },
+      { name: 'Ácido cítrico', store: null },
     ];
 
     expect(
@@ -57,7 +58,7 @@ describe('groupByShoppingStore', () => {
       ]),
     ).toEqual([
       ['VERDULERIA', ['Lechuga', 'Yerba']],
-      ['ALMACEN', ['Leche', 'Pan']],
+      ['ALMACEN', ['Ácido cítrico', 'leche', 'Pan']],
       ['CARNICERIA', ['Asado']],
     ]);
   });

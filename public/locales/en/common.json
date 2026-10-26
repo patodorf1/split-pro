@@ -208,7 +208,7 @@
       "expenses": "Expenses",
       "home": "Home",
       "more": "More",
-      "shopping": "Kitchen"
+      "shopping": "Shopping"
     },
     "recent": {
       "title": "Latest movements",
@@ -869,7 +869,7 @@
     "in_group": "In group"
   },
   "kitchen": {
-    "title": "Kitchen",
+    "title": "Shopping",
     "tabs": {
       "shopping": "Shopping",
       "stock": "Pantry"
