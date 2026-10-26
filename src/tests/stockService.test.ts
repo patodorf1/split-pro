@@ -4,6 +4,7 @@ import {
   addToStock,
   finishStockItem,
   removeStockItem,
+  restoreStockItem,
   setShoppingItemChecked,
   undoBoughtFromStock,
   updateStockItem,
@@ -53,6 +54,7 @@ const makeClient = (seed: Record<string, unknown>[], inserted: Record<string, un
   shoppingItem: {
     findMany: jest.fn().mockResolvedValue([]),
     create: jest.fn().mockResolvedValue({ id: 'shop-1' }),
+    deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
   },
 });
 
@@ -189,6 +191,7 @@ describe('finishStockItem', () => {
     });
 
     expect(result?.addedToShopping).toBe(true);
+    expect(result?.shoppingItemId).toBe('shop-1');
     expect(db.stockItem.deleteMany).toHaveBeenCalledWith({
       where: { id: 'stock-1', groupId: 1 },
     });
@@ -213,6 +216,7 @@ describe('finishStockItem', () => {
     });
 
     expect(result?.addedToShopping).toBe(false);
+    expect(result?.shoppingItemId).toBeNull();
     expect(db.shoppingItem.create).not.toHaveBeenCalled();
   });
 
@@ -250,6 +254,46 @@ describe('removeStockItem', () => {
 
     expect(await removeStockItem(db as never, { groupId: 1, id: 'stock-1' })).not.toBeNull();
     expect(db.shoppingItem.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('restoreStockItem', () => {
+  it('puts it back in its section and takes out of Compras only what finish added', async () => {
+    const db = makeDb();
+    db.stockItem.findFirst.mockResolvedValue(row({ section: 'FREEZER' }));
+
+    const restored = await restoreStockItem(db as never, {
+      groupId: 1,
+      name: 'Leche',
+      note: null,
+      section: 'FREEZER',
+      addedBy: 7,
+      shoppingItemId: 'shop-1',
+    });
+
+    expect(restored?.section).toBe('FREEZER');
+    expect(db.stockItem.createMany.mock.calls[0][0]).toMatchObject({
+      data: [{ groupId: 1, name: 'Leche', key: 'leche', section: 'FREEZER', addedBy: 7 }],
+      skipDuplicates: true,
+    });
+    expect(db.shoppingItem.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'shop-1', groupId: 1, checked: false },
+    });
+  });
+
+  it('leaves Compras alone when nothing was added there', async () => {
+    const db = makeDb();
+    db.stockItem.findFirst.mockResolvedValue(row());
+
+    await restoreStockItem(db as never, {
+      groupId: 1,
+      name: 'Leche',
+      note: null,
+      section: 'FRIDGE',
+      addedBy: 7,
+    });
+
+    expect(db.shoppingItem.deleteMany).not.toHaveBeenCalled();
   });
 });
 

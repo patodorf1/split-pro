@@ -3,6 +3,7 @@ import { useTranslation } from 'next-i18next';
 import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { toastMove } from '~/components/kitchen/moveToast';
 import { STOCK_SECTIONS, type StockSection } from '~/lib/stock';
 import { cn } from '~/lib/utils';
 import { api } from '~/utils/api';
@@ -45,12 +46,29 @@ export const StockTab: React.FC<{ groupId: number }> = ({ groupId }) => {
 
   const onError = useCallback(() => toast.error(t('stock.toast.error')), [t]);
 
+  const restore = api.stock.restore.useMutation({ onSuccess: refresh, onError });
+
+  /** Deshacer: vuelve al Stock en su sección y sale de Compras lo que "Se acabó" anotó. */
+  const undo = useCallback(
+    (item: StockItem, shoppingItemId?: string | null) =>
+      restore.mutate({
+        groupId,
+        name: item.name,
+        note: item.note,
+        section: item.section,
+        shoppingItemId: shoppingItemId ?? undefined,
+      }),
+    [groupId, restore],
+  );
+
   const finish = api.stock.finish.useMutation({
-    onSuccess: ({ item, addedToShopping }) => {
-      toast(
+    onSuccess: ({ item, addedToShopping, shoppingItemId }) => {
+      toastMove(
         t(addedToShopping ? 'stock.toast.finished' : 'stock.toast.finished_already', {
           name: item.name,
         }),
+        t('kitchen.toast.undo'),
+        () => undo(item, shoppingItemId),
       );
       refresh();
     },
@@ -59,7 +77,9 @@ export const StockTab: React.FC<{ groupId: number }> = ({ groupId }) => {
 
   const remove = api.stock.remove.useMutation({
     onSuccess: (item) => {
-      toast(t('stock.toast.removed', { name: item.name }));
+      toastMove(t('stock.toast.removed', { name: item.name }), t('kitchen.toast.undo'), () =>
+        undo(item),
+      );
       refresh();
     },
     onError,

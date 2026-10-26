@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { SimpleConfirmationDialog } from '~/components/SimpleConfirmationDialog';
+import { toastMove } from '~/components/kitchen/moveToast';
 import { AddShoppingItem } from '~/components/shopping/AddShoppingItem';
 import { ShoppingItemActions } from '~/components/shopping/ShoppingItemActions';
 import { type ShoppingItem, ShoppingItemRow } from '~/components/shopping/ShoppingItemRow';
@@ -93,13 +94,16 @@ export const ShoppingTab: React.FC<{ groupId: number; user: User }> = ({ groupId
 
       return { previous };
     },
-    onSuccess: (data) => {
+    onSuccess: (data, { id }) => {
       if (data.stock?.created) {
-        toast(
+        // Deshacer es destildar: el servidor también lo saca del Stock.
+        toastMove(
           t('kitchen.toast.to_stock', {
             name: data.stock.name,
             section: t(`stock.sections.${data.stock.section}`),
           }),
+          t('kitchen.toast.undo'),
+          () => setChecked.mutate({ groupId, id, checked: false }),
         );
       }
       void utils.stock.getList.invalidate({ groupId });

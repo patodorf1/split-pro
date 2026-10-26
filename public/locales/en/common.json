@@ -875,7 +875,8 @@
       "stock": "Pantry"
     },
     "toast": {
-      "to_stock": "{{name}} moved to the pantry ({{section}})"
+      "to_stock": "{{name}} moved to the pantry ({{section}})",
+      "undo": "Undo"
     }
   },
   "stock": {

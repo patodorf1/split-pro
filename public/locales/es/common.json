@@ -845,7 +845,8 @@
       "stock": "Stock"
     },
     "toast": {
-      "to_stock": "{{name}} pasó al Stock ({{section}})"
+      "to_stock": "{{name}} pasó al Stock ({{section}})",
+      "undo": "Deshacer"
     }
   },
   "stock": {

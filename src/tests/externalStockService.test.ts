@@ -145,7 +145,7 @@ beforeEach(() => {
     Promise.resolve(pending.find((entry) => entry.id === where.id)),
   );
   mockDb.shoppingItem.updateMany.mockResolvedValue({ count: 1 });
-  mockDb.shoppingItem.create.mockResolvedValue({});
+  mockDb.shoppingItem.create.mockResolvedValue({ id: 'shop-1' });
   mockDb.$transaction.mockImplementation((fn: (tx: typeof mockDb) => unknown) => fn(mockDb));
 });
 
@@ -286,6 +286,7 @@ describe('finishExternalStock', () => {
     expect(mockDb.shoppingItem.create).toHaveBeenCalledTimes(1);
     expect(mockDb.shoppingItem.create).toHaveBeenCalledWith({
       data: { groupId: 1, name: 'Leche', addedBy: 2, source: 'API' },
+      select: { id: true },
     });
     expect(result.items).toMatchObject([
       { name: 'Leche', status: 'finished', addedToShopping: true },
@@ -313,6 +314,7 @@ describe('finishExternalStock', () => {
 
     expect(mockDb.shoppingItem.create).toHaveBeenCalledWith({
       data: { groupId: 1, name: 'Yerba', addedBy: null, source: 'API' },
+      select: { id: true },
     });
     expect(result.text).toBe('Yerba no estaba en el Stock; fue a Compras.');
   });

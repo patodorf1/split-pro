@@ -240,31 +240,43 @@ export const loadPendingShoppingKeys = async (
     ).map((entry) => stockKey(entry.name)),
   );
 
+interface ShoppingAddInput {
+  groupId: number;
+  name: string;
+  userId: number | null;
+  source: ShoppingItemSource;
+}
+
+/** Como `addToShoppingUnlessPending`, pero devuelve el id de lo anotado (o null si ya estaba). */
+const createShoppingUnlessPending = async (
+  db: Pick<PrismaClient | Prisma.TransactionClient, 'shoppingItem'>,
+  input: ShoppingAddInput,
+): Promise<string | null> => {
+  if ((await loadPendingShoppingKeys(db, input.groupId)).has(stockKey(input.name))) {
+    return null;
+  }
+
+  const created = await db.shoppingItem.create({
+    data: {
+      groupId: input.groupId,
+      name: input.name,
+      addedBy: input.userId,
+      source: input.source,
+    },
+    select: { id: true },
+  });
+
+  return created.id;
+};
+
 /**
  * Anota algo en Compras, salvo que ya haya uno igual pendiente ("tomates" pendiente cubre
  * "tomate"). Devuelve si lo anotó.
  */
 export const addToShoppingUnlessPending = async (
   db: Pick<PrismaClient | Prisma.TransactionClient, 'shoppingItem'>,
-  input: { groupId: number; name: string; userId: number | null; source: ShoppingItemSource },
-) => {
-  const alreadyPending = (await loadPendingShoppingKeys(db, input.groupId)).has(
-    stockKey(input.name),
-  );
-
-  if (!alreadyPending) {
-    await db.shoppingItem.create({
-      data: {
-        groupId: input.groupId,
-        name: input.name,
-        addedBy: input.userId,
-        source: input.source,
-      },
-    });
-  }
-
-  return !alreadyPending;
-};
+  input: ShoppingAddInput,
+) => null !== (await createShoppingUnlessPending(db, input));
 
 /** "Se acabó": sale del Stock y va a Compras, salvo que ya esté pendiente ahí. */
 export const finishStockItem = async (
@@ -277,8 +289,8 @@ export const finishStockItem = async (
     return null;
   }
 
-  // deleteMany, no delete: si otro "se acabó" lo sacó justo antes, no tira P2025 y no aborta el
-  // lote; ya no está, así que se saltea.
+  // DeleteMany, no delete: si otro "se acabó" lo sacó justo antes, no tira P2025 y no aborta el
+  // Lote; ya no está, así que se saltea.
   const { count } = await db.stockItem.deleteMany({
     where: { id: item.id, groupId: input.groupId },
   });
@@ -287,14 +299,15 @@ export const finishStockItem = async (
     return null;
   }
 
-  const addedToShopping = await addToShoppingUnlessPending(db, {
+  const shoppingItemId = await createShoppingUnlessPending(db, {
     groupId: input.groupId,
     name: item.name,
     userId: input.userId,
     source: input.source,
   });
 
-  return { item: withoutKey(item), addedToShopping };
+  // `shoppingItemId` es lo que anotó en Compras, para que "Deshacer" saque solo eso.
+  return { item: withoutKey(item), addedToShopping: null !== shoppingItemId, shoppingItemId };
 };
 
 /** Sacar sin comprar: solo sale del Stock. */
@@ -308,6 +321,54 @@ export const removeStockItem = async (db: StockDb, input: { groupId: number; id:
   await db.stockItem.delete({ where: { id: item.id } });
 
   return withoutKey(item);
+};
+
+/**
+ * "Deshacer" de "Se acabó" o de sacar: el producto vuelve al Stock en su sección, y si "Se acabó"
+ * lo había anotado en Compras y nadie lo tildó todavía, sale de ahí. Si mientras tanto alguien lo
+ * volvió a cargar, queda el que está.
+ */
+export const restoreStockItem = async (
+  db: StockDb,
+  input: {
+    groupId: number;
+    name: string;
+    note: string | null;
+    section: StockSection;
+    addedBy: number | null;
+    shoppingItemId?: string;
+  },
+) => {
+  const name = cleanShoppingItemName(input.name);
+  const key = stockKey(name);
+
+  await db.stockItem.createMany({
+    data: [
+      {
+        groupId: input.groupId,
+        name,
+        key,
+        note: cleanOptionalText(input.note ?? undefined, MAX_STOCK_NOTE_LENGTH) ?? null,
+        section: input.section,
+        source: 'APP',
+        addedBy: input.addedBy,
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  if (input.shoppingItemId) {
+    await db.shoppingItem.deleteMany({
+      where: { id: input.shoppingItemId, groupId: input.groupId, checked: false },
+    });
+  }
+
+  const restored = await db.stockItem.findFirst({
+    where: { groupId: input.groupId, key },
+    select: WITH_KEY,
+  });
+
+  return restored ? withoutKey(restored) : null;
 };
 
 /**

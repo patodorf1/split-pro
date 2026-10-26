@@ -11,6 +11,7 @@ import {
   addToStock,
   finishStockItem,
   removeStockItem,
+  restoreStockItem,
   updateStockItem,
 } from '~/server/stock/service';
 
@@ -115,6 +116,28 @@ export const stockRouter = createTRPCRouter({
       } catch (error) {
         throw mapRaceError(error);
       }
+    }),
+
+  /** "Deshacer" de "Se acabó" o de sacar: vuelve al Stock y sale de Compras lo que anotó. */
+  restore: groupProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(MAX_SHOPPING_ITEM_NAME_LENGTH),
+        note: z.string().max(MAX_STOCK_NOTE_LENGTH).nullable(),
+        section: z.enum(STOCK_SECTIONS),
+        shoppingItemId: z.string().uuid().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const item = await ctx.db.$transaction((tx) =>
+        restoreStockItem(tx, { ...input, addedBy: ctx.session.user.id }),
+      );
+
+      if (!item) {
+        throw notFound();
+      }
+
+      return item;
     }),
 
   /** Sacar sin comprar. */
