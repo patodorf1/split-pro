@@ -11,6 +11,7 @@ import {
   normalizeShoppingItemName,
   parseShoppingItems,
 } from '~/lib/shopping';
+import { SHOPPING_STORES } from '~/lib/shoppingStores';
 import { createTRPCRouter, groupProcedure } from '~/server/api/trpc';
 import { type db as dbClient } from '~/server/db';
 import { setShoppingItemChecked } from '~/server/stock/service';
@@ -32,6 +33,7 @@ export const SHOPPING_ITEM_SELECT = {
   source: true,
   externalId: true,
   sortOrder: true,
+  store: true,
   createdAt: true,
   updatedAt: true,
   addedByUser: { select: SHOPPING_USER_SELECT },
@@ -141,6 +143,7 @@ export const shoppingRouter = createTRPCRouter({
         name: z.string().min(1).max(MAX_SHOPPING_ITEM_NAME_LENGTH).optional(),
         quantity: z.string().max(MAX_SHOPPING_ITEM_QUANTITY_LENGTH).nullable().optional(),
         note: z.string().max(MAX_SHOPPING_ITEM_NOTE_LENGTH).nullable().optional(),
+        store: z.enum(SHOPPING_STORES).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -164,6 +167,7 @@ export const shoppingRouter = createTRPCRouter({
             undefined === input.note
               ? undefined
               : (cleanOptionalText(input.note, MAX_SHOPPING_ITEM_NOTE_LENGTH) ?? null),
+          store: input.store,
         },
         select: SHOPPING_ITEM_SELECT,
       });

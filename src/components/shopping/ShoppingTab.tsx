@@ -1,6 +1,6 @@
-import { ShoppingBasket, Trash2 } from 'lucide-react';
+import { ChevronDown, ShoppingBasket, Trash2 } from 'lucide-react';
 import { type User } from 'next-auth';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { SimpleConfirmationDialog } from '~/components/SimpleConfirmationDialog';
@@ -16,6 +16,13 @@ import {
 import { Button } from '~/components/ui/button';
 import { SectionLabel } from '~/components/ui/section-label';
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
+import {
+  type ShoppingStore,
+  groupByShoppingStore,
+  guessShoppingStore,
+  learnedShoppingStores,
+} from '~/lib/shoppingStores';
+import { cn } from '~/lib/utils';
 import { api } from '~/utils/api';
 
 /** Cada cuánto se vuelve a mirar la lista mientras la página está a la vista. */
@@ -130,8 +137,29 @@ export const ShoppingTab: React.FC<{ groupId: number; user: User }> = ({ groupId
   }, [clearChecked, groupId]);
 
   const pending = useMemo(() => listQuery.data?.pending ?? [], [listQuery.data?.pending]);
-  const checked = listQuery.data?.checked ?? [];
+  const checked = useMemo(() => listQuery.data?.checked ?? [], [listQuery.data?.checked]);
   const pendingNames = useMemo(() => pending.map((item) => item.name), [pending]);
+
+  // Lo que alguien movió a mano enseña dónde va el mismo producto si se vuelve a cargar.
+  const learned = useMemo(
+    () => learnedShoppingStores([...pending, ...checked]),
+    [pending, checked],
+  );
+  const stores = useMemo(() => groupByShoppingStore(pending, learned), [pending, learned]);
+
+  const [closed, setClosed] = useState<ReadonlySet<ShoppingStore>>(() => new Set());
+
+  const toggleStore = useCallback((store: ShoppingStore) => {
+    setClosed((previous) => {
+      const next = new Set(previous);
+
+      if (!next.delete(store)) {
+        next.add(store);
+      }
+
+      return next;
+    });
+  }, []);
 
   const clearButton = (
     <SimpleConfirmationDialog
@@ -166,21 +194,50 @@ export const ShoppingTab: React.FC<{ groupId: number; user: User }> = ({ groupId
       ) : null}
 
       {0 < pending.length ? (
-        <section className="flex flex-col gap-2">
+        <section className="flex flex-col gap-4">
           <SectionLabel>
             {t('shopping.pending')} · {pending.length}
           </SectionLabel>
-          <ul className="card-surface divide-border divide-y px-3">
-            {pending.map((item) => (
-              <ShoppingItemRow
-                key={item.id}
-                item={item}
-                currentUserId={user.id}
-                onToggle={onToggle}
-                actions={<ShoppingItemActions groupId={groupId} item={item} />}
-              />
-            ))}
-          </ul>
+          {stores.map(({ store, items }) => {
+            const isOpen = !closed.has(store);
+
+            return (
+              <section key={store} className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => toggleStore(store)}
+                  className="flex items-center justify-between text-left"
+                >
+                  <span className="section-label flex items-center gap-1.5">
+                    {t(`shopping.stores.${store}`)}
+                    <span className="text-muted-foreground font-normal">{items.length}</span>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'text-muted-foreground size-4 transition-transform',
+                      isOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
+                {isOpen ? (
+                  <ul className="card-surface divide-border divide-y px-3">
+                    {items.map((item) => (
+                      <ShoppingItemRow
+                        key={item.id}
+                        item={item}
+                        currentUserId={user.id}
+                        onToggle={onToggle}
+                        actions={
+                          <ShoppingItemActions groupId={groupId} item={item} store={store} />
+                        }
+                      />
+                    ))}
+                  </ul>
+                ) : null}
+              </section>
+            );
+          })}
           <p className="text-muted-foreground text-center text-xs">{t('shopping.hint_to_stock')}</p>
         </section>
       ) : null}
@@ -203,7 +260,13 @@ export const ShoppingTab: React.FC<{ groupId: number; user: User }> = ({ groupId
                       item={item}
                       currentUserId={user.id}
                       onToggle={onToggle}
-                      actions={<ShoppingItemActions groupId={groupId} item={item} />}
+                      actions={
+                        <ShoppingItemActions
+                          groupId={groupId}
+                          item={item}
+                          store={item.store ?? guessShoppingStore(item.name, learned)}
+                        />
+                      }
                     />
                   ))}
                 </ul>

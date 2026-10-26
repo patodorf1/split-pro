@@ -700,6 +700,7 @@
       "note_placeholder": "La marca barata",
       "quantity": "Cantidad",
       "quantity_placeholder": "2 kg",
+      "store": "Dónde se compra",
       "title": "Editar artículo"
     },
     "empty": {
@@ -713,6 +714,11 @@
     "requested_by": "Lo pidió {{name}}",
     "source": {
       "alexa": "Alexa"
+    },
+    "stores": {
+      "VERDULERIA": "Verdulería",
+      "ALMACEN": "Abarrotes",
+      "CARNICERIA": "Carnicería"
     },
     "title": "Lista de compras",
     "toast": {

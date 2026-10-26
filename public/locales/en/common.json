@@ -727,6 +727,7 @@
       "note_placeholder": "The cheap brand",
       "quantity": "Quantity",
       "quantity_placeholder": "2 kg",
+      "store": "Store",
       "title": "Edit item"
     },
     "empty": {
@@ -740,6 +741,11 @@
     "requested_by": "Asked by {{name}}",
     "source": {
       "alexa": "Alexa"
+    },
+    "stores": {
+      "VERDULERIA": "Greengrocer",
+      "ALMACEN": "Grocery store",
+      "CARNICERIA": "Butcher"
     },
     "title": "Shopping list",
     "toast": {

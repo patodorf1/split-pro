@@ -6,25 +6,32 @@ import { toast } from 'sonner';
 import { Button } from '~/components/ui/button';
 import { AppDrawer } from '~/components/ui/drawer';
 import { Input } from '~/components/ui/input';
+import { NativeSelect, NativeSelectOption } from '~/components/ui/native-select';
 import {
   MAX_SHOPPING_ITEM_NAME_LENGTH,
   MAX_SHOPPING_ITEM_NOTE_LENGTH,
   MAX_SHOPPING_ITEM_QUANTITY_LENGTH,
 } from '~/lib/shopping';
+import { SHOPPING_STORES, type ShoppingStore, isShoppingStore } from '~/lib/shoppingStores';
 import { api } from '~/utils/api';
 
 import { type ShoppingItem } from './ShoppingItemRow';
 
-/** Menú por ítem: editar nombre, cantidad y nota, o borrarlo. */
-export const ShoppingItemActions: React.FC<{ groupId: number; item: ShoppingItem }> = ({
-  groupId,
-  item,
-}) => {
+/**
+ * Menú por ítem: editar nombre, cantidad, nota y negocio, o borrarlo. `store` es el negocio donde se
+ * ve ahora (elegido a mano o adivinado); cambiarlo lo deja guardado en el ítem.
+ */
+export const ShoppingItemActions: React.FC<{
+  groupId: number;
+  item: ShoppingItem;
+  store: ShoppingStore;
+}> = ({ groupId, item, store }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(item.name);
   const [quantity, setQuantity] = useState(item.quantity ?? '');
   const [note, setNote] = useState(item.note ?? '');
+  const [selectedStore, setSelectedStore] = useState<ShoppingStore>(store);
 
   const utils = api.useUtils();
 
@@ -43,8 +50,9 @@ export const ShoppingItemActions: React.FC<{ groupId: number; item: ShoppingItem
       setName(item.name);
       setQuantity(item.quantity ?? '');
       setNote(item.note ?? '');
+      setSelectedStore(store);
     }
-  }, [open, item.name, item.quantity, item.note]);
+  }, [open, item.name, item.quantity, item.note, store]);
 
   const onSave = useCallback(() => {
     const trimmed = name.trim();
@@ -53,8 +61,16 @@ export const ShoppingItemActions: React.FC<{ groupId: number; item: ShoppingItem
       return;
     }
 
-    updateItem.mutate({ groupId, id: item.id, name: trimmed, quantity, note });
-  }, [groupId, item.id, name, note, quantity, updateItem]);
+    updateItem.mutate({
+      groupId,
+      id: item.id,
+      name: trimmed,
+      quantity,
+      note,
+      // Solo se guarda si cambió: lo adivinado sigue siguiendo al nombre.
+      store: selectedStore === store ? undefined : selectedStore,
+    });
+  }, [groupId, item.id, name, note, quantity, selectedStore, store, updateItem]);
 
   const onDelete = useCallback(() => {
     setOpen(false);
@@ -73,6 +89,12 @@ export const ShoppingItemActions: React.FC<{ groupId: number; item: ShoppingItem
     (e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value),
     [],
   );
+
+  const onStoreChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (isShoppingStore(e.target.value)) {
+      setSelectedStore(e.target.value);
+    }
+  }, []);
 
   return (
     <AppDrawer
@@ -119,6 +141,17 @@ export const ShoppingItemActions: React.FC<{ groupId: number; item: ShoppingItem
             placeholder={t('shopping.edit.note_placeholder')}
             maxLength={MAX_SHOPPING_ITEM_NOTE_LENGTH}
           />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="section-label">{t('shopping.edit.store')}</span>
+          <NativeSelect value={selectedStore} onChange={onStoreChange} className="w-full">
+            {SHOPPING_STORES.map((value) => (
+              <NativeSelectOption key={value} value={value}>
+                {t(`shopping.stores.${value}`)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
         </label>
 
         <Button

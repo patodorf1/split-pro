@@ -61,7 +61,7 @@ export const containsWords = (haystackKey: string, needleKey: string): boolean =
  * Productos comunes de la casa y dónde se guardan. Se busca por palabras dentro del nombre y gana
  * la coincidencia más larga ("leche de coco" le gana a "leche").
  */
-const SECTION_WORDS: Record<StockSection, string[]> = {
+export const SECTION_WORDS: Record<StockSection, string[]> = {
   FRIDGE: [
     'leche',
     'yogur',
@@ -273,13 +273,45 @@ const SECTION_WORDS: Record<StockSection, string[]> = {
   ],
 };
 
-const SECTION_ENTRIES: { key: string; words: number; section: StockSection }[] =
-  STOCK_SECTIONS.flatMap((section) =>
-    SECTION_WORDS[section].map((word) => {
+/** Una palabra conocida ya pasada a clave, con su cantidad de palabras y a qué grupo lleva. */
+export interface WordEntry<T> {
+  key: string;
+  words: number;
+  value: T;
+}
+
+export const toWordEntries = <T extends string>(lists: Record<T, string[]>, order: readonly T[]) =>
+  order.flatMap((value) =>
+    lists[value].map((word): WordEntry<T> => {
       const key = stockKey(word);
-      return { key, words: key.split(' ').length, section };
+      return { key, words: key.split(' ').length, value };
     }),
   );
+
+/**
+ * La palabra conocida que mejor describe un nombre (ya pasado a clave). Primero lo más largo
+ * ("leche de coco" le gana a "leche"); a igual largo, lo que aparece antes en el nombre, porque en
+ * español el sustantivo principal va primero ("caldo de pollo" es de Alacena, no de freezer).
+ */
+export const bestWordMatch = <T>(key: string, entries: readonly WordEntry<T>[]): T | undefined => {
+  let best: { value: T; words: number; position: number } | undefined;
+
+  for (const entry of entries.filter((candidate) => containsWords(key, candidate.key))) {
+    const position = ` ${key} `.indexOf(` ${entry.key} `);
+
+    if (
+      !best ||
+      entry.words > best.words ||
+      (entry.words === best.words && position < best.position)
+    ) {
+      best = { value: entry.value, words: entry.words, position };
+    }
+  }
+
+  return best?.value;
+};
+
+const SECTION_ENTRIES = toWordEntries(SECTION_WORDS, STOCK_SECTIONS);
 
 /**
  * Dónde va un producto: primero lo que el grupo enseñó (corrigiendo a mano), después la lista de
@@ -290,30 +322,8 @@ export const guessStockSection = (
   learned?: ReadonlyMap<string, StockSection>,
 ): StockSection => {
   const key = stockKey(name);
-  const taught = learned?.get(key);
 
-  if (taught) {
-    return taught;
-  }
-
-  let best: { section: StockSection; words: number; position: number } | undefined;
-
-  // Primero lo más largo ("leche de coco" le gana a "leche"); a igual largo, lo que aparece antes
-  // En el nombre, porque en español el sustantivo principal va primero ("caldo de pollo" es de
-  // Alacena, no de freezer).
-  for (const entry of SECTION_ENTRIES.filter((candidate) => containsWords(key, candidate.key))) {
-    const position = ` ${key} `.indexOf(` ${entry.key} `);
-
-    if (
-      !best ||
-      entry.words > best.words ||
-      (entry.words === best.words && position < best.position)
-    ) {
-      best = { section: entry.section, words: entry.words, position };
-    }
-  }
-
-  return best?.section ?? DEFAULT_STOCK_SECTION;
+  return learned?.get(key) ?? bestWordMatch(key, SECTION_ENTRIES) ?? DEFAULT_STOCK_SECTION;
 };
 
 /** Productos cuyo nombre contiene `text` como palabras completas ("arroz" → "Arroz yamaní"). */

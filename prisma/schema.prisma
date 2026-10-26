@@ -319,6 +319,8 @@ model ShoppingItem {
   source        ShoppingItemSource @default(APP)
   externalId    String?
   sortOrder     Int?
+  /// Negocio donde se compra, si alguien lo eligió a mano. Vacío: se adivina por el nombre.
+  store         ShoppingStore?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   group         Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -564,6 +566,15 @@ enum ShoppingItemSource {
   APP
   ALEXA
   API
+
+  @@schema("public")
+}
+
+/// Negocios de la lista de compras, en el orden de la pantalla. Ver `SHOPPING_STORES`.
+enum ShoppingStore {
+  VERDULERIA
+  ALMACEN
+  CARNICERIA
 
   @@schema("public")
 }
