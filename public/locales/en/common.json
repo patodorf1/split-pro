@@ -872,8 +872,7 @@
     "title": "Kitchen",
     "tabs": {
       "shopping": "Shopping",
-      "stock": "Pantry",
-      "meals": "Meals"
+      "stock": "Pantry"
     },
     "toast": {
       "to_stock": "{{name}} moved to the pantry ({{section}})"
@@ -916,98 +915,6 @@
       "removed": "{{name}} left the pantry",
       "conflict": "There is already one with that name",
       "error": "Could not save. Try again."
-    }
-  },
-  "meals": {
-    "kinds": {
-      "ALL": "All",
-      "PROTEIN": "Proteins",
-      "MAIN": "Mains",
-      "SALAD": "Salads",
-      "SIDE": "Sides"
-    },
-    "parts": {
-      "ready": "You can make",
-      "oneMissing": "One thing missing",
-      "moreMissing": "More recipes"
-    },
-    "part_empty": {
-      "ready": "Nothing of this kind with what you have.",
-      "oneMissing": "Nothing one ingredient away.",
-      "moreMissing": "No more recipes of this kind."
-    },
-    "part_empty_all": {
-      "ready": "Nothing can be made with what you have.",
-      "oneMissing": "No recipe is one ingredient away.",
-      "moreMissing": "No more recipes."
-    },
-    "missing_chip": "missing {{name}}",
-    "add_missing": {
-      "one": "Add {{name}} to Shopping",
-      "many": "Add what is missing to Shopping",
-      "done": "Everything is in Shopping",
-      "confirm": "Add {{names}} to Shopping?",
-      "cancel": "Cancel",
-      "confirm_action": "Add"
-    },
-    "actions": {
-      "add": "Add recipe",
-      "back": "Meals",
-      "edit": "Edit",
-      "save": "Save",
-      "delete": "Delete recipe",
-      "write_steps": "Write the steps"
-    },
-    "recipe": {
-      "ready": "You have everything to make it",
-      "missing": "Missing",
-      "no_steps": "This recipe has no steps yet. Dictate them to Charly or write them here.",
-      "not_found": "We could not find this recipe."
-    },
-    "editor": {
-      "new_title": "New recipe",
-      "edit_title": "Edit recipe",
-      "title": "Name",
-      "kind": "Kind",
-      "yield": "Makes",
-      "yield_placeholder": "For 1.8 kg",
-      "ingredients": "Main ingredients",
-      "ingredients_placeholder": "chicken, breadcrumbs, egg",
-      "ingredients_hint": "Separated by commas, 1 to 12. Salt, oil and spices do not count.",
-      "body": "Steps",
-      "body_placeholder": "1. Season the meat\n- 3 teaspoons of salt\nTip: mash the garlic with salt",
-      "body_hint": "Each step starts with its number (1. Season). Ingredients start with a dash (-) and tips with \"Tip:\".",
-      "delete_title": "Delete the recipe?",
-      "delete_description": "{{title}} leaves the recipe book. This cannot be undone."
-    },
-    "empty": {
-      "title": "No recipes yet",
-      "subtitle": "Add one with the + button or dictate it to Charly."
-    },
-    "toast": {
-      "added_one": "{{name}} went to Shopping",
-      "added_other": "{{count}} items went to Shopping",
-      "already": "Everything was already in Shopping",
-      "saved": "Recipe saved",
-      "deleted": "Recipe deleted",
-      "conflict": "There is already a recipe with that name",
-      "error": "Could not save. Try again."
-    },
-    "ideas": {
-      "button": "AI ideas",
-      "title": "Ideas · {{kind}}",
-      "loading": "Thinking of recipes with what is in your Stock…",
-      "more": "Ask for others",
-      "save": "Save recipe",
-      "open_saved": "Saved · Open",
-      "saved_toast": "{{title}} is now in your recipes",
-      "error": "We could not get ideas. Try again.",
-      "error_limit": "You reached today's ideas limit. It resets tomorrow.",
-      "error_unavailable": "AI ideas are not set up yet.",
-      "ask": "Get ideas",
-      "with_label": "What do you want to cook?",
-      "with_placeholder": "chicken without cream cheese…",
-      "hint": "Type what you want: \"chicken\", \"chicken without cream cheese\", \"something with trout\". Or leave it empty and get ideas with what you have."
     }
   },
   "todo": {
