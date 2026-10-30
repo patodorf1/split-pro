@@ -9,6 +9,7 @@ import {
   type ExternalDocumentUpload,
   documentSavedText,
   documentsListText,
+  uploadFileName,
 } from '~/lib/externalDocuments';
 import { db } from '~/server/db';
 import { resolveDocumentPath } from '~/server/documents/storage';
@@ -212,7 +213,30 @@ const findSameFile = async (folderId: number, buffer: Buffer) => {
   return null;
 };
 
-/** Sube un archivo a una sección, con nombre, nota y vencimiento opcionales. */
+/**
+ * Una subida por sección a la vez. La app corre en un solo proceso, así que alcanza con una fila
+ * en memoria: dos reintentos simultáneos del mismo archivo no pasan juntos el chequeo de "ya está".
+ */
+const folderQueues = new Map<number, Promise<unknown>>();
+
+const inFolderQueue = async <T>(folderId: number, task: () => Promise<T>): Promise<T> => {
+  const run = (folderQueues.get(folderId) ?? Promise.resolve()).catch(() => undefined).then(task);
+  const tail = run.catch(() => undefined);
+  folderQueues.set(folderId, tail);
+
+  try {
+    return await run;
+  } finally {
+    if (folderQueues.get(folderId) === tail) {
+      folderQueues.delete(folderId);
+    }
+  }
+};
+
+/**
+ * Sube un archivo a una sección, con nombre, nota y vencimiento opcionales. Si ese mismo archivo ya
+ * estaba, no se repite: se le aplican el nombre, la nota y el vencimiento que vinieron.
+ */
 export const uploadExternalDocument = async (
   group: LoadedGroup,
   input: ExternalDocumentUpload,
@@ -222,41 +246,58 @@ export const uploadExternalDocument = async (
 
   const uploadedById = resolveOptionalMemberId(input.uploadedBy, group.members, 'uploadedBy');
   const folder = await findGroupFolder(group, input.folderId);
-  const existing = await findSameFile(folder.id, buffer);
 
-  if (existing) {
+  return inFolderQueue(folder.id, async () => {
+    const existing = await findSameFile(folder.id, buffer);
+
+    if (existing) {
+      const changes = {
+        ...(undefined === input.name ? {} : { name: input.name }),
+        ...(undefined === input.notes ? {} : { notes: input.notes }),
+        ...(undefined === input.expiresAt ? {} : { expiresAt: input.expiresAt }),
+      };
+      const document =
+        0 < Object.keys(changes).length
+          ? await db.document.update({
+              where: { id: existing.id },
+              data: changes,
+              select: DOCUMENT_VIEW,
+            })
+          : existing;
+
+      return {
+        groupId: group.id,
+        status: 'already' as const,
+        document: serializeExternalDocument(document),
+        text: documentSavedText(document, folder.name, 'already'),
+      };
+    }
+
+    const stored = await storeDocument(
+      {
+        folder,
+        buffer,
+        originalName: uploadFileName(input.fileName, buffer),
+        uploadedById,
+        name: input.name,
+        notes: input.notes,
+        expiresAt: input.expiresAt,
+      },
+      DOCUMENT_VIEW,
+    );
+
+    if (!stored.ok) {
+      const [es, en] = REJECTION_TEXT[stored.reason];
+      throw new ExternalApiError(rejectionStatus(stored.reason), stored.reason, es, en);
+    }
+
     return {
       groupId: group.id,
-      status: 'already' as const,
-      document: serializeExternalDocument(existing),
-      text: documentSavedText(existing, folder.name, 'already'),
+      status: 'added' as const,
+      document: serializeExternalDocument(stored.document),
+      text: documentSavedText(stored.document, folder.name, 'added'),
     };
-  }
-
-  const stored = await storeDocument(
-    {
-      folder,
-      buffer,
-      originalName: input.fileName ?? '',
-      uploadedById,
-      name: input.name,
-      notes: input.notes,
-      expiresAt: input.expiresAt,
-    },
-    DOCUMENT_VIEW,
-  );
-
-  if (!stored.ok) {
-    const [es, en] = REJECTION_TEXT[stored.reason];
-    throw new ExternalApiError(rejectionStatus(stored.reason), stored.reason, es, en);
-  }
-
-  return {
-    groupId: group.id,
-    status: 'added' as const,
-    document: serializeExternalDocument(stored.document),
-    text: documentSavedText(stored.document, folder.name, 'added'),
-  };
+  });
 };
 
 /** Cambia nombre, nota, vencimiento (null lo saca) o sección (del mismo grupo). */

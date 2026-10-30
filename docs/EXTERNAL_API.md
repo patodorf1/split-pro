@@ -973,7 +973,7 @@ the URL:
 | param        | notes                                                                  |
 | ------------ | ---------------------------------------------------------------------- |
 | `folderId`   | required: a section of the group (from the GET).                       |
-| `fileName`   | optional, recommended: the extension helps to check the type.          |
+| `fileName`   | optional: without an allowed extension, it comes from the content.     |
 | `name`       | optional: the name to show (default: the file name without extension). |
 | `expiresAt`  | optional, `YYYY-MM-DD`.                                                |
 | `notes`      | optional free text.                                                    |
@@ -986,9 +986,11 @@ curl -s -X POST "$BASE/api/external/groups/1/documents?folderId=5&fileName=tarje
 ```
 
 Same rules as the app: up to 25 MB, PDF, images, Word, Excel or text, and the real type is
-checked by content. The **same file (same bytes) already in that section** is not stored again:
-it comes back with `status: "already"` and `200`, so a retry never duplicates. A new one answers
-`201` with `status: "added"`:
+checked by content. Plain text has no signature, so it needs a `.txt` `fileName`. The **same
+file (same bytes) already in that section** is not stored again: it comes back with
+`status: "already"` and `200`, with the `name`, `notes` and `expiresAt` sent applied to it, so a
+retry never duplicates (uploads to a section go one at a time). A new one answers `201` with
+`status: "added"`:
 
 ```json
 {

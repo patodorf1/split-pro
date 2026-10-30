@@ -294,11 +294,75 @@ describe('uploadExternalDocument', () => {
       { ...doc({ id: 'other' }), storageKey: '1/missing.jpg' },
       { ...doc(), storageKey: '1/existing.jpg' },
     ]);
+    mockDb.document.update.mockResolvedValue(doc());
 
     const result = await uploadExternalDocument(casa, input, Buffer.from('jpeg'));
 
     expect(storeDocument).not.toHaveBeenCalled();
     expect(result).toMatchObject({ status: 'already', document: { id: DOC_ID } });
+    // Vino un nombre: se le aplica al que ya estaba.
+    expect(mockDb.document.update.mock.calls[0]?.[0]).toMatchObject({
+      where: { id: DOC_ID },
+      data: { name: 'Tarjeta de seguro Fox' },
+    });
+  });
+
+  it('applies the new expiry to the file that was already there', async () => {
+    fs.writeFileSync(`${mockTmp}/1_again.jpg`, 'again');
+    mockDb.documentFolder.findFirst.mockResolvedValue(fox);
+    mockDb.document.findMany.mockResolvedValue([{ ...doc(), storageKey: '1/again.jpg' }]);
+    mockDb.document.update.mockResolvedValue(doc({ expiresAt: parseExpiryDay('2028-03-01') }));
+
+    const result = await uploadExternalDocument(
+      casa,
+      { folderId: 5, expiresAt: parseExpiryDay('2028-03-01')! },
+      Buffer.from('again'),
+    );
+
+    expect(mockDb.document.update.mock.calls[0]?.[0]?.data).toEqual({
+      expiresAt: parseExpiryDay('2028-03-01'),
+    });
+    expect(result.text).toBe(
+      'Ese archivo ya estaba: "Tarjeta de seguro Fox" en Fox, vence el 01/03/2028.',
+    );
+  });
+
+  it('takes the extension from the content when the file name has none', async () => {
+    mockDb.documentFolder.findFirst.mockResolvedValue(fox);
+    mockDb.document.findMany.mockResolvedValue([]);
+    jest.mocked(storeDocument).mockResolvedValue({ ok: true, document: doc() } as never);
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10]);
+    const pdf = Buffer.from('%PDF-1.4\n%%EOF\n');
+
+    await uploadExternalDocument(casa, { folderId: 5, fileName: 'IMG_1234' }, jpeg);
+    await uploadExternalDocument(casa, { folderId: 5 }, pdf);
+    await uploadExternalDocument(casa, { folderId: 5, fileName: 'poliza.pdf' }, pdf);
+
+    expect(jest.mocked(storeDocument).mock.calls.map((call) => call[0].originalName)).toEqual([
+      'IMG_1234.jpg',
+      'documento.pdf',
+      'poliza.pdf',
+    ]);
+  });
+
+  it('stores the same file only once when two uploads arrive at the same time', async () => {
+    const saved: unknown[] = [];
+    mockDb.documentFolder.findFirst.mockResolvedValue(fox);
+    mockDb.document.findMany.mockImplementation(() => Promise.resolve([...saved]));
+    jest.mocked(storeDocument).mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      fs.writeFileSync(`${mockTmp}/1_race.jpg`, 'race');
+      saved.push({ ...doc(), storageKey: '1/race.jpg' });
+      return { ok: true, document: doc() } as never;
+    });
+
+    const results = await Promise.all([
+      uploadExternalDocument(casa, { folderId: 5 }, Buffer.from('race')),
+      uploadExternalDocument(casa, { folderId: 5 }, Buffer.from('race')),
+    ]);
+
+    expect(storeDocument).toHaveBeenCalledTimes(1);
+    expect(results.map((result) => result.status)).toEqual(['added', 'already']);
   });
 
   it('rejects other groups, outsiders, archived groups and bad files', async () => {

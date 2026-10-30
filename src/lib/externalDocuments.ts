@@ -1,7 +1,15 @@
 import { z } from 'zod';
 
 import { formatExpiryDate, parseExpiryDay } from '~/lib/documentReminders';
-import { MAX_DOCUMENT_NAME_LENGTH, cleanDocumentName } from '~/lib/documents';
+import {
+  ALLOWED_DOCUMENT_EXTENSIONS,
+  DOCUMENT_TYPES,
+  MAX_DOCUMENT_NAME_LENGTH,
+  cleanDocumentName,
+  sanitizeFileName,
+  sniffDocumentKind,
+  splitExtension,
+} from '~/lib/documents';
 import {
   ExternalApiError,
   MAX_EXTERNAL_NOTE_LENGTH,
@@ -109,6 +117,24 @@ export const parseExternalDocumentUpload = (query: Query): ExternalDocumentUploa
   }
 
   return parsed.data;
+};
+
+/**
+ * El nombre de archivo con el que se guarda. Si `fileName` no trae una extensión permitida ("foto",
+ * "IMG_1234", o no vino), la extensión sale del contenido (PDF, fotos, Office); el texto plano no
+ * tiene firma, así que sin ".txt" se rechaza como hasta ahora.
+ */
+export const uploadFileName = (fileName: string | undefined, buffer: Uint8Array): string => {
+  const clean = sanitizeFileName(fileName ?? '');
+  const { ext } = splitExtension(clean);
+
+  if (ext && ALLOWED_DOCUMENT_EXTENSIONS.includes(ext)) {
+    return clean;
+  }
+
+  const sniffed = sniffDocumentKind(buffer);
+
+  return sniffed ? `${clean || 'documento'}.${DOCUMENT_TYPES[sniffed].ext}` : clean;
 };
 
 /** `?q=seguro`: buscar por nombre (como el buscador de la app). Vacío = todo. */
