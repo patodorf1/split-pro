@@ -252,6 +252,7 @@
       "create": "Crear",
       "delete": "Borrar",
       "download": "Descargar",
+      "expiry": "Vencimiento",
       "menu": "Opciones de {{name}}",
       "move": "Mover a…",
       "rename": "Renombrar",
@@ -282,6 +283,12 @@
     },
     "expired": "Venció {{date}}",
     "expires": "Vence {{date}}",
+    "expiry": {
+      "clear": "Sin vencimiento",
+      "hint": "Avisa una semana antes y aparece en la Agenda.",
+      "label": "Fecha de vencimiento",
+      "title": "Vencimiento"
+    },
     "folder": {
       "create": "Nueva sección",
       "delete": "Borrar sección",
@@ -342,6 +349,8 @@
     "title": "Documentos",
     "toast": {
       "deleted": "Documento borrado",
+      "expiry_cleared": "Le sacamos el vencimiento",
+      "expiry_saved": "Vencimiento guardado",
       "moved": "Movido a {{name}}",
       "renamed": "Nombre actualizado",
       "uploaded_one": "Subimos {{count}} documento",

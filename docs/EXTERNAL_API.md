@@ -700,8 +700,8 @@ an all-day event. Answers `{ groupId, event }`.
 Deletes the event, like the app (there is no trash). Answers `{ groupId, deleted: true, event }`
 with what was deleted.
 
-Only the group's own events can be changed. Expiry dates are edited in Documents and recurring
-expenses in the app. Codes: `404 event_not_found` (wrong id or another group's event),
+Only the group's own events can be changed. Expiry dates are edited in Documents (app or the
+Documents endpoints below) and recurring expenses in the app. Codes: `404 event_not_found` (wrong id or another group's event),
 `409 group_archived`, `400 validation_error` / `invalid_date` / `invalid_range`.
 
 ## Stock
@@ -911,6 +911,105 @@ Deletes it (no trash, as in the app). Answers `{ groupId, deleted: true, item }`
 
 Codes: `400 validation_error` (the `field` says which), `400 not_a_member` (`addedBy`,
 `doneBy`), `404 todo_item_not_found` (wrong id or another group's task), `409 group_archived`.
+
+## Documents
+
+Endpoints for the assistant to **read the family documents, upload a file to a section and set
+its name, note or expiry date** (the insurance card, a passport). Same key, same header, same
+errors format and same assumption as the rest: the key can touch every group, but sections and
+documents of another group "do not exist", and `uploadedBy` must be a member of the group in the
+URL. Deleting is not possible from here: it is done in the app.
+
+Expiry dates are Buenos Aires days, `YYYY-MM-DD`, both ways. A document with an expiry date shows
+up by itself in the Agenda and in the reminders of Inicio (a week before): there is no need to
+add an event for it.
+
+### GET /api/external/groups/{groupId}/documents
+
+| param | notes                                                                |
+| ----- | -------------------------------------------------------------------- |
+| `q`   | optional text in the name, case and accent insensitive (as the app). |
+
+```bash
+curl -s "$BASE/api/external/groups/1/documents?q=seguro" -H "Authorization: Bearer $SPLIT_API_KEY"
+```
+
+```json
+{
+  "groupId": 1,
+  "folders": [
+    {
+      "id": 5,
+      "name": "Fox",
+      "icon": "car",
+      "isPerson": false,
+      "documents": [
+        {
+          "id": "…",
+          "folderId": 5,
+          "name": "Tarjeta de seguro Fox (La Caja)",
+          "mimeType": "image/jpeg",
+          "size": 120609,
+          "notes": null,
+          "expiresAt": "2027-02-02",
+          "uploadedBy": { "id": 1, "name": "Pato", "email": "patodorf@gmail.com" },
+          "createdAt": "2026-10-30T14:00:00.000Z"
+        }
+      ]
+    }
+  ],
+  "text": "En Fox (1): Tarjeta de seguro Fox (La Caja), vence el 02/02/2027."
+}
+```
+
+Every section of the group comes, in the app order (with `q`, sections with no match come with
+an empty list); documents, the last uploaded first.
+
+### POST /api/external/groups/{groupId}/documents?folderId=5&…
+
+Uploads **one file**. The body is the file itself (raw bytes, not multipart); the rest goes in
+the URL:
+
+| param        | notes                                                                  |
+| ------------ | ---------------------------------------------------------------------- |
+| `folderId`   | required: a section of the group (from the GET).                       |
+| `fileName`   | optional, recommended: the extension helps to check the type.          |
+| `name`       | optional: the name to show (default: the file name without extension). |
+| `expiresAt`  | optional, `YYYY-MM-DD`.                                                |
+| `notes`      | optional free text.                                                    |
+| `uploadedBy` | optional email or id of a member.                                      |
+
+```bash
+curl -s -X POST "$BASE/api/external/groups/1/documents?folderId=5&fileName=tarjeta.jpg" \
+  --url-query "name=Tarjeta de seguro Fox (La Caja)" --url-query "expiresAt=2027-02-02" \
+  -H "Authorization: Bearer $SPLIT_API_KEY" --data-binary @tarjeta.jpg
+```
+
+Same rules as the app: up to 25 MB, PDF, images, Word, Excel or text, and the real type is
+checked by content. The **same file (same bytes) already in that section** is not stored again:
+it comes back with `status: "already"` and `200`, so a retry never duplicates. A new one answers
+`201` with `status: "added"`:
+
+```json
+{
+  "groupId": 1,
+  "status": "added",
+  "document": { "id": "…", "name": "Tarjeta de seguro Fox (La Caja)", "expiresAt": "2027-02-02" },
+  "text": "Guardé \"Tarjeta de seguro Fox (La Caja)\" en Fox, vence el 02/02/2027."
+}
+```
+
+(`document` carries the same fields as in the GET.)
+
+### PATCH /api/external/groups/{groupId}/documents/{documentId}
+
+Changes only the fields sent: `name`, `notes` (`null` or blank clears it), `expiresAt`
+(`YYYY-MM-DD`, `null` clears it) and `folderId` (another section of the same group). Answers
+`{ groupId, document, text }`.
+
+Codes: `400 validation_error` (the `field` says which), `400 not_a_member` (`uploadedBy`),
+`404 folder_not_found`, `404 document_not_found` (wrong id, another group's or deleted),
+`409 group_archived`, `413 too_large`, `400 empty`, `415 type_not_allowed` / `type_mismatch`.
 
 ## Recetas / Recipes
 

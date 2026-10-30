@@ -291,6 +291,10 @@ export const buildContentDisposition = (
 
 export type DocumentRejectReason = 'empty' | 'too_large' | 'type_not_allowed' | 'type_mismatch';
 
+/** Código HTTP de un rechazo al guardar (lo comparten la subida de la app y la API externa). */
+export const rejectionStatus = (reason: DocumentRejectReason | 'server_error'): number =>
+  'server_error' === reason ? 500 : 'too_large' === reason ? 413 : 'empty' === reason ? 400 : 415;
+
 export type DocumentDetection =
   | { ok: true; type: DocumentTypeInfo }
   | { ok: false; reason: DocumentRejectReason };

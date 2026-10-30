@@ -10,6 +10,7 @@ import {
   matchesDocumentSearch,
 } from '~/lib/documents';
 import { parseStoredQuickFields, quickFieldsInputSchema } from '~/lib/documentQuickFields';
+import { parseExpiryDay } from '~/lib/documentReminders';
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
 import { findAccessibleDocument, findAccessibleFolder, memberOf } from '~/server/documents/access';
 import { updateFolderQuickFields } from '~/server/documents/quickFields';
@@ -334,6 +335,29 @@ export const documentsRouter = createTRPCRouter({
       return ctx.db.document.update({
         where: { id: document.id },
         data: { name: input.name },
+        select: DOCUMENT_SELECT,
+      });
+    }),
+
+  /** Pone, cambia o saca (null) el vencimiento: un día "aaaa-mm-dd" de Argentina. */
+  setDocumentExpiry: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), expiresAt: z.string().max(10).nullable() }))
+    .mutation(async ({ ctx, input }) => {
+      const expiresAt = null === input.expiresAt ? null : parseExpiryDay(input.expiresAt);
+
+      if (null !== input.expiresAt && !expiresAt) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'invalid_expiry' });
+      }
+
+      const document = await findAccessibleDocument(ctx.db, input.id, ctx.session.user.id);
+
+      if (!document) {
+        throw notFound();
+      }
+
+      return ctx.db.document.update({
+        where: { id: document.id },
+        data: { expiresAt },
         select: DOCUMENT_SELECT,
       });
     }),

@@ -1,4 +1,5 @@
 import {
+  CalendarIcon,
   CheckIcon,
   DownloadIcon,
   FolderInputIcon,
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 import { Button } from '~/components/ui/button';
 import { AppDrawer } from '~/components/ui/drawer';
 import { Input } from '~/components/ui/input';
+import { expiryDayKey } from '~/lib/documentReminders';
 import { MAX_DOCUMENT_NAME_LENGTH } from '~/lib/documents';
 import { api } from '~/utils/api';
 
@@ -32,12 +34,12 @@ const SHARE_PREFETCH_MAX_BYTES = 10 * 1024 * 1024;
 const canShareFiles = () =>
   'undefined' !== typeof navigator && 'function' === typeof navigator.canShare;
 
-type View = 'menu' | 'rename' | 'move' | 'delete';
+type View = 'menu' | 'rename' | 'expiry' | 'move' | 'delete';
 
 const MENU_ROW = 'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-sm';
 
 /**
- * Menú de un documento: Compartir, Descargar, Renombrar, Mover a… y Borrar. Al terminar invalida
+ * Menú de un documento: Compartir, Descargar, Renombrar, Vencimiento, Mover a… y Borrar. Al terminar invalida
  * la sección, el resumen y la búsqueda para que todo quede al día.
  */
 export const DocumentActions: React.FC<{
@@ -49,6 +51,8 @@ export const DocumentActions: React.FC<{
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>('menu');
   const [name, setName] = useState(document.name);
+  /** "aaaa-mm-dd" del campo de fecha; vacío = sin elegir. */
+  const [expiry, setExpiry] = useState('');
   const [sharing, setSharing] = useState(false);
   const prefetched = useRef<Promise<File> | null>(null);
   const latest = useRef(document);
@@ -64,6 +68,7 @@ export const DocumentActions: React.FC<{
     const current = latest.current;
     setView('menu');
     setName(current.name);
+    setExpiry(current.expiresAt ? expiryDayKey(current.expiresAt) : '');
 
     if (canShareFiles() && current.size <= SHARE_PREFETCH_MAX_BYTES) {
       const promise = fetchDocumentFile(current);
@@ -79,6 +84,8 @@ export const DocumentActions: React.FC<{
       void utils.documents.overview.invalidate();
       void utils.documents.search.invalidate();
       void utils.documents.upcomingExpiries.invalidate();
+      // Los vencimientos también se ven en la Agenda.
+      void utils.calendar.range.invalidate();
     });
   }, [utils]);
 
@@ -87,6 +94,17 @@ export const DocumentActions: React.FC<{
   const rename = api.documents.renameDocument.useMutation({
     onSuccess: () => {
       toast.success(t('documents.toast.renamed'));
+      setOpen(false);
+      invalidate();
+    },
+    onError,
+  });
+
+  const saveExpiry = api.documents.setDocumentExpiry.useMutation({
+    onSuccess: (_data, variables) => {
+      toast.success(
+        t(variables.expiresAt ? 'documents.toast.expiry_saved' : 'documents.toast.expiry_cleared'),
+      );
       setOpen(false);
       invalidate();
     },
@@ -150,16 +168,29 @@ export const DocumentActions: React.FC<{
     rename.mutate({ id: document.id, name: trimmed });
   }, [document.id, document.name, name, rename]);
 
+  const onExpirySave = useCallback(() => {
+    const current = document.expiresAt ? expiryDayKey(document.expiresAt) : '';
+
+    if (!expiry || expiry === current) {
+      setOpen(false);
+      return;
+    }
+
+    saveExpiry.mutate({ id: document.id, expiresAt: expiry });
+  }, [document.expiresAt, document.id, expiry, saveExpiry]);
+
   const onDelete = useCallback(() => remove.mutate({ id: document.id }), [document.id, remove]);
 
   const title =
     'rename' === view
       ? t('documents.rename.title')
-      : 'move' === view
-        ? t('documents.move.title')
-        : 'delete' === view
-          ? t('documents.confirm_delete.title')
-          : document.name;
+      : 'expiry' === view
+        ? t('documents.expiry.title')
+        : 'move' === view
+          ? t('documents.move.title')
+          : 'delete' === view
+            ? t('documents.confirm_delete.title')
+            : document.name;
 
   return (
     <>
@@ -167,9 +198,15 @@ export const DocumentActions: React.FC<{
         open={open}
         onOpenChange={setOpen}
         title={title}
-        actionTitle={'rename' === view ? t('documents.actions.save') : undefined}
-        actionOnClick={'rename' === view ? onRenameSave : undefined}
-        actionDisabled={!name.trim() || rename.isPending}
+        actionTitle={
+          'rename' === view || 'expiry' === view ? t('documents.actions.save') : undefined
+        }
+        actionOnClick={
+          'rename' === view ? onRenameSave : 'expiry' === view ? onExpirySave : undefined
+        }
+        actionDisabled={
+          'expiry' === view ? !expiry || saveExpiry.isPending : !name.trim() || rename.isPending
+        }
         className="h-auto"
         trigger={
           <Button
@@ -195,6 +232,10 @@ export const DocumentActions: React.FC<{
             <button type="button" className={MENU_ROW} onClick={() => setView('rename')}>
               <PencilIcon className="text-primary size-5" />
               <span className="flex-1">{t('documents.actions.rename')}</span>
+            </button>
+            <button type="button" className={MENU_ROW} onClick={() => setView('expiry')}>
+              <CalendarIcon className="text-primary size-5" />
+              <span className="flex-1">{t('documents.actions.expiry')}</span>
             </button>
             {1 < folders.length ? (
               <button type="button" className={MENU_ROW} onClick={() => setView('move')}>
@@ -231,6 +272,34 @@ export const DocumentActions: React.FC<{
               placeholder={t('documents.rename.placeholder')}
               aria-label={t('documents.rename.placeholder')}
             />
+          </form>
+        ) : null}
+
+        {'expiry' === view ? (
+          <form
+            className="flex flex-col gap-3 px-1 pb-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onExpirySave();
+            }}
+          >
+            <Input
+              type="date"
+              value={expiry}
+              onChange={(event) => setExpiry(event.target.value)}
+              aria-label={t('documents.expiry.label')}
+            />
+            <p className="text-muted-foreground text-xs">{t('documents.expiry.hint')}</p>
+            {document.expiresAt ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={saveExpiry.isPending}
+                onClick={() => saveExpiry.mutate({ id: document.id, expiresAt: null })}
+              >
+                {t('documents.expiry.clear')}
+              </Button>
+            ) : null}
           </form>
         ) : null}
 

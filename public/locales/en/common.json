@@ -251,6 +251,7 @@
       "create": "Create",
       "delete": "Delete",
       "download": "Download",
+      "expiry": "Expiry date",
       "menu": "Options for {{name}}",
       "move": "Move to…",
       "rename": "Rename",
@@ -281,6 +282,12 @@
     },
     "expired": "Expired {{date}}",
     "expires": "Expires {{date}}",
+    "expiry": {
+      "clear": "No expiry date",
+      "hint": "You get a heads-up a week before, and it shows in the Calendar.",
+      "label": "Expiry date",
+      "title": "Expiry date"
+    },
     "folder": {
       "create": "New section",
       "delete": "Delete section",
@@ -341,6 +348,8 @@
     "title": "Documents",
     "toast": {
       "deleted": "Document deleted",
+      "expiry_cleared": "Expiry date removed",
+      "expiry_saved": "Expiry date saved",
       "moved": "Moved to {{name}}",
       "renamed": "Name updated",
       "uploaded_one": "Uploaded {{count}} document",

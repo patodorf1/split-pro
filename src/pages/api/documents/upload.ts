@@ -3,25 +3,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import sharp from 'sharp';
 
 import { type File, formidable, errors as formidableErrors } from 'formidable';
 
-import {
-  DOCUMENT_MAX_SIZE_BYTES,
-  buildStorageKey,
-  defaultDocumentName,
-  detectDocumentType,
-  sanitizeFileName,
-} from '~/lib/documents';
+import { DOCUMENT_MAX_SIZE_BYTES, rejectionStatus } from '~/lib/documents';
 import { authOptions } from '~/server/auth';
 import { db } from '~/server/db';
 import { findAccessibleFolder } from '~/server/documents/access';
-import {
-  DOCUMENTS_INCOMING_DIR,
-  resolveDocumentPath,
-  resolveThumbnailPath,
-} from '~/server/documents/storage';
+import { DOCUMENTS_INCOMING_DIR } from '~/server/documents/storage';
+import { storeDocument } from '~/server/documents/store';
 
 export const config = {
   api: {
@@ -31,8 +21,6 @@ export const config = {
 
 /** Margen para los encabezados del multipart por encima del tope del archivo. */
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
-
-const THUMBNAIL_SIZE = 240;
 
 type UploadError =
   | 'method_not_allowed'
@@ -68,8 +56,8 @@ const cleanupIncoming = async (prefix: string) => {
  * `file`). La UI sube varios archivos uno detrás de otro para poder mostrar el progreso.
  *
  * Orden de los chequeos: sesión → membresía de la sección (antes de leer el cuerpo) → tamaño →
- * tipo real por contenido. El archivo se escribe en `.incoming/` y se mueve con `rename` al
- * destino final (`<groupId>/<uuid>.<ext>`), así nunca queda un archivo a medias con nombre final.
+ * tipo real por contenido. Guardar el archivo y la fila es `storeDocument`, igual que la API
+ * externa.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'private, no-store');
@@ -105,8 +93,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const requestPrefix = `${randomUUID()}-`;
   let uploaded: File | undefined;
-  let finalPath: string | null = null;
-  let finalKey: string | null = null;
 
   try {
     const form = formidable({
@@ -143,85 +129,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return fail(res, 400, 'no_file');
     }
 
-    const originalName = sanitizeFileName(uploaded.originalFilename ?? '') || 'documento';
     const buffer = await fs.readFile(uploaded.filepath);
-    const detection = detectDocumentType(buffer, originalName);
-
-    if (!detection.ok) {
-      const status =
-        'too_large' === detection.reason ? 413 : 'empty' === detection.reason ? 400 : 415;
-      return fail(res, status, detection.reason);
-    }
-
-    const { type } = detection;
-    const id = randomUUID();
-    const storageKey = buildStorageKey(folder.groupId, id, type.ext);
-    finalPath = resolveDocumentPath(storageKey);
-    finalKey = storageKey;
-
-    if (!finalPath) {
-      return fail(res, 500, 'server_error');
-    }
-
-    await fs.mkdir(path.dirname(finalPath), { recursive: true });
-    await fs.rename(uploaded.filepath, finalPath);
-
-    if (type.isImage) {
-      await writeThumbnail(buffer, storageKey, requestPrefix);
-    }
-
-    const document = await db.document.create({
-      data: {
-        id,
-        folderId: folder.id,
-        groupId: folder.groupId,
-        name: defaultDocumentName(originalName),
-        originalName,
-        mimeType: type.mimeType,
-        size: buffer.length,
-        storageKey,
+    const stored = await storeDocument(
+      {
+        folder,
+        buffer,
+        originalName: uploaded.originalFilename ?? '',
         uploadedById: session.user.id,
       },
-      select: { id: true, name: true, mimeType: true, size: true, createdAt: true },
-    });
+      { id: true, name: true, mimeType: true, size: true, createdAt: true },
+    );
 
-    finalPath = null;
+    if (!stored.ok) {
+      return fail(res, rejectionStatus(stored.reason), stored.reason);
+    }
 
-    return res.status(201).json({ document });
+    return res.status(201).json({ document: stored.document });
   } catch (error) {
     console.error('Document upload error', error);
     return fail(res, 500, 'server_error');
   } finally {
-    // Si algo falló después de mover el archivo, no dejamos huérfanos con nombre final.
-    if (finalPath) {
-      await fs.rm(finalPath, { force: true }).catch(() => undefined);
-      const thumbPath = finalKey ? resolveThumbnailPath(finalKey) : null;
-      if (thumbPath) {
-        await fs.rm(thumbPath, { force: true }).catch(() => undefined);
-      }
-    }
     await cleanupIncoming(requestPrefix);
   }
 }
-
-/** Miniatura cuadrada en WebP para la lista. Si el formato no se puede leer (HEIC), no hay. */
-const writeThumbnail = async (buffer: Buffer, storageKey: string, requestPrefix: string) => {
-  const thumbPath = resolveThumbnailPath(storageKey);
-
-  if (!thumbPath) {
-    return;
-  }
-
-  const tempPath = path.join(DOCUMENTS_INCOMING_DIR, `${requestPrefix}thumb.part`);
-
-  try {
-    await sharp(buffer)
-      .rotate()
-      .resize(THUMBNAIL_SIZE, THUMBNAIL_SIZE, { fit: 'cover' })
-      .webp({ quality: 60 })
-      .toFile(tempPath);
-    await fs.rename(tempPath, thumbPath);
-  } catch {
-    // Sin miniatura: la lista muestra el ícono del tipo.
-  }
-};

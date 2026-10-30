@@ -44,6 +44,45 @@ export const formatExpiryDate = (
   return `${pad(day)}/${pad(month)}/${year}`;
 };
 
+const EXPIRY_DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * "2027-02-02" → el instante que se guarda en `expiresAt`: el mediodía UTC de ese día (las 9 en
+ * Argentina), así el día de calendario es el mismo en cualquier zona de América. Devuelve null si
+ * no es una fecha real ("2027-02-30") o tiene otro formato.
+ */
+export const parseExpiryDay = (text: string): Date | null => {
+  const match = EXPIRY_DAY_PATTERN.exec(text.trim());
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+
+  if (
+    1900 > year ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
+/** Día de calendario (en Argentina) de un vencimiento, "aaaa-mm-dd": la inversa de `parseExpiryDay`. */
+export const expiryDayKey = (expiresAt: Date, timeZone: string = REMINDER_TIME_ZONE): string => {
+  const { year, month, day } = getZonedCalendarDay(timeZone, expiresAt);
+  const pad = (value: number) => String(value).padStart(2, '0');
+
+  return `${year}-${pad(month)}-${pad(day)}`;
+};
+
 /** Ya venció: su día de calendario (en Argentina) es anterior a hoy. Vencer hoy no cuenta. */
 export const isExpired = (
   expiresAt: Date,
