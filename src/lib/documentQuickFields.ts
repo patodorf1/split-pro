@@ -16,7 +16,7 @@ export const MAX_QUICK_FIELD_LENGTH = 100;
 
 /**
  * Largo máximo para mostrar el valor debajo de la etiqueta en el botón. Más largo no entra prolijo
- * en un teléfono de 375px (cuatro botones por fila) y se muestra sólo la etiqueta.
+ * en un teléfono de 375px y se muestra sólo la etiqueta.
  */
 export const QUICK_FIELD_PREVIEW_MAX_LENGTH = 10;
 

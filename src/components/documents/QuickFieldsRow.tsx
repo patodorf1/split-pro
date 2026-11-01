@@ -30,9 +30,10 @@ interface QuickFieldsRowProps {
 }
 
 /**
- * Fila de datos rápidos de una sección persona: cuatro botones (DNI, Pasaporte, OS, Nacimiento)
- * que copian el valor al tocarlos, y un lápiz al final para cargar, cambiar o borrar los datos. Un
- * botón sin valor se ve apagado con un "+" y abre la edición.
+ * Datos rápidos de una sección persona: cuatro botones (DNI, Pasaporte, OS, Nacimiento) en dos
+ * filas, que copian el valor al tocarlos, y un lápiz al costado para cargar, cambiar o borrar los
+ * datos. Un botón sin valor se ve apagado con un "+" y abre la edición. Van de a dos por fila para
+ * que la letra sea grande: en una sola fila "Nacimiento" se corta en 375px.
  */
 export const QuickFieldsRow: React.FC<QuickFieldsRowProps> = ({
   folderId,
@@ -102,42 +103,48 @@ export const QuickFieldsRow: React.FC<QuickFieldsRowProps> = ({
 
   return (
     <div className="flex items-stretch gap-1" data-testid="quick-fields-row">
-      {QUICK_FIELD_KEYS.map((key) => {
-        const value = quickFields[key];
-        const label = t(`documents.quick.labels.${key}`);
-        const fullLabel = t(`documents.quick.fields.${key}`);
-        const preview = quickFieldPreview(value);
+      <div className="grid min-w-0 flex-1 grid-cols-2 gap-2">
+        {QUICK_FIELD_KEYS.map((key) => {
+          const value = quickFields[key];
+          const label = t(`documents.quick.labels.${key}`);
+          const fullLabel = t(`documents.quick.fields.${key}`);
+          const preview = quickFieldPreview(value);
 
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => void onChipClick(key)}
-            aria-label={
-              value
-                ? `${t('documents.quick.copy', { label: fullLabel })}: ${value}`
-                : t('documents.quick.missing', { label: fullLabel })
-            }
-            className={cn(
-              'relative flex h-11 min-w-0 flex-1 flex-col items-center justify-center rounded-xl px-0.5 leading-tight transition-colors active:scale-[0.97]',
-              value
-                ? 'bg-primary-soft text-primary'
-                : 'text-muted-foreground border-border border border-dashed opacity-70',
-            )}
-          >
-            {/* El "+" va en la esquina: en línea no deja lugar para "Nacimiento" en 375px. */}
-            {value ? null : (
-              <PlusIcon className="absolute top-1 right-1 size-2.5" strokeWidth={3} aria-hidden />
-            )}
-            <span className="max-w-full truncate text-[11px] font-semibold">{label}</span>
-            {preview ? (
-              <span className="text-muted-foreground max-w-full truncate text-[10px] tabular-nums">
-                {preview}
-              </span>
-            ) : null}
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => void onChipClick(key)}
+              aria-label={
+                value
+                  ? `${t('documents.quick.copy', { label: fullLabel })}: ${value}`
+                  : t('documents.quick.missing', { label: fullLabel })
+              }
+              className={cn(
+                'relative flex h-14 min-w-0 flex-col items-center justify-center rounded-xl px-2 leading-tight transition-colors active:scale-[0.97]',
+                value
+                  ? 'bg-primary-soft text-primary'
+                  : 'text-muted-foreground border-border border border-dashed opacity-70',
+              )}
+            >
+              {/* El "+" va en la esquina, como marca de "falta cargar". */}
+              {value ? null : (
+                <PlusIcon
+                  className="absolute top-1.5 right-1.5 size-3"
+                  strokeWidth={3}
+                  aria-hidden
+                />
+              )}
+              <span className="max-w-full truncate text-[15px] font-semibold">{label}</span>
+              {preview ? (
+                <span className="text-muted-foreground max-w-full truncate text-sm tabular-nums">
+                  {preview}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
 
       <AppDrawer
         open={open}
@@ -151,9 +158,9 @@ export const QuickFieldsRow: React.FC<QuickFieldsRowProps> = ({
           <button
             type="button"
             aria-label={t('documents.quick.edit')}
-            className="text-primary hover:bg-primary-soft flex h-11 w-7 shrink-0 items-center justify-center rounded-xl"
+            className="text-primary hover:bg-primary-soft flex w-9 shrink-0 items-center justify-center self-stretch rounded-xl"
           >
-            <PencilIcon className="size-4" />
+            <PencilIcon className="size-5" />
           </button>
         }
       >
