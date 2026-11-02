@@ -1,5 +1,6 @@
 import {
   TREND_VISIBLE_MONTHS,
+  averageOfClosedMonths,
   averageOfNonZero,
   categoryTrends,
   indexOfMonth,
@@ -39,6 +40,22 @@ describe('averageOfNonZero', () => {
   it('ignores empty months', () => {
     expect(averageOfNonZero([0n, 100n, 300n])).toBe(200n);
     expect(averageOfNonZero([0n, 0n])).toBe(0n);
+  });
+});
+
+describe('averageOfClosedMonths', () => {
+  const months = monthsEndingAt({ year: 2026, month: 11 }, 3);
+
+  it('leaves out the month in progress', () => {
+    expect(averageOfClosedMonths(months, [100n, 300n, 10n], { year: 2026, month: 11 })).toBe(200n);
+  });
+
+  it('uses every month when the chart ends before the current month', () => {
+    expect(averageOfClosedMonths(months, [100n, 300n, 200n], { year: 2027, month: 1 })).toBe(200n);
+  });
+
+  it('still ignores empty months', () => {
+    expect(averageOfClosedMonths(months, [0n, 300n, 10n], { year: 2026, month: 11 })).toBe(300n);
   });
 });
 

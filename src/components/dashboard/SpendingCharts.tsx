@@ -13,7 +13,7 @@ import { type YearMonth, compareYearMonth } from '~/lib/stats';
 import {
   TREND_BASELINE_MONTHS,
   TREND_FETCH_MONTHS,
-  averageOfNonZero,
+  averageOfClosedMonths,
   categoryTrends,
   indexOfMonth,
   monthsEndingAt,
@@ -70,6 +70,7 @@ const TrendRow: React.FC<{
   values: bigint[];
   months: YearMonth[];
   selectedIndex: number;
+  currentMonth: YearMonth;
   currency: string;
   expanded: boolean;
   onToggle: (category: string) => void;
@@ -81,6 +82,7 @@ const TrendRow: React.FC<{
   values,
   months,
   selectedIndex,
+  currentMonth,
   currency,
   expanded,
   onToggle,
@@ -126,6 +128,7 @@ const TrendRow: React.FC<{
           months={months}
           values={values}
           selectedIndex={selectedIndex}
+          currentMonth={currentMonth}
           currency={currency}
           compact
         />
@@ -230,7 +233,7 @@ export const SpendingCharts: React.FC<{
   }
 
   const { toUIString } = getCurrencyHelpersCached(currency);
-  const average = averageOfNonZero(visibleValues);
+  const average = averageOfClosedMonths(visibleMonths, visibleValues, currentMonth);
   const inProgress = 0 === compareYearMonth(selected, currentMonth);
   const shownTrends = showAll ? trends : trends.slice(0, TRENDS_PREVIEW);
 
@@ -246,6 +249,7 @@ export const SpendingCharts: React.FC<{
           months={visibleMonths}
           values={visibleValues}
           selectedIndex={selectedIndex - TREND_BASELINE_MONTHS}
+          currentMonth={currentMonth}
           currency={currency}
           onSelect={handleSelect}
         />
@@ -276,6 +280,7 @@ export const SpendingCharts: React.FC<{
                 }
                 months={visibleMonths}
                 selectedIndex={selectedIndex - TREND_BASELINE_MONTHS}
+                currentMonth={currentMonth}
                 currency={currency}
                 expanded={expanded === trend.category}
                 onToggle={toggle}

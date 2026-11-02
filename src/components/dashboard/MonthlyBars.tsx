@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 
 import { useTranslationWithUtils } from '~/hooks/useTranslationWithUtils';
 import { type YearMonth } from '~/lib/stats';
-import { averageOfNonZero } from '~/lib/trends';
+import { averageOfClosedMonths } from '~/lib/trends';
 import { cn } from '~/lib/utils';
 
 const monthLabel = (month: YearMonth, locale: string, style: 'short' | 'long') => {
@@ -66,18 +66,28 @@ const Bar: React.FC<{
 };
 
 /**
- * Barras de un monto mes a mes, con una línea punteada en el promedio de los meses con gastos.
- * Con `onSelect`, cada barra es un botón que elige ese mes.
+ * Barras de un monto mes a mes, con una línea punteada en el promedio de los meses cerrados con
+ * gastos (sin el mes en curso). Con `onSelect`, cada barra es un botón que elige ese mes.
  */
 export const MonthlyBars: React.FC<{
   months: YearMonth[];
   values: bigint[];
   selectedIndex: number;
+  currentMonth: YearMonth;
   currency: string;
   onSelect?: (index: number) => void;
   compact?: boolean;
   className?: string;
-}> = ({ months, values, selectedIndex, currency, onSelect, compact = false, className }) => {
+}> = ({
+  months,
+  values,
+  selectedIndex,
+  currentMonth,
+  currency,
+  onSelect,
+  compact = false,
+  className,
+}) => {
   const { i18n, getCurrencyHelpersCached } = useTranslationWithUtils();
   const { toUIString } = getCurrencyHelpersCached(currency);
 
@@ -86,7 +96,10 @@ export const MonthlyBars: React.FC<{
     () => positive.reduce((acc, value) => (value > acc ? value : acc), 0n),
     [positive],
   );
-  const average = useMemo(() => averageOfNonZero(positive), [positive]);
+  const average = useMemo(
+    () => averageOfClosedMonths(months, positive, currentMonth),
+    [months, positive, currentMonth],
+  );
   const toPercent = (value: bigint) => (0n === max ? 0 : (Number(value) / Number(max)) * 100);
 
   return (

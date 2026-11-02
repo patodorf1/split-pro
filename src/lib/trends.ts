@@ -36,6 +36,22 @@ export const averageOf = (values: bigint[]): bigint =>
 export const averageOfNonZero = (values: bigint[]): bigint =>
   averageOf(values.filter((value) => 0n !== value));
 
+/**
+ * Promedio mensual de las barras: sólo meses cerrados y con gastos. El mes en curso queda afuera
+ * porque todavía no terminó y bajaría el promedio.
+ */
+export const averageOfClosedMonths = (
+  months: YearMonth[],
+  values: bigint[],
+  current: YearMonth,
+): bigint =>
+  averageOfNonZero(
+    values.filter((_, index) => {
+      const month = months[index];
+      return undefined !== month && 0 > compareYearMonth(month, current);
+    }),
+  );
+
 export interface CategoryTrend {
   category: string;
   current: bigint;
