@@ -152,6 +152,112 @@ const withMyShare = <
   };
 };
 
+/** Años hacia atrás que puede mostrar el gráfico año a año. */
+const YEARLY_TREND_MAX_YEARS = 20;
+
+export interface YearlyTrend {
+  /** Primer mes de las series: enero del primer año con gastos. */
+  first: { year: number; month: number };
+  series: Omit<TrendSeries, 'categories'>[];
+}
+
+/**
+ * Serie mes a mes (total y por categoría) de `months` meses desde `first`. Una serie por moneda;
+ * en "blue", una sola en dólares.
+ */
+const buildTrendSeries = async ({
+  userId,
+  groupId,
+  timeZone,
+  valuation,
+  first,
+  months,
+}: {
+  userId: number;
+  groupId?: number | null;
+  timeZone: string;
+  valuation: Valuation;
+  first: { year: number; month: number };
+  months: number;
+}): Promise<TrendSeries[]> => {
+  const buckets = Array.from({ length: months }, (_, index) => {
+    const current = addMonths(first, index);
+    const range = getMonthRange(current.year, current.month, timeZone);
+    return {
+      key: `${current.year}-${String(current.month).padStart(2, '0')}`,
+      from: toUtcTimestampLiteral(range.from),
+      to: toUtcTimestampLiteral(range.to),
+      offset: Math.round(getTimeZoneOffsetMs(range.from, timeZone) / 60_000),
+    };
+  });
+  const monthKeys = buckets.map(({ key }) => key);
+
+  await prepareValuation(valuation);
+  const valued = valuationSql(valuation, expenseLocalDateSql(Prisma.sql`m.offset_min`));
+
+  const rows = await db.$queryRaw<TrendAggregateRow[]>`
+    WITH months AS (
+      SELECT *
+      FROM unnest(
+        ${monthKeys}::text[],
+        ${buckets.map(({ from }) => from)}::timestamp[],
+        ${buckets.map(({ to }) => to)}::timestamp[],
+        ${buckets.map(({ offset }) => offset)}::int[]
+      ) AS m(ym, from_ts, to_ts, offset_min)
+    ),
+    scoped AS (
+      SELECT
+        m.ym AS ym,
+        ${valued.currency} AS currency,
+        e.category AS category,
+        ${valued.amount(Prisma.sql`e.amount`)} AS ours,
+        ${valued.amount(memberShareSql(Prisma.sql`${userId}`))} AS mine
+      FROM "Expense" e
+      JOIN months m ON e."expenseDate" >= m.from_ts AND e."expenseDate" < m.to_ts
+      LEFT JOIN "ExpenseParticipant" p
+        ON p."expenseId" = e.id AND p."userId" = ${userId}
+      WHERE ${COUNTS_AS_SPENDING_SQL}
+        AND e."expenseDate" >= ${buckets[0]!.from}::timestamp
+        AND e."expenseDate" < ${buckets.at(-1)!.to}::timestamp
+        ${scopeFilterSql(userId, groupId)}
+        ${valued.filter}
+    )
+    SELECT ym, currency, category, SUM(ours)::bigint AS ours, SUM(mine)::bigint AS mine
+    FROM scoped
+    GROUP BY ym, currency, category
+  `;
+
+  const zeros = () => monthKeys.map(() => 0n);
+  const series = new Map<string, TrendSeries>();
+
+  for (const row of rows) {
+    const index = monthKeys.indexOf(row.ym);
+    if (-1 === index) {
+      continue;
+    }
+
+    const entry = series.get(row.currency) ?? {
+      currency: row.currency,
+      ours: zeros(),
+      mine: zeros(),
+      categories: [],
+    };
+    let category = entry.categories.find((item) => item.category === row.category);
+    if (!category) {
+      category = { category: row.category, ours: zeros(), mine: zeros() };
+      entry.categories.push(category);
+    }
+
+    entry.ours[index]! += row.ours;
+    entry.mine[index]! += row.mine;
+    category.ours[index]! += row.ours;
+    category.mine[index]! += row.mine;
+    series.set(row.currency, entry);
+  }
+
+  return [...series.values()];
+};
+
 export const statsRouter = createTRPCRouter({
   /**
    * Totals and per-category breakdown of a month, plus the previous month's
@@ -273,90 +379,54 @@ export const statsRouter = createTRPCRouter({
   monthlyTrend: protectedProcedure
     .input(monthInput.extend({ months: z.number().int().min(2).max(24).default(15) }))
     .query(async ({ ctx, input }): Promise<TrendSeries[]> => {
-      const userId = ctx.session.user.id;
-      const { year, month, timeZone, groupId, months } = input;
+      const { year, month, months } = input;
 
-      /*
-       * Los límites de cada mes (y el corrimiento horario para saber el día de cada gasto) salen
-       * de la zona horaria del teléfono, igual que en `monthlySummary`; la base solo compara.
-       */
-      const first = addMonths({ year, month }, -(months - 1));
-      const buckets = Array.from({ length: months }, (_, index) => {
-        const current = addMonths(first, index);
-        const range = getMonthRange(current.year, current.month, timeZone);
-        return {
-          key: `${current.year}-${String(current.month).padStart(2, '0')}`,
-          from: toUtcTimestampLiteral(range.from),
-          to: toUtcTimestampLiteral(range.to),
-          offset: Math.round(getTimeZoneOffsetMs(range.from, timeZone) / 60_000),
-        };
+      return buildTrendSeries({
+        ...input,
+        userId: ctx.session.user.id,
+        first: addMonths({ year, month }, -(months - 1)),
+        months,
       });
-      const monthKeys = buckets.map(({ key }) => key);
+    }),
 
-      await prepareValuation(input.valuation);
-      const valued = valuationSql(input.valuation, expenseLocalDateSql(Prisma.sql`m.offset_min`));
+  /**
+   * Serie mes a mes desde enero del primer año con gastos hasta el mes pedido (el actual), para
+   * comparar años en /stats. Sólo totales, sin categorías.
+   */
+  yearlyTrend: protectedProcedure
+    .input(monthInput)
+    .query(async ({ ctx, input }): Promise<YearlyTrend> => {
+      const userId = ctx.session.user.id;
+      const { year, month, timeZone, groupId } = input;
 
-      const rows = await db.$queryRaw<TrendAggregateRow[]>`
-        WITH months AS (
-          SELECT *
-          FROM unnest(
-            ${monthKeys}::text[],
-            ${buckets.map(({ from }) => from)}::timestamp[],
-            ${buckets.map(({ to }) => to)}::timestamp[],
-            ${buckets.map(({ offset }) => offset)}::int[]
-          ) AS m(ym, from_ts, to_ts, offset_min)
-        ),
-        scoped AS (
-          SELECT
-            m.ym AS ym,
-            ${valued.currency} AS currency,
-            e.category AS category,
-            ${valued.amount(Prisma.sql`e.amount`)} AS ours,
-            ${valued.amount(memberShareSql(Prisma.sql`${userId}`))} AS mine
-          FROM "Expense" e
-          JOIN months m ON e."expenseDate" >= m.from_ts AND e."expenseDate" < m.to_ts
-          LEFT JOIN "ExpenseParticipant" p
-            ON p."expenseId" = e.id AND p."userId" = ${userId}
-          WHERE ${COUNTS_AS_SPENDING_SQL}
-            AND e."expenseDate" >= ${buckets[0]!.from}::timestamp
-            AND e."expenseDate" < ${buckets.at(-1)!.to}::timestamp
-            ${scopeFilterSql(userId, groupId)}
-            ${valued.filter}
-        )
-        SELECT ym, currency, category, SUM(ours)::bigint AS ours, SUM(mine)::bigint AS mine
-        FROM scoped
-        GROUP BY ym, currency, category
+      // Sólo se usa el filtro de monedas; las cotizaciones las prepara `buildTrendSeries`.
+      const valued = valuationSql(input.valuation, Prisma.sql`NULL`);
+      const [oldest] = await db.$queryRaw<{ first: Date | null }[]>`
+        SELECT MIN(e."expenseDate") AS first
+        FROM "Expense" e
+        LEFT JOIN "ExpenseParticipant" p
+          ON p."expenseId" = e.id AND p."userId" = ${userId}
+        WHERE ${COUNTS_AS_SPENDING_SQL}
+          ${scopeFilterSql(userId, groupId)}
+          ${valued.filter}
       `;
 
-      const zeros = () => monthKeys.map(() => 0n);
-      const series = new Map<string, TrendSeries>();
+      // Del primer año con gastos (en la hora del teléfono) a hoy, con tope de años hacia atrás.
+      const firstYear = oldest?.first
+        ? Math.max(
+            getZonedCalendarDay(timeZone, oldest.first).year,
+            year - (YEARLY_TREND_MAX_YEARS - 1),
+          )
+        : year;
+      const first = { year: Math.min(firstYear, year), month: 1 };
+      const months = (year - first.year) * 12 + month;
 
-      for (const row of rows) {
-        const index = monthKeys.indexOf(row.ym);
-        if (-1 === index) {
-          continue;
-        }
+      const series = await buildTrendSeries({ ...input, userId, first, months });
 
-        const entry = series.get(row.currency) ?? {
-          currency: row.currency,
-          ours: zeros(),
-          mine: zeros(),
-          categories: [],
-        };
-        let category = entry.categories.find((item) => item.category === row.category);
-        if (!category) {
-          category = { category: row.category, ours: zeros(), mine: zeros() };
-          entry.categories.push(category);
-        }
-
-        entry.ours[index]! += row.ours;
-        entry.mine[index]! += row.mine;
-        category.ours[index]! += row.ours;
-        category.mine[index]! += row.mine;
-        series.set(row.currency, entry);
-      }
-
-      return [...series.values()];
+      return {
+        first,
+        series: series.map(({ currency, ours, mine }) => ({ currency, ours, mine })),
+      };
     }),
 
   /** Expenses behind one category of one month, for the drill-down. */

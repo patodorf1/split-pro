@@ -6,6 +6,7 @@ import {
   indexOfMonth,
   monthsEndingAt,
   trendWindowEnd,
+  yearlySummaries,
 } from '~/lib/trends';
 import { parseEvolution } from '~/server/api/services/dolarBlueService';
 
@@ -56,6 +57,39 @@ describe('averageOfClosedMonths', () => {
 
   it('still ignores empty months', () => {
     expect(averageOfClosedMonths(months, [0n, 300n, 10n], { year: 2026, month: 11 })).toBe(300n);
+  });
+});
+
+describe('yearlySummaries', () => {
+  // De enero 2025 a marzo 2026 (el mes actual).
+  const months = monthsEndingAt({ year: 2026, month: 3 }, 15);
+  const values = months.map((_, index) => BigInt((index + 1) * 100));
+  const current = { year: 2026, month: 3 };
+
+  it('groups the months by year, oldest first, with twelve months each', () => {
+    const years = yearlySummaries(months, values, current);
+
+    expect(years.map(({ year }) => year)).toEqual([2025, 2026]);
+    expect(years[0]?.months).toHaveLength(12);
+    expect(years[0]?.months[0]).toEqual({ year: 2025, month: 1 });
+    expect(years[1]?.values).toEqual([1300n, 1400n, 1500n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n]);
+  });
+
+  it('averages each year without the month in progress', () => {
+    const [past, now] = yearlySummaries(months, values, current);
+
+    // 100 a 1200: promedio 650.
+    expect(past?.average).toBe(650n);
+    // Enero y febrero de 2026; marzo todavía no terminó.
+    expect(now?.average).toBe(1350n);
+  });
+
+  it('does not count empty months of a year that started late', () => {
+    const late = values.map((value, index) => (index < 6 ? 0n : value));
+    const [first] = yearlySummaries(months, late, current);
+
+    // Julio a diciembre: 700 a 1200.
+    expect(first?.average).toBe(950n);
   });
 });
 

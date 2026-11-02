@@ -52,6 +52,43 @@ export const averageOfClosedMonths = (
     }),
   );
 
+export interface YearSummary {
+  year: number;
+  /** Los 12 meses del año, de enero a diciembre. */
+  months: YearMonth[];
+  /** Monto de cada mes; 0 en los meses sin datos (los que todavía no llegaron, por ejemplo). */
+  values: bigint[];
+  /** Promedio por mes del año: meses cerrados y con gastos. */
+  average: bigint;
+}
+
+/**
+ * Agrupa una serie mes a mes por año, para el gráfico año a año. Cada año trae sus 12 meses y el
+ * promedio por mes (sin el mes en curso: así un año empezado se compara con uno entero).
+ */
+export const yearlySummaries = (
+  months: YearMonth[],
+  values: bigint[],
+  current: YearMonth,
+): YearSummary[] => {
+  const byMonth = new Map(
+    months.map((month, index) => [`${month.year}-${month.month}`, values[index] ?? 0n]),
+  );
+  const years = [...new Set(months.map(({ year }) => year))].sort((a, b) => a - b);
+
+  return years.map((year) => {
+    const yearMonths = Array.from({ length: 12 }, (_, index) => ({ year, month: index + 1 }));
+    const yearValues = yearMonths.map((month) => byMonth.get(`${month.year}-${month.month}`) ?? 0n);
+
+    return {
+      year,
+      months: yearMonths,
+      values: yearValues,
+      average: averageOfClosedMonths(yearMonths, yearValues, current),
+    };
+  });
+};
+
 export interface CategoryTrend {
   category: string;
   current: bigint;

@@ -788,6 +788,18 @@
       "show_less": "Show less",
       "subtitle": "{{month}} compared to the average of the previous {{count}} months.",
       "title": "What goes up and down"
+    },
+    "view": {
+      "label": "View by",
+      "months": "Months",
+      "years": "Years"
+    },
+    "yearly": {
+      "bar": "{{year}}: {{amount}} per month",
+      "hint": "Tap a year to see its months",
+      "inflation": "In pesos, inflation makes recent years look bigger. To compare, pick Blue.",
+      "subtitle": "Monthly average of each year",
+      "title": "Year by year"
     }
   },
   "sync": {

@@ -761,6 +761,18 @@
       "show_less": "Ver menos",
       "subtitle": "{{month}} contra el promedio de los {{count}} meses anteriores.",
       "title": "Qué sube y qué baja"
+    },
+    "view": {
+      "label": "Ver por",
+      "months": "Meses",
+      "years": "Años"
+    },
+    "yearly": {
+      "bar": "{{year}}: {{amount}} por mes",
+      "hint": "Tocá un año para ver sus meses",
+      "inflation": "En pesos, la inflación agranda los años nuevos. Para comparar, elegí Blue.",
+      "subtitle": "Promedio por mes de cada año",
+      "title": "Año a año"
     }
   },
   "sync": {

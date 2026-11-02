@@ -5,6 +5,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useCategoryLabel } from '~/components/dashboard/CategoryRow';
 import { formatMonthLabel } from '~/components/dashboard/MonthSwitcher';
 import { MonthlyBars } from '~/components/dashboard/MonthlyBars';
+import { SegmentedControl, type SegmentedOption } from '~/components/dashboard/SegmentedControl';
+import { YearlyChart } from '~/components/dashboard/YearlyChart';
 import { Card } from '~/components/ui/card';
 import { CategoryIcon } from '~/components/ui/categoryIcons';
 import { SectionLabel } from '~/components/ui/section-label';
@@ -24,6 +26,7 @@ import { type RouterOutputs, api } from '~/utils/api';
 
 type Scope = 'mine' | 'ours';
 type Valuation = 'native' | 'blue';
+type ChartView = 'months' | 'years';
 type TrendSeries = RouterOutputs['stats']['monthlyTrend'][number];
 
 /** Categorías que se ven antes de tocar "Ver todas". */
@@ -154,6 +157,14 @@ export const SpendingCharts: React.FC<{
   const { t, i18n, getCurrencyHelpersCached } = useTranslationWithUtils();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [view, setView] = useState<ChartView>('months');
+  const viewOptions = useMemo<SegmentedOption<ChartView>[]>(
+    () => [
+      { value: 'months', label: t('spending_charts.view.months') },
+      { value: 'years', label: t('spending_charts.view.years') },
+    ],
+    [t],
+  );
 
   const end = trendWindowEnd(selected, currentMonth);
   const windowEnd = useMemo(() => ({ year: end.year, month: end.month }), [end.year, end.month]);
@@ -240,22 +251,50 @@ export const SpendingCharts: React.FC<{
   return (
     <>
       <Card>
-        <SectionLabel>{t('spending_charts.monthly.title')}</SectionLabel>
-        <p className="text-muted-foreground mt-1 text-xs">
-          {t('spending_charts.monthly.average', { amount: toUIString(average) })}
-        </p>
-        <MonthlyBars
-          className="mt-4"
-          months={visibleMonths}
-          values={visibleValues}
-          selectedIndex={selectedIndex - TREND_BASELINE_MONTHS}
-          currentMonth={currentMonth}
-          currency={currency}
-          onSelect={handleSelect}
-        />
-        <p className="text-muted-foreground mt-3 text-center text-xs">
-          {t('spending_charts.monthly.hint')}
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <SectionLabel>
+            {'years' === view
+              ? t('spending_charts.yearly.title')
+              : t('spending_charts.monthly.title')}
+          </SectionLabel>
+          <SegmentedControl
+            size="sm"
+            options={viewOptions}
+            value={view}
+            onChange={setView}
+            label={t('spending_charts.view.label')}
+          />
+        </div>
+        {'years' === view ? (
+          <YearlyChart
+            selected={selected}
+            currentMonth={currentMonth}
+            onSelectMonth={onSelectMonth}
+            timeZone={timeZone}
+            groupId={groupId}
+            currency={currency}
+            scope={scope}
+            valuation={valuation}
+          />
+        ) : (
+          <>
+            <p className="text-muted-foreground mt-1 text-xs">
+              {t('spending_charts.monthly.average', { amount: toUIString(average) })}
+            </p>
+            <MonthlyBars
+              className="mt-4"
+              months={visibleMonths}
+              values={visibleValues}
+              selectedIndex={selectedIndex - TREND_BASELINE_MONTHS}
+              currentMonth={currentMonth}
+              currency={currency}
+              onSelect={handleSelect}
+            />
+            <p className="text-muted-foreground mt-3 text-center text-xs">
+              {t('spending_charts.monthly.hint')}
+            </p>
+          </>
+        )}
       </Card>
 
       {0 < trends.length ? (

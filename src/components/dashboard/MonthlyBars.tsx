@@ -65,6 +65,66 @@ const Bar: React.FC<{
   );
 };
 
+export interface BarItem {
+  key: string;
+  value: bigint;
+  /** Nombre corto debajo de la barra. */
+  label: string;
+  /** Lo que lee el lector de pantalla. */
+  spokenLabel: string;
+}
+
+/**
+ * Barras de un monto, con una línea punteada en `average` (sin línea si es 0). Con `onSelect`,
+ * cada barra es un botón.
+ */
+export const Bars: React.FC<{
+  items: BarItem[];
+  selectedIndex: number;
+  average: bigint;
+  onSelect?: (index: number) => void;
+  compact?: boolean;
+  className?: string;
+}> = ({ items, selectedIndex, average, onSelect, compact = false, className }) => {
+  const max = useMemo(
+    () => items.reduce((acc, { value }) => (value > acc ? value : acc), 0n),
+    [items],
+  );
+  const toPercent = (value: bigint) =>
+    0n === max || value <= 0n ? 0 : (Number(value) / Number(max)) * 100;
+
+  return (
+    <div className={cn('relative', compact ? 'h-12' : 'h-36', className)}>
+      {0n < average ? (
+        <div
+          aria-hidden="true"
+          className="border-muted-foreground/50 pointer-events-none absolute inset-x-0 border-t border-dashed"
+          // Las barras no ocupan todo el alto: abajo van los nombres.
+          style={{
+            bottom: compact
+              ? `${toPercent(average)}%`
+              : `calc(${toPercent(average) / 100} * (100% - 14px) + 14px)`,
+          }}
+        />
+      ) : null}
+      <div className="flex h-full items-end gap-1">
+        {items.map((item, index) => (
+          <Bar
+            key={item.key}
+            index={index}
+            height={toPercent(item.value)}
+            selected={index === selectedIndex}
+            label={item.label}
+            spokenLabel={item.spokenLabel}
+            compact={compact}
+            onSelect={onSelect}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /**
  * Barras de un monto mes a mes, con una línea punteada en el promedio de los meses cerrados con
  * gastos (sin el mes en curso). Con `onSelect`, cada barra es un botón que elige ese mes.
@@ -92,44 +152,29 @@ export const MonthlyBars: React.FC<{
   const { toUIString } = getCurrencyHelpersCached(currency);
 
   const positive = useMemo(() => values.map((value) => (0n < value ? value : 0n)), [values]);
-  const max = useMemo(
-    () => positive.reduce((acc, value) => (value > acc ? value : acc), 0n),
-    [positive],
-  );
   const average = useMemo(
     () => averageOfClosedMonths(months, positive, currentMonth),
     [months, positive, currentMonth],
   );
-  const toPercent = (value: bigint) => (0n === max ? 0 : (Number(value) / Number(max)) * 100);
+  const items = useMemo(
+    () =>
+      months.map((month, index) => ({
+        key: `${month.year}-${month.month}`,
+        value: positive[index] ?? 0n,
+        label: monthLabel(month, i18n.language, 'short'),
+        spokenLabel: `${monthLabel(month, i18n.language, 'long')}: ${toUIString(values[index] ?? 0n)}`,
+      })),
+    [months, positive, values, i18n.language, toUIString],
+  );
 
   return (
-    <div className={cn('relative', compact ? 'h-12' : 'h-36', className)}>
-      {0n < average ? (
-        <div
-          aria-hidden="true"
-          className="border-muted-foreground/50 pointer-events-none absolute inset-x-0 border-t border-dashed"
-          // Las barras no ocupan todo el alto: abajo van los nombres de los meses.
-          style={{
-            bottom: compact
-              ? `${toPercent(average)}%`
-              : `calc(${toPercent(average) / 100} * (100% - 14px) + 14px)`,
-          }}
-        />
-      ) : null}
-      <div className="flex h-full items-end gap-1">
-        {months.map((month, index) => (
-          <Bar
-            key={`${month.year}-${month.month}`}
-            index={index}
-            height={toPercent(positive[index] ?? 0n)}
-            selected={index === selectedIndex}
-            label={monthLabel(month, i18n.language, 'short')}
-            spokenLabel={`${monthLabel(month, i18n.language, 'long')}: ${toUIString(values[index] ?? 0n)}`}
-            compact={compact}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
-    </div>
+    <Bars
+      items={items}
+      selectedIndex={selectedIndex}
+      average={average}
+      onSelect={onSelect}
+      compact={compact}
+      className={className}
+    />
   );
 };
