@@ -1129,3 +1129,33 @@ describe('useAddExpenseStore sign preservation on edit (#658)', () => {
     expect(state.amount).toBe(20001n);
   });
 });
+
+describe('useAddExpenseStore payer on edit', () => {
+  const { actions } = useAddExpenseStore.getState();
+
+  beforeEach(() => {
+    useAddExpenseStore.setState({ currentUser: undefined, paidBy: undefined });
+    actions.resetState();
+  });
+
+  it('defaults the payer to the current user on a new expense', () => {
+    actions.setCurrentUser(user2);
+
+    expect(useAddExpenseStore.getState().paidBy?.id).toBe(user2.id);
+  });
+
+  it('keeps who paid when the current user is set again while editing (session refresh)', () => {
+    // Bob edita un gasto que pagó Alice.
+    actions.setCurrentUser(user2);
+    actions.setPaidBy(user1);
+    actions.setAmount(20000n);
+    actions.setParticipants(createParticipants([user1, user2], [10000n, -10000n]), SplitType.EQUAL);
+
+    // Al volver a la app la sesión se refresca y la pantalla vuelve a anotar quién la usa.
+    actions.setCurrentUser({ ...user2 });
+
+    const state = useAddExpenseStore.getState();
+    expect(state.paidBy?.id).toBe(user1.id);
+    expect(state.participants.find((p) => p.id === user1.id)?.amount).toBe(10000n);
+  });
+});

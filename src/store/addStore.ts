@@ -267,7 +267,9 @@ export const useAddExpenseStore = create<AddExpenseState>()((set) => ({
         if (!splitShares[currentUser.id]) {
           splitShares[currentUser.id] = initSplitShares();
         }
-        return { currentUser, splitShares, paidBy: currentUser, participants };
+        // Quien usa la app solo es el pagador por defecto: al editar, o si la sesión se refresca
+        // (volver a la app), pisarlo cambiaba quién pagó sin rehacer los saldos.
+        return { currentUser, splitShares, paidBy: s.paidBy ?? currentUser, participants };
       }),
     setDescription: (description) => set({ description }),
     setFileUploading: (isFileUploading) => set({ isFileUploading }),
